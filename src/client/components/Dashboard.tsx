@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { listSwarms, createBlankSwarm, importFromCSV, getCSVTemplateUrl, getTemplates, instantiateTemplate } from '../api.js';
+import { ThemeToggle } from './ThemeToggle.js';
+import { useTheme } from '../hooks/useTheme.js';
 import type { Swarm } from '../../shared/types/index.js';
 import type { TemplateInfo } from '../api.js';
 
@@ -10,6 +12,7 @@ interface DashboardProps {
 type View = 'home' | 'templates' | 'csv';
 
 export function Dashboard({ onOpenSwarm }: DashboardProps) {
+  const { theme, toggleTheme } = useTheme();
   const [swarms, setSwarms] = useState<Swarm[]>([]);
   const [templates, setTemplates] = useState<TemplateInfo[]>([]);
   const [view, setView] = useState<View>('home');
@@ -67,15 +70,20 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0a0e27 100%)', padding: '40px 20px' }}>
+    <div style={{ minHeight: '100vh', padding: '40px 20px' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
         {/* Header */}
-        <h1 style={{
-          textAlign: 'center', color: '#00d9ff', fontSize: 36, letterSpacing: 4,
-          textTransform: 'uppercase', textShadow: '0 0 20px rgba(0,217,255,0.4)', marginBottom: 8,
-        }}>Agent Modus</h1>
-        <p style={{ textAlign: 'center', color: '#8b9dc3', fontSize: 16, marginBottom: 40 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-16)', paddingBottom: 'var(--space-6)', borderBottom: '1px solid var(--border-default)' }}>
+          <div>
+            <h1 style={{
+              color: 'var(--text-primary)', fontSize: 'var(--text-xl)', fontWeight: 700,
+              letterSpacing: '-0.02em', margin: 0,
+            }}>Agent<span style={{ color: 'var(--accent-primary)' }}>Modus</span></h1>
+          </div>
+          <ThemeToggle theme={theme} onToggle={toggleTheme} />
+        </div>
+        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: 'var(--text-base)', marginBottom: 'var(--space-10)' }}>
           Design, monitor, and optimize multi-agent swarms
         </p>
 
@@ -247,19 +255,19 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
 function ActionCard({ title, description, color, onClick }: { title: string; description: string; color: string; onClick: () => void }) {
   return (
     <div onClick={onClick} style={{
-      padding: 24, borderRadius: 14, cursor: 'pointer', transition: 'all 0.2s',
-      background: 'linear-gradient(145deg, #1e293b, #0f172a)',
-      border: `2px solid ${color}30`, textAlign: 'center',
+      padding: 'var(--space-6)', borderRadius: 'var(--radius-lg)', cursor: 'pointer', transition: 'all 0.2s',
+      background: 'var(--bg-surface)',
+      border: `1px solid var(--border-default)`, textAlign: 'center',
     }}>
-      <div style={{ fontSize: 18, fontWeight: 600, color }}>{title}</div>
-      <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 6 }}>{description}</div>
+      <div style={{ fontSize: 'var(--text-lg)', fontWeight: 600, color }}>{title}</div>
+      <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 'var(--space-2)' }}>{description}</div>
     </div>
   );
 }
 
 const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '10px 14px', borderRadius: 8,
-  border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.3)',
-  color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box',
-  resize: 'vertical' as const,
+  width: '100%', padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius-md)',
+  border: '1px solid var(--border-default)', background: 'var(--bg-surface)',
+  color: 'var(--text-primary)', fontSize: 'var(--text-sm)', outline: 'none', boxSizing: 'border-box',
+  resize: 'vertical' as const, fontFamily: 'var(--font-primary)',
 };

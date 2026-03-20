@@ -1,4 +1,6 @@
 import React from 'react';
+import { ThemeToggle } from './ThemeToggle.js';
+import { useTheme } from '../hooks/useTheme.js';
 
 export type EditorMode = 'design' | 'monitor' | 'analyze';
 
@@ -60,6 +62,8 @@ export function EditorToolbar(props: EditorToolbarProps) {
     healthStatus,
   } = props;
 
+  const { theme, toggleTheme } = useTheme();
+
   const healthColors: Record<string, string> = {
     healthy: '#22c55e', degraded: '#fbbf24', unhealthy: '#ef4444', unknown: '#6b7280',
   };
@@ -69,7 +73,7 @@ export function EditorToolbar(props: EditorToolbarProps) {
   return (
     <div style={{
       padding: '8px 16px',
-      background: 'rgba(10, 14, 39, 0.95)',
+      background: 'var(--bg-surface)',
       borderBottom: `2px solid ${mColor}40`,
       display: 'flex',
       alignItems: 'center',
@@ -145,6 +149,8 @@ export function EditorToolbar(props: EditorToolbarProps) {
           <button onClick={props.onImport} style={btnStyle(false, mColor)}>Import</button>
         </div>
       )}
+
+      <ThemeToggle theme={theme} onToggle={toggleTheme} />
     </div>
   );
 }

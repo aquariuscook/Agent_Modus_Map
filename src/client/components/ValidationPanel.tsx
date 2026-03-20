@@ -140,7 +140,7 @@ export function ValidationPanel({ messages, isOpen, onToggle }: ValidationPanelP
         onClick={onToggle}
         style={{
           position: 'absolute',
-          top: 12,
+          bottom: 16,
           left: '50%',
           transform: 'translateX(-50%)',
           padding: '6px 14px',
@@ -166,7 +166,7 @@ export function ValidationPanel({ messages, isOpen, onToggle }: ValidationPanelP
       {isOpen && messages.length > 0 && (
         <div style={{
           position: 'absolute',
-          top: 48,
+          bottom: 48,
           left: '50%',
           transform: 'translateX(-50%)',
           width: 500,
