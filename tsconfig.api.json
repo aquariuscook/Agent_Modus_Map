@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "dist/api",
+    "noEmit": false,
+    "jsx": "react-jsx"
+  },
+  "include": ["src/api", "src/shared"]
+}
