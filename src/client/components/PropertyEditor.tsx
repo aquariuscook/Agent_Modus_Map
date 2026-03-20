@@ -6,7 +6,7 @@ const ALL_BADGES: Badge[] = [
   'ALWAYS_ON', 'ADVISORY', 'CAN_OVERRIDE', 'HIGH_PRIORITY', 'MEDIUM', 'LOGS_ALL',
 ];
 
-type Tab = 'general' | 'skills' | 'rag' | 'api' | 'mcp' | 'notes' | 'practices';
+type Tab = 'general' | 'skills' | 'rag' | 'api' | 'mcp' | 'database' | 'prompt' | 'model' | 'memory' | 'guardrails' | 'triggers' | 'errors' | 'costs' | 'permissions' | 'context' | 'notes' | 'practices';
 
 interface PropertyEditorProps {
   agent: Agent;
@@ -22,7 +22,18 @@ interface AgentConfig {
   rag?: RagConfig;
   apiCalls?: ApiCallEntry[];
   mcp?: McpConfig;
+  database?: DatabaseConfig;
+  systemPrompt?: SystemPromptConfig;
+  modelConfig?: ModelConfig;
+  memoryConfig?: MemoryConfig;
+  guardrails?: GuardrailsConfig;
+  triggers?: TriggerEntry[];
+  errorHandling?: ErrorHandlingConfig;
+  costLimits?: CostLimitsConfig;
+  permissions?: PermissionsConfig;
+  contextSources?: ContextSourceEntry[];
   notes?: NoteEntry[];
+  [key: string]: unknown;
 }
 
 interface SkillEntry { id: string; name: string; description: string; enabled: boolean; }
@@ -33,6 +44,17 @@ interface McpConfig { enabled: boolean; servers: McpServer[]; tools: McpTool[]; 
 interface McpServer { id: string; name: string; url: string; transport: 'stdio' | 'sse' | 'streamable-http'; }
 interface McpTool { id: string; name: string; serverId: string; description: string; enabled: boolean; }
 interface NoteEntry { id: string; content: string; author: string; timestamp: string; }
+interface DatabaseConfig { connections: DbConnection[]; }
+interface DbConnection { id: string; name: string; type: 'postgresql' | 'mysql' | 'sqlite' | 'mongodb' | 'redis'; connectionString: string; readOnly: boolean; }
+interface SystemPromptConfig { persona: string; instructions: string; constraints: string; outputFormat: string; }
+interface ModelConfig { provider: string; model: string; temperature: number; maxTokens: number; topP: number; frequencyPenalty: number; }
+interface MemoryConfig { shortTermEnabled: boolean; longTermEnabled: boolean; contextWindowTokens: number; memoryBackend: string; ttlMinutes: number; }
+interface GuardrailsConfig { contentFilters: string[]; outputValidation: string[]; maxOutputTokens: number; blockedTopics: string[]; requireCitation: boolean; }
+interface TriggerEntry { id: string; type: 'scheduled' | 'webhook' | 'message' | 'event' | 'manual'; config: string; enabled: boolean; }
+interface ErrorHandlingConfig { retryCount: number; retryDelayMs: number; timeoutMs: number; fallbackAgentId: string; circuitBreakerThreshold: number; circuitBreakerResetMs: number; }
+interface CostLimitsConfig { maxTokensPerRequest: number; maxRequestsPerMinute: number; dailyBudgetUsd: number; monthlyBudgetUsd: number; alertThresholdPercent: number; }
+interface PermissionsConfig { canRead: string[]; canWrite: string[]; canExecute: string[]; canAccessExternal: boolean; requireApproval: boolean; }
+interface ContextSourceEntry { id: string; agentNickname: string; dataType: string; required: boolean; }
 
 function getConfig(agent: Agent): AgentConfig {
   const c = agent.config as AgentConfig;
@@ -41,6 +63,16 @@ function getConfig(agent: Agent): AgentConfig {
     rag: c?.rag || { enabled: false, sources: [], chunkSize: 512, overlapTokens: 50, embeddingModel: 'text-embedding-3-small' },
     apiCalls: c?.apiCalls || [],
     mcp: c?.mcp || { enabled: false, servers: [], tools: [] },
+    database: c?.database || { connections: [] },
+    systemPrompt: c?.systemPrompt || { persona: '', instructions: '', constraints: '', outputFormat: '' },
+    modelConfig: c?.modelConfig || { provider: 'anthropic', model: 'claude-sonnet-4-20250514', temperature: 0.7, maxTokens: 4096, topP: 1, frequencyPenalty: 0 },
+    memoryConfig: c?.memoryConfig || { shortTermEnabled: true, longTermEnabled: false, contextWindowTokens: 100000, memoryBackend: 'in-memory', ttlMinutes: 60 },
+    guardrails: c?.guardrails || { contentFilters: [], outputValidation: [], maxOutputTokens: 4096, blockedTopics: [], requireCitation: false },
+    triggers: c?.triggers || [],
+    errorHandling: c?.errorHandling || { retryCount: 3, retryDelayMs: 1000, timeoutMs: 30000, fallbackAgentId: '', circuitBreakerThreshold: 5, circuitBreakerResetMs: 60000 },
+    costLimits: c?.costLimits || { maxTokensPerRequest: 10000, maxRequestsPerMinute: 60, dailyBudgetUsd: 50, monthlyBudgetUsd: 1000, alertThresholdPercent: 80 },
+    permissions: c?.permissions || { canRead: [], canWrite: [], canExecute: [], canAccessExternal: false, requireApproval: false },
+    contextSources: c?.contextSources || [],
     notes: c?.notes || [],
   };
 }
@@ -103,13 +135,20 @@ export function PropertyEditor({ agent, layers, onSave, onDelete, onClose, depen
 
       {/* Tabs */}
       <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.06)', overflowX: 'auto', padding: '0 8px' }}>
-        {(['general', 'skills', 'rag', 'api', 'mcp', 'notes', 'practices'] as Tab[]).map(t => (
+        {([
+          ['general', 'General'], ['prompt', 'Prompt'], ['model', 'Model'],
+          ['skills', 'Skills'], ['rag', 'RAG'], ['api', 'API'], ['mcp', 'MCP'],
+          ['database', 'Database'], ['memory', 'Memory'], ['triggers', 'Triggers'],
+          ['guardrails', 'Guardrails'], ['errors', 'Errors'], ['costs', 'Costs'],
+          ['permissions', 'Perms'], ['context', 'Context'], ['notes', 'Notes'],
+          ['practices', 'Tips'],
+        ] as [Tab, string][]).map(([t, label]) => (
           <button key={t} onClick={() => setTab(t)} style={{
-            padding: '8px 10px', fontSize: 11, fontWeight: 600, border: 'none', cursor: 'pointer',
+            padding: '8px 8px', fontSize: 10, fontWeight: 600, border: 'none', cursor: 'pointer',
             background: 'transparent', color: tab === t ? '#00d9ff' : '#64748b',
             borderBottom: tab === t ? '2px solid #00d9ff' : '2px solid transparent',
-            textTransform: 'capitalize', whiteSpace: 'nowrap',
-          }}>{t === 'practices' ? 'Best Practices' : t === 'rag' ? 'RAG' : t === 'api' ? 'API' : t === 'mcp' ? 'MCP' : t}</button>
+            whiteSpace: 'nowrap',
+          }}>{label}</button>
         ))}
       </div>
 
@@ -128,6 +167,16 @@ export function PropertyEditor({ agent, layers, onSave, onDelete, onClose, depen
         {tab === 'rag' && <RagTab rag={config.rag!} onChange={rag => updateConfig({ rag })} />}
         {tab === 'api' && <ApiTab apiCalls={config.apiCalls || []} onChange={apiCalls => updateConfig({ apiCalls })} />}
         {tab === 'mcp' && <McpTab mcp={config.mcp!} onChange={mcp => updateConfig({ mcp })} />}
+        {tab === 'database' && <DatabaseTab db={config.database!} onChange={database => updateConfig({ database })} />}
+        {tab === 'prompt' && <SystemPromptTab prompt={config.systemPrompt!} onChange={systemPrompt => updateConfig({ systemPrompt })} />}
+        {tab === 'model' && <ModelTab model={config.modelConfig!} onChange={modelConfig => updateConfig({ modelConfig })} />}
+        {tab === 'memory' && <MemoryTab memory={config.memoryConfig!} onChange={memoryConfig => updateConfig({ memoryConfig })} />}
+        {tab === 'guardrails' && <GuardrailsTab guardrails={config.guardrails!} onChange={guardrails => updateConfig({ guardrails })} />}
+        {tab === 'triggers' && <TriggersTab triggers={config.triggers || []} onChange={triggers => updateConfig({ triggers })} />}
+        {tab === 'errors' && <ErrorHandlingTab errors={config.errorHandling!} onChange={errorHandling => updateConfig({ errorHandling })} />}
+        {tab === 'costs' && <CostLimitsTab costs={config.costLimits!} onChange={costLimits => updateConfig({ costLimits })} />}
+        {tab === 'permissions' && <PermissionsTab perms={config.permissions!} onChange={permissions => updateConfig({ permissions })} />}
+        {tab === 'context' && <ContextSourcesTab sources={config.contextSources || []} onChange={contextSources => updateConfig({ contextSources })} />}
         {tab === 'notes' && <NotesTab notes={config.notes || []} onChange={notes => updateConfig({ notes })} />}
         {tab === 'practices' && <BestPracticesTab agent={agent} badges={badges} />}
       </div>
@@ -497,4 +546,223 @@ function BestPracticesTab({ agent, badges }: { agent: Agent; badges: Badge[] }) 
       ))}
     </div>
   );
+}
+
+// ---- Database Tab ----
+function DatabaseTab({ db, onChange }: { db: DatabaseConfig; onChange: (d: DatabaseConfig) => void }) {
+  const add = () => onChange({ connections: [...db.connections, { id: uid(), name: '', type: 'postgresql', connectionString: '', readOnly: true }] });
+  const update = (id: string, patch: Partial<DbConnection>) => onChange({ connections: db.connections.map(c => c.id === id ? { ...c, ...patch } : c) });
+  const remove = (id: string) => onChange({ connections: db.connections.filter(c => c.id !== id) });
+  return (<>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+      <span style={{ fontSize: 12, color: '#94a3b8' }}>Database connections</span>
+      <button onClick={add} style={smallBtnStyle}>+ Add</button>
+    </div>
+    {db.connections.length === 0 && <p style={{ color: '#475569', fontSize: 12, marginTop: 8 }}>No connections. Add one to let this agent query data.</p>}
+    {db.connections.map(c => (
+      <div key={c.id} style={cardStyle}>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <input value={c.name} onChange={e => update(c.id, { name: e.target.value })} placeholder="Name" style={{ ...inputStyle, marginTop: 0, flex: 1 }} />
+          <button onClick={() => remove(c.id)} style={removeBtnStyle}>X</button>
+        </div>
+        <select value={c.type} onChange={e => update(c.id, { type: e.target.value as any })} style={{ ...inputStyle, cursor: 'pointer' }}>
+          {['postgresql', 'mysql', 'sqlite', 'mongodb', 'redis'].map(t => <option key={t} value={t} style={{ background: '#1e293b' }}>{t}</option>)}
+        </select>
+        <input value={c.connectionString} onChange={e => update(c.id, { connectionString: e.target.value })} placeholder="connection string" style={inputStyle} />
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 11, color: '#94a3b8', cursor: 'pointer' }}>
+          <input type="checkbox" checked={c.readOnly} onChange={e => update(c.id, { readOnly: e.target.checked })} /> Read-only
+        </label>
+      </div>
+    ))}
+  </>);
+}
+
+// ---- System Prompt Tab ----
+function SystemPromptTab({ prompt, onChange }: { prompt: SystemPromptConfig; onChange: (p: SystemPromptConfig) => void }) {
+  const update = (patch: Partial<SystemPromptConfig>) => onChange({ ...prompt, ...patch });
+  return (<>
+    <label style={labelStyle}>Persona</label>
+    <textarea value={prompt.persona} onChange={e => update({ persona: e.target.value })} placeholder="You are a helpful customer service agent..." style={{ ...inputStyle, minHeight: 60, resize: 'vertical', fontFamily: 'inherit' }} />
+    <label style={labelStyle}>Instructions</label>
+    <textarea value={prompt.instructions} onChange={e => update({ instructions: e.target.value })} placeholder="When a customer asks about their order..." style={{ ...inputStyle, minHeight: 80, resize: 'vertical', fontFamily: 'inherit' }} />
+    <label style={labelStyle}>Constraints</label>
+    <textarea value={prompt.constraints} onChange={e => update({ constraints: e.target.value })} placeholder="Never share internal pricing. Always escalate safety complaints..." style={{ ...inputStyle, minHeight: 60, resize: 'vertical', fontFamily: 'inherit' }} />
+    <label style={labelStyle}>Output Format</label>
+    <textarea value={prompt.outputFormat} onChange={e => update({ outputFormat: e.target.value })} placeholder='{ "response": string, "confidence": number }' style={{ ...inputStyle, minHeight: 50, resize: 'vertical', fontFamily: 'monospace', fontSize: 11 }} />
+  </>);
+}
+
+// ---- Model Tab ----
+function ModelTab({ model, onChange }: { model: ModelConfig; onChange: (m: ModelConfig) => void }) {
+  const update = (patch: Partial<ModelConfig>) => onChange({ ...model, ...patch });
+  return (<>
+    <label style={labelStyle}>Provider</label>
+    <select value={model.provider} onChange={e => update({ provider: e.target.value })} style={{ ...inputStyle, cursor: 'pointer' }}>
+      {['anthropic', 'openai', 'google', 'mistral', 'meta', 'local', 'custom'].map(p => <option key={p} value={p} style={{ background: '#1e293b' }}>{p}</option>)}
+    </select>
+    <label style={labelStyle}>Model</label>
+    {model.provider === 'anthropic' ? (
+      <select value={model.model} onChange={e => update({ model: e.target.value })} style={{ ...inputStyle, cursor: 'pointer' }}>
+        {['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5-20251001'].map(m => <option key={m} value={m} style={{ background: '#1e293b' }}>{m}</option>)}
+      </select>
+    ) : model.provider === 'openai' ? (
+      <select value={model.model} onChange={e => update({ model: e.target.value })} style={{ ...inputStyle, cursor: 'pointer' }}>
+        {['gpt-4o', 'gpt-4o-mini', 'o3', 'o4-mini'].map(m => <option key={m} value={m} style={{ background: '#1e293b' }}>{m}</option>)}
+      </select>
+    ) : model.provider === 'google' ? (
+      <select value={model.model} onChange={e => update({ model: e.target.value })} style={{ ...inputStyle, cursor: 'pointer' }}>
+        {['gemini-2.5-pro', 'gemini-2.5-flash'].map(m => <option key={m} value={m} style={{ background: '#1e293b' }}>{m}</option>)}
+      </select>
+    ) : (
+      <input value={model.model} onChange={e => update({ model: e.target.value })} placeholder="model-name" style={inputStyle} />
+    )}
+    <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+      <div style={{ flex: 1 }}><label style={labelStyle}>Temperature</label><input type="number" value={model.temperature} onChange={e => update({ temperature: Number(e.target.value) })} min={0} max={2} step={0.1} style={inputStyle} /></div>
+      <div style={{ flex: 1 }}><label style={labelStyle}>Max Tokens</label><input type="number" value={model.maxTokens} onChange={e => update({ maxTokens: Number(e.target.value) })} step={256} style={inputStyle} /></div>
+    </div>
+    <div style={{ display: 'flex', gap: 8 }}>
+      <div style={{ flex: 1 }}><label style={labelStyle}>Top P</label><input type="number" value={model.topP} onChange={e => update({ topP: Number(e.target.value) })} min={0} max={1} step={0.05} style={inputStyle} /></div>
+      <div style={{ flex: 1 }}><label style={labelStyle}>Freq Penalty</label><input type="number" value={model.frequencyPenalty} onChange={e => update({ frequencyPenalty: Number(e.target.value) })} min={0} max={2} step={0.1} style={inputStyle} /></div>
+    </div>
+  </>);
+}
+
+// ---- Memory Tab ----
+function MemoryTab({ memory, onChange }: { memory: MemoryConfig; onChange: (m: MemoryConfig) => void }) {
+  const update = (patch: Partial<MemoryConfig>) => onChange({ ...memory, ...patch });
+  return (<>
+    <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#94a3b8', cursor: 'pointer' }}><input type="checkbox" checked={memory.shortTermEnabled} onChange={e => update({ shortTermEnabled: e.target.checked })} /> Short-term</label>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#94a3b8', cursor: 'pointer' }}><input type="checkbox" checked={memory.longTermEnabled} onChange={e => update({ longTermEnabled: e.target.checked })} /> Long-term</label>
+    </div>
+    <label style={labelStyle}>Context Window (tokens)</label>
+    <input type="number" value={memory.contextWindowTokens} onChange={e => update({ contextWindowTokens: Number(e.target.value) })} step={1000} style={inputStyle} />
+    <label style={labelStyle}>Backend</label>
+    <select value={memory.memoryBackend} onChange={e => update({ memoryBackend: e.target.value })} style={{ ...inputStyle, cursor: 'pointer' }}>
+      {['in-memory', 'sqlite', 'redis', 'postgres', 'pinecone', 'chromadb', 'qdrant'].map(b => <option key={b} value={b} style={{ background: '#1e293b' }}>{b}</option>)}
+    </select>
+    <label style={labelStyle}>TTL (minutes, 0 = never)</label>
+    <input type="number" value={memory.ttlMinutes} onChange={e => update({ ttlMinutes: Number(e.target.value) })} min={0} style={inputStyle} />
+  </>);
+}
+
+// ---- Guardrails Tab ----
+function GuardrailsTab({ guardrails, onChange }: { guardrails: GuardrailsConfig; onChange: (g: GuardrailsConfig) => void }) {
+  const update = (patch: Partial<GuardrailsConfig>) => onChange({ ...guardrails, ...patch });
+  return (<>
+    <label style={labelStyle}>Content Filters</label>
+    <input value={guardrails.contentFilters.join(', ')} onChange={e => update({ contentFilters: e.target.value.split(',').map(s => s.trim()).filter(s => s) })} placeholder="pii-detection, profanity-filter, bias-check" style={inputStyle} />
+    <label style={labelStyle}>Output Validation</label>
+    <input value={guardrails.outputValidation.join(', ')} onChange={e => update({ outputValidation: e.target.value.split(',').map(s => s.trim()).filter(s => s) })} placeholder="json-schema, max-length, no-hallucination" style={inputStyle} />
+    <label style={labelStyle}>Blocked Topics</label>
+    <input value={guardrails.blockedTopics.join(', ')} onChange={e => update({ blockedTopics: e.target.value.split(',').map(s => s.trim()).filter(s => s) })} placeholder="internal-pricing, competitor-info" style={inputStyle} />
+    <label style={labelStyle}>Max Output Tokens</label>
+    <input type="number" value={guardrails.maxOutputTokens} onChange={e => update({ maxOutputTokens: Number(e.target.value) })} step={256} style={inputStyle} />
+    <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, fontSize: 12, color: '#94a3b8', cursor: 'pointer' }}><input type="checkbox" checked={guardrails.requireCitation} onChange={e => update({ requireCitation: e.target.checked })} /> Require citations</label>
+  </>);
+}
+
+// ---- Triggers Tab ----
+function TriggersTab({ triggers, onChange }: { triggers: TriggerEntry[]; onChange: (t: TriggerEntry[]) => void }) {
+  const add = () => onChange([...triggers, { id: uid(), type: 'message', config: '', enabled: true }]);
+  const update = (id: string, patch: Partial<TriggerEntry>) => onChange(triggers.map(t => t.id === id ? { ...t, ...patch } : t));
+  const remove = (id: string) => onChange(triggers.filter(t => t.id !== id));
+  return (<>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+      <span style={{ fontSize: 12, color: '#94a3b8' }}>What activates this agent</span>
+      <button onClick={add} style={smallBtnStyle}>+ Add</button>
+    </div>
+    {triggers.length === 0 && <p style={{ color: '#475569', fontSize: 12, marginTop: 8 }}>No triggers. Add one to define activation.</p>}
+    {triggers.map(t => (
+      <div key={t.id} style={cardStyle}>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <select value={t.type} onChange={e => update(t.id, { type: e.target.value as any })} style={{ ...inputStyle, marginTop: 0, width: 90, cursor: 'pointer' }}>
+            {['scheduled', 'webhook', 'message', 'event', 'manual'].map(ty => <option key={ty} value={ty} style={{ background: '#1e293b' }}>{ty}</option>)}
+          </select>
+          <input value={t.config} onChange={e => update(t.id, { config: e.target.value })} placeholder={t.type === 'scheduled' ? 'cron expression' : 'config'} style={{ ...inputStyle, marginTop: 0, flex: 1 }} />
+          <button onClick={() => update(t.id, { enabled: !t.enabled })} style={{ ...removeBtnStyle, background: t.enabled ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)', color: t.enabled ? '#10b981' : '#ef4444' }}>{t.enabled ? 'ON' : 'OFF'}</button>
+          <button onClick={() => remove(t.id)} style={removeBtnStyle}>X</button>
+        </div>
+      </div>
+    ))}
+  </>);
+}
+
+// ---- Error Handling Tab ----
+function ErrorHandlingTab({ errors, onChange }: { errors: ErrorHandlingConfig; onChange: (e: ErrorHandlingConfig) => void }) {
+  const update = (patch: Partial<ErrorHandlingConfig>) => onChange({ ...errors, ...patch });
+  return (<>
+    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+      <div style={{ flex: 1 }}><label style={labelStyle}>Retries</label><input type="number" value={errors.retryCount} onChange={e => update({ retryCount: Number(e.target.value) })} min={0} max={10} style={inputStyle} /></div>
+      <div style={{ flex: 1 }}><label style={labelStyle}>Delay (ms)</label><input type="number" value={errors.retryDelayMs} onChange={e => update({ retryDelayMs: Number(e.target.value) })} step={500} style={inputStyle} /></div>
+    </div>
+    <label style={labelStyle}>Timeout (ms)</label>
+    <input type="number" value={errors.timeoutMs} onChange={e => update({ timeoutMs: Number(e.target.value) })} step={1000} style={inputStyle} />
+    <label style={labelStyle}>Fallback Agent</label>
+    <input value={errors.fallbackAgentId} onChange={e => update({ fallbackAgentId: e.target.value })} placeholder="Agent nickname to call on failure" style={inputStyle} />
+    <div style={{ display: 'flex', gap: 8 }}>
+      <div style={{ flex: 1 }}><label style={labelStyle}>Circuit Breaker</label><input type="number" value={errors.circuitBreakerThreshold} onChange={e => update({ circuitBreakerThreshold: Number(e.target.value) })} min={1} style={inputStyle} /></div>
+      <div style={{ flex: 1 }}><label style={labelStyle}>Reset (ms)</label><input type="number" value={errors.circuitBreakerResetMs} onChange={e => update({ circuitBreakerResetMs: Number(e.target.value) })} step={1000} style={inputStyle} /></div>
+    </div>
+  </>);
+}
+
+// ---- Cost Limits Tab ----
+function CostLimitsTab({ costs, onChange }: { costs: CostLimitsConfig; onChange: (c: CostLimitsConfig) => void }) {
+  const update = (patch: Partial<CostLimitsConfig>) => onChange({ ...costs, ...patch });
+  return (<>
+    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+      <div style={{ flex: 1 }}><label style={labelStyle}>Tokens/Request</label><input type="number" value={costs.maxTokensPerRequest} onChange={e => update({ maxTokensPerRequest: Number(e.target.value) })} step={1000} style={inputStyle} /></div>
+      <div style={{ flex: 1 }}><label style={labelStyle}>Req/Min</label><input type="number" value={costs.maxRequestsPerMinute} onChange={e => update({ maxRequestsPerMinute: Number(e.target.value) })} style={inputStyle} /></div>
+    </div>
+    <div style={{ display: 'flex', gap: 8 }}>
+      <div style={{ flex: 1 }}><label style={labelStyle}>Daily ($)</label><input type="number" value={costs.dailyBudgetUsd} onChange={e => update({ dailyBudgetUsd: Number(e.target.value) })} step={5} style={inputStyle} /></div>
+      <div style={{ flex: 1 }}><label style={labelStyle}>Monthly ($)</label><input type="number" value={costs.monthlyBudgetUsd} onChange={e => update({ monthlyBudgetUsd: Number(e.target.value) })} step={50} style={inputStyle} /></div>
+    </div>
+    <label style={labelStyle}>Alert at % of budget</label>
+    <input type="number" value={costs.alertThresholdPercent} onChange={e => update({ alertThresholdPercent: Number(e.target.value) })} min={0} max={100} style={inputStyle} />
+  </>);
+}
+
+// ---- Permissions Tab ----
+function PermissionsTab({ perms, onChange }: { perms: PermissionsConfig; onChange: (p: PermissionsConfig) => void }) {
+  const update = (patch: Partial<PermissionsConfig>) => onChange({ ...perms, ...patch });
+  return (<>
+    <label style={labelStyle}>Can Read</label>
+    <input value={perms.canRead.join(', ')} onChange={e => update({ canRead: e.target.value.split(',').map(s => s.trim()).filter(s => s) })} placeholder="product-catalog, user-profiles" style={inputStyle} />
+    <label style={labelStyle}>Can Write</label>
+    <input value={perms.canWrite.join(', ')} onChange={e => update({ canWrite: e.target.value.split(',').map(s => s.trim()).filter(s => s) })} placeholder="audit-log, support-tickets" style={inputStyle} />
+    <label style={labelStyle}>Can Execute</label>
+    <input value={perms.canExecute.join(', ')} onChange={e => update({ canExecute: e.target.value.split(',').map(s => s.trim()).filter(s => s) })} placeholder="send-email, create-ticket" style={inputStyle} />
+    <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#94a3b8', cursor: 'pointer' }}><input type="checkbox" checked={perms.canAccessExternal} onChange={e => update({ canAccessExternal: e.target.checked })} /> Can access external APIs</label>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#94a3b8', cursor: 'pointer' }}><input type="checkbox" checked={perms.requireApproval} onChange={e => update({ requireApproval: e.target.checked })} /> Require human approval</label>
+    </div>
+  </>);
+}
+
+// ---- Context Sources Tab ----
+function ContextSourcesTab({ sources, onChange }: { sources: ContextSourceEntry[]; onChange: (s: ContextSourceEntry[]) => void }) {
+  const add = () => onChange([...sources, { id: uid(), agentNickname: '', dataType: 'output', required: false }]);
+  const update = (id: string, patch: Partial<ContextSourceEntry>) => onChange(sources.map(s => s.id === id ? { ...s, ...patch } : s));
+  const remove = (id: string) => onChange(sources.filter(s => s.id !== id));
+  return (<>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+      <span style={{ fontSize: 12, color: '#94a3b8' }}>Agent outputs this one reads</span>
+      <button onClick={add} style={smallBtnStyle}>+ Add</button>
+    </div>
+    {sources.length === 0 && <p style={{ color: '#475569', fontSize: 12, marginTop: 8 }}>No context sources configured.</p>}
+    {sources.map(s => (
+      <div key={s.id} style={cardStyle}>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <input value={s.agentNickname} onChange={e => update(s.id, { agentNickname: e.target.value })} placeholder="Agent nickname" style={{ ...inputStyle, marginTop: 0, flex: 1 }} />
+          <select value={s.dataType} onChange={e => update(s.id, { dataType: e.target.value })} style={{ ...inputStyle, marginTop: 0, width: 80, cursor: 'pointer' }}>
+            {['output', 'state', 'memory', 'logs', 'metrics'].map(d => <option key={d} value={d} style={{ background: '#1e293b' }}>{d}</option>)}
+          </select>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: '#94a3b8', cursor: 'pointer', whiteSpace: 'nowrap' }}><input type="checkbox" checked={s.required} onChange={e => update(s.id, { required: e.target.checked })} /> Req</label>
+          <button onClick={() => remove(s.id)} style={removeBtnStyle}>X</button>
+        </div>
+      </div>
+    ))}
+  </>);
 }
