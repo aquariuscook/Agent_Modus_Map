@@ -122,6 +122,7 @@ export function PropertyEditor({ agent, layers, onSave, onDelete, onClose, depen
           layerId={layerId} setLayerId={v => { setLayerId(v); markDirty(); }}
           badges={badges} toggleBadge={toggleBadge}
           layers={layers} borderColor={borderColor} agent={agent}
+          config={config} updateConfig={updateConfig}
         />}
         {tab === 'skills' && <SkillsTab skills={config.skills || []} onChange={skills => updateConfig({ skills })} />}
         {tab === 'rag' && <RagTab rag={config.rag!} onChange={rag => updateConfig({ rag })} />}
@@ -161,19 +162,41 @@ const deleteBtnStyle: React.CSSProperties = { padding: '8px 16px', borderRadius:
 const cardStyle: React.CSSProperties = { padding: 10, borderRadius: 8, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.06)', marginTop: 8 };
 
 // ---- General Tab ----
-function GeneralTab({ nickname, setNickname, formalName, setFormalName, descriptor, setDescriptor, layerId, setLayerId, badges, toggleBadge, layers, borderColor, agent }: any) {
+function GeneralTab({ nickname, setNickname, formalName, setFormalName, descriptor, setDescriptor, layerId, setLayerId, badges, toggleBadge, layers, borderColor, agent, config, updateConfig }: any) {
+  const emoji = (config as any)?.emoji || '';
+  const coreTask = (config as any)?.coreTask || '';
+  const inputs = (config as any)?.inputs || [];
+  const outputs = (config as any)?.outputs || [];
+
   return (
     <>
-      <label style={labelStyle}>Nickname</label>
-      <input value={nickname} onChange={e => setNickname(e.target.value)} style={inputStyle} />
+      <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ flex: 1 }}>
+          <label style={labelStyle}>Nickname</label>
+          <input value={nickname} onChange={e => setNickname(e.target.value)} style={inputStyle} />
+        </div>
+        <div style={{ width: 60 }}>
+          <label style={labelStyle}>Emoji</label>
+          <input value={emoji} onChange={e => updateConfig({ emoji: e.target.value })} placeholder="🤖" maxLength={4} style={{ ...inputStyle, textAlign: 'center', fontSize: 20 }} />
+        </div>
+      </div>
       <label style={labelStyle}>Formal Name</label>
-      <input value={formalName} onChange={e => setFormalName(e.target.value)} style={inputStyle} />
+      <input value={formalName} onChange={e => setFormalName(e.target.value)} style={inputStyle} placeholder="Category-Function-Specificity" />
       <label style={labelStyle}>Descriptor</label>
-      <input value={descriptor} onChange={e => setDescriptor(e.target.value)} style={inputStyle} />
+      <input value={descriptor} onChange={e => setDescriptor(e.target.value)} style={inputStyle} placeholder='e.g. "The Greeter"' />
+      <label style={labelStyle}>Core Task</label>
+      <textarea value={coreTask} onChange={e => updateConfig({ coreTask: e.target.value })} placeholder="What does this agent do? Describe its primary function..."
+        style={{ ...inputStyle, minHeight: 60, resize: 'vertical', fontFamily: 'inherit' }} />
       <label style={labelStyle}>Layer</label>
       <select value={layerId} onChange={e => setLayerId(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
         {layers.map((l: any) => <option key={l.id} value={l.id} style={{ background: '#1e293b' }}>{l.name}</option>)}
       </select>
+      <label style={labelStyle}>Inputs (what data this agent receives)</label>
+      <input value={inputs.join(', ')} onChange={e => updateConfig({ inputs: e.target.value.split(',').map((s: string) => s.trim()).filter((s: string) => s) })}
+        placeholder="Customer messages, Session context" style={inputStyle} />
+      <label style={labelStyle}>Outputs (what this agent produces)</label>
+      <input value={outputs.join(', ')} onChange={e => updateConfig({ outputs: e.target.value.split(',').map((s: string) => s.trim()).filter((s: string) => s) })}
+        placeholder="Routed queries, Escalation flags" style={inputStyle} />
       <label style={labelStyle}>Badges</label>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
         {ALL_BADGES.map(badge => (

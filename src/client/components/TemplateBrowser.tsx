@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getTemplates, instantiateTemplate, createBlankSwarm, listSwarms, type TemplateInfo } from '../api.js';
+import { getTemplates, instantiateTemplate, createBlankSwarm, listSwarms, importFromCSV, getCSVTemplateUrl, type TemplateInfo } from '../api.js';
 import type { Swarm } from '../../shared/types/index.js';
 
 const domainColors: Record<string, string> = {
@@ -25,7 +25,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
   const [templates, setTemplates] = useState<TemplateInfo[]>([]);
   const [existingSwarms, setExistingSwarms] = useState<Swarm[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateInfo | null>(null);
-  const [mode, setMode] = useState<'choose' | 'blank' | 'template' | 'existing'>('choose');
+  const [mode, setMode] = useState<'choose' | 'blank' | 'template' | 'existing' | 'csv'>('choose');
   const [swarmName, setSwarmName] = useState('');
   const [creating, setCreating] = useState(false);
 
@@ -131,6 +131,16 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
               </div>
             </div>
 
+            <div onClick={() => setMode('csv')} style={{
+              padding: 20, borderRadius: 14, border: '2px solid rgba(251,191,36,0.3)',
+              background: 'rgba(251,191,36,0.05)', cursor: 'pointer', transition: 'all 0.2s',
+            }}>
+              <div style={{ fontSize: 18, fontWeight: 600, color: '#fbbf24' }}>Import from CSV</div>
+              <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 6 }}>
+                Upload a spreadsheet with agent definitions, relationships, and config.
+              </div>
+            </div>
+
             {existingSwarms.length > 1 && (
               <div onClick={() => setMode('existing')} style={{
                 padding: 20, borderRadius: 14, border: '2px solid rgba(34,197,94,0.3)',
@@ -195,6 +205,65 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
                 {s.description && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>{s.description.slice(0, 100)}</div>}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* CSV import mode */}
+        {mode === 'csv' && (
+          <div>
+            <div style={{ padding: 16, background: 'rgba(251,191,36,0.05)', borderRadius: 12, marginBottom: 16, border: '1px solid rgba(251,191,36,0.2)' }}>
+              <div style={{ color: '#fbbf24', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>CSV Format</div>
+              <div style={{ color: '#94a3b8', fontSize: 12, lineHeight: 1.6 }}>
+                Columns: Nickname, Emoji, Formal Name, Descriptor, Layer, Badges, Core Task, Inputs, Outputs, Depends On, Feeds Into, Collaborates With, Can Override
+                <br />Use semicolons (;) to separate multiple values within a cell.
+              </div>
+              <a href={getCSVTemplateUrl()} download style={{ color: '#00d9ff', fontSize: 12, fontWeight: 600, marginTop: 8, display: 'inline-block' }}>
+                Download CSV Template
+              </a>
+            </div>
+            <label style={{ fontSize: 12, color: '#8b9dc3', display: 'block', marginBottom: 6 }}>Swarm Name</label>
+            <input value={swarmName} onChange={e => setSwarmName(e.target.value)} placeholder="My Imported Swarm"
+              style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid rgba(0,217,255,0.3)', background: 'rgba(0,0,0,0.3)', color: '#fff', fontSize: 14, outline: 'none', marginBottom: 12, boxSizing: 'border-box' }} />
+            <div style={{
+              border: '2px dashed rgba(251,191,36,0.4)', borderRadius: 12, padding: '40px 20px',
+              textAlign: 'center', cursor: 'pointer', transition: 'all 0.3s',
+            }} onClick={() => document.getElementById('csvFileInput')?.click()}>
+              <div style={{ fontSize: 36, marginBottom: 10 }}>📤</div>
+              <div style={{ color: '#94a3b8', fontSize: 14 }}>Click to upload CSV file</div>
+              <div style={{ color: '#64748b', fontSize: 12, marginTop: 6 }}>or paste CSV data below</div>
+            </div>
+            <input type="file" id="csvFileInput" accept=".csv" style={{ display: 'none' }} onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file || !swarmName.trim()) return;
+              const text = await file.text();
+              setCreating(true);
+              try {
+                const result = await importFromCSV(text, swarmName.trim());
+                onSwarmCreated(result.swarmId);
+                onClose();
+              } catch (err) { console.error(err); } finally { setCreating(false); }
+            }} />
+            <textarea placeholder="Or paste CSV data here..." style={{
+              width: '100%', minHeight: 100, marginTop: 12, padding: '10px 14px', borderRadius: 8,
+              border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.3)',
+              color: '#fff', fontSize: 12, fontFamily: 'monospace', outline: 'none', resize: 'vertical', boxSizing: 'border-box',
+            }} id="csvPasteArea" />
+            <button onClick={async () => {
+              const text = (document.getElementById('csvPasteArea') as HTMLTextAreaElement)?.value;
+              if (!text?.trim() || !swarmName.trim()) return;
+              setCreating(true);
+              try {
+                const result = await importFromCSV(text, swarmName.trim());
+                onSwarmCreated(result.swarmId);
+                onClose();
+              } catch (err) { console.error(err); } finally { setCreating(false); }
+            }} disabled={creating} style={{
+              width: '100%', marginTop: 12, padding: '12px', borderRadius: 10, border: 'none',
+              background: '#fbbf24', color: '#0a0e27', fontWeight: 700, fontSize: 15,
+              cursor: creating ? 'default' : 'pointer', opacity: creating ? 0.5 : 1,
+            }}>
+              {creating ? 'Importing...' : 'Import from Pasted CSV'}
+            </button>
           </div>
         )}
 

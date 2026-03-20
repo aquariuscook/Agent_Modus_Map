@@ -15,6 +15,7 @@ interface HeaderProps {
   onOpenOptimization: () => void;
   onOpenCollaboration: () => void;
   onOpenDocs: () => void;
+  onExportHTML: () => void;
   healthStatus?: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
 }
 
@@ -35,7 +36,7 @@ export function Header({
   showBlastRadius, onToggleBlastRadius,
   onOpenTemplates, onExport, onImport,
   onOpenHealth, onOpenTraces, onOpenGovernance,
-  onOpenOptimization, onOpenCollaboration, onOpenDocs,
+  onOpenOptimization, onOpenCollaboration, onOpenDocs, onExportHTML,
   healthStatus,
 }: HeaderProps) {
   const healthColors: Record<string, string> = {
@@ -87,7 +88,8 @@ export function Header({
         <button onClick={onOpenDocs} style={btnStyle}>Docs</button>
         <button onClick={onOpenTemplates} style={{ ...btnStyle, background: 'rgba(0,217,255,0.15)', fontWeight: 700 }}>+ New / Templates</button>
         <button onClick={onImport} style={btnStyle}>Import</button>
-        <button onClick={onExport} style={btnStyle}>Export</button>
+        <button onClick={onExport} style={btnStyle}>Export JSON</button>
+        <button onClick={onExportHTML} style={btnStyle}>Export HTML</button>
         <button
           onClick={onToggleBlastRadius}
           style={{

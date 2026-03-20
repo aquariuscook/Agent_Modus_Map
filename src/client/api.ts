@@ -407,6 +407,20 @@ export async function executeApiCallApi(config: { name: string; method: string; 
   return postJson('/mcp/api/call', { config, body });
 }
 
+// CSV Import
+export async function importFromCSV(csvData: string, swarmName: string): Promise<{ swarmId: string; agentsImported: number; relationshipsCreated: number }> {
+  return postJson('/import/csv', { csvData, swarmName });
+}
+
+export function getCSVTemplateUrl(): string {
+  return `${BASE}/import/template`;
+}
+
+// HTML Export
+export function getHTMLExportUrl(swarmId: string): string {
+  return `${BASE}/docs/${swarmId}/html`;
+}
+
 // Health check with LLM status
 export async function getApiHealth(): Promise<{ status: string; llmAvailable: boolean }> {
   return fetchJson('/health');

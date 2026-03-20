@@ -21,7 +21,7 @@ import { CollaborationCursors } from './components/CollaborationCursors.js';
 import { useCollaboration } from './hooks/useCollaboration.js';
 import {
   getSwarm, getBlastRadius, exportSwarm, importSwarm,
-  getSwarmHealthSummary, getAuthToken, setAuthToken,
+  getSwarmHealthSummary, getAuthToken, setAuthToken, getHTMLExportUrl,
   createAgent, updateAgent, deleteAgent,
   createRelationship, deleteRelationship,
 } from './api.js';
@@ -121,6 +121,10 @@ export function App() {
     setAuthToken(null);
     setCurrentUser(null);
   }, []);
+
+  const handleExportHTML = useCallback(() => {
+    window.open(getHTMLExportUrl(swarmId), '_blank');
+  }, [swarmId]);
 
   const handleSelectAgent = useCallback(async (agent: Agent | null) => {
     setSelectedAgent(agent);
@@ -292,6 +296,7 @@ export function App() {
           onOpenOptimization={() => setOptimizationOpen(true)}
           onOpenCollaboration={() => setCollaborationOpen(true)}
           onOpenDocs={() => setDocsOpen(true)}
+          onExportHTML={handleExportHTML}
           healthStatus={healthSummary?.overall}
         />
         <div style={{ flex: 1, position: 'relative' }}>

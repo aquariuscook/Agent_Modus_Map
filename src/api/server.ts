@@ -12,6 +12,7 @@ import { createOptimizationRoutes } from './routes/optimization-routes.js';
 import { createDocGenerationRoutes } from './routes/doc-generation-routes.js';
 import { createAuthRoutes } from './routes/auth-routes.js';
 import { createMcpRoutes } from './routes/mcp-routes.js';
+import { createImportRoutes } from './routes/import-routes.js';
 import { initKnowledgeBase, seedKnowledgeBase } from './db/knowledge-base.js';
 import { initHealthStore } from './db/health-store.js';
 import { initDecisionTraceStore } from './db/decision-trace-store.js';
@@ -46,6 +47,7 @@ export function createApp(db?: ReturnType<typeof getDb>) {
   app.use('/api/docs', createDocGenerationRoutes(database));
   app.use('/api/auth', createAuthRoutes(database));
   app.use('/api/mcp', createMcpRoutes());
+  app.use('/api/import', createImportRoutes(database));
 
   // Health check
   app.get('/api/health', (_req, res) => {

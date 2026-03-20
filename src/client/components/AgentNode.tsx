@@ -11,6 +11,7 @@ export interface AgentNodeData {
   isSelected: boolean;
   isInBlastRadius: boolean;
   blastRadiusHops: number | null;
+  emoji?: string;
 }
 
 const badgeColors: Record<string, { bg: string; border: string }> = {
@@ -75,6 +76,10 @@ function AgentNodeComponent({ data }: NodeProps) {
         }}>
           {d.blastRadiusHops}
         </div>
+      )}
+
+      {d.emoji && (
+        <div style={{ fontSize: 28, textAlign: 'center', marginBottom: 4 }}>{d.emoji}</div>
       )}
 
       <div style={{
