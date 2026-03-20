@@ -16,7 +16,6 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
   const [swarms, setSwarms] = useState<Swarm[]>([]);
   const [templates, setTemplates] = useState<TemplateInfo[]>([]);
   const [view, setView] = useState<View>('home');
-  const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
   const [csvData, setCsvData] = useState('');
   const [csvName, setCsvName] = useState('');
@@ -27,16 +26,13 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
   }, []);
 
   const handleCreateBlank = async () => {
-    if (!newName.trim()) return;
+    const name = prompt('Name your swarm:');
+    if (!name?.trim()) return;
     setCreating(true);
     try {
-      const swarm = await createBlankSwarm(newName.trim());
+      const swarm = await createBlankSwarm(name.trim());
       onOpenSwarm(swarm.id);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setCreating(false);
-    }
+    } finally { setCreating(false); }
   };
 
   const handleInstantiateTemplate = async (templateId: string, name: string) => {
@@ -44,11 +40,7 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
     try {
       const swarm = await instantiateTemplate(templateId, name);
       onOpenSwarm(swarm.id);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setCreating(false);
-    }
+    } finally { setCreating(false); }
   };
 
   const handleCSVImport = async () => {
@@ -57,101 +49,122 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
     try {
       const result = await importFromCSV(csvData, csvName.trim());
       onOpenSwarm(result.swarmId);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setCreating(false);
-    }
+    } finally { setCreating(false); }
   };
 
   const domainColors: Record<string, string> = {
-    Support: '#00d9ff', Media: '#a855f7', Engineering: '#fb923c', Data: '#06b6d4',
-    Security: '#ef4444', Research: '#3b82f6', Sales: '#06b6d4', HR: '#3b82f6',
+    Support: 'var(--gem-cyan-400)', Media: 'var(--gem-amethyst-400)',
+    Engineering: 'var(--gem-amber-400)', Data: 'var(--gem-sapphire-400)',
+    Security: 'var(--gem-ruby-400)', Research: 'var(--gem-sapphire-400)',
+    Sales: 'var(--gem-cyan-400)', HR: 'var(--gem-emerald-400)',
   };
 
   return (
-    <div style={{ minHeight: '100vh', padding: '40px 20px' }}>
-      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', padding: 'var(--space-10) var(--space-6)' }}>
+      <div style={{ maxWidth: 1000, margin: '0 auto' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-16)', paddingBottom: 'var(--space-6)', borderBottom: '1px solid var(--border-default)' }}>
-          <div>
-            <h1 style={{
-              color: 'var(--text-primary)', fontSize: 'var(--text-xl)', fontWeight: 700,
-              letterSpacing: '-0.02em', margin: 0,
-            }}>Agent<span style={{ color: 'var(--accent-primary)' }}>Modus</span></h1>
+        <header style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: 'var(--space-12)', paddingBottom: 'var(--space-6)',
+          borderBottom: '1px solid var(--border-default)',
+        }}>
+          <div style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+            Agent<span style={{ color: 'var(--accent-primary)' }}>Modus</span>
           </div>
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
-        </div>
-        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: 'var(--text-base)', marginBottom: 'var(--space-10)' }}>
-          Design, monitor, and optimize multi-agent swarms
-        </p>
+        </header>
 
         {view === 'home' && (
           <>
-            {/* Quick Actions */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 40 }}>
-              <ActionCard
-                title="Start from Scratch"
-                description="Blank canvas with default layers"
-                color="#00d9ff"
-                onClick={() => {
-                  const name = prompt('Name your swarm:');
-                  if (name) { setNewName(name); createBlankSwarm(name).then(s => onOpenSwarm(s.id)); }
-                }}
-              />
-              <ActionCard
-                title="Use a Template"
-                description={`${templates.length} industry templates`}
-                color="#a855f7"
-                onClick={() => setView('templates')}
-              />
-              <ActionCard
-                title="Import CSV"
-                description="Upload a spreadsheet of agents"
-                color="#fbbf24"
-                onClick={() => setView('csv')}
-              />
+            {/* Hero */}
+            <div style={{ marginBottom: 'var(--space-10)' }}>
+              <h1 style={{
+                fontSize: 'var(--text-4xl)', fontWeight: 800, color: 'var(--text-primary)',
+                lineHeight: 1.2, letterSpacing: '-0.03em', marginBottom: 'var(--space-3)',
+              }}>
+                Design your agent swarm
+              </h1>
+              <p style={{ fontSize: 'var(--text-lg)', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: 560 }}>
+                Build, connect, and monitor multi-agent AI systems. Start from scratch, use a template, or import your existing agents.
+              </p>
             </div>
 
-            {/* Existing Swarms */}
-            <h2 style={{ color: '#e2e8f0', fontSize: 20, marginBottom: 16 }}>Your Swarms</h2>
-            {swarms.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 40, color: '#64748b', fontSize: 15 }}>
-                No swarms yet. Create one above to get started.
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-                {swarms.map(s => (
-                  <div key={s.id} onClick={() => onOpenSwarm(s.id)} style={{
-                    padding: 20, borderRadius: 14, cursor: 'pointer', transition: 'all 0.2s',
-                    background: 'linear-gradient(145deg, #1e293b, #0f172a)',
-                    border: '2px solid rgba(255,255,255,0.08)',
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                      <div style={{ fontSize: 18, fontWeight: 600, color: '#e2e8f0' }}>{s.name}</div>
+            {/* Action Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)', marginBottom: 'var(--space-12)' }}>
+              <button onClick={handleCreateBlank} disabled={creating} style={{
+                ...cardBase, borderColor: 'var(--border-accent)',
+                cursor: 'pointer', textAlign: 'left',
+                boxShadow: '0 0 0 1px var(--border-accent), inset 0 1px 0 rgba(255,255,255,0.03)',
+              }}>
+                <div style={{ fontSize: 28, marginBottom: 'var(--space-3)' }}>+</div>
+                <div style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--space-1)' }}>Start from Scratch</div>
+                <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Blank canvas with default layers</div>
+              </button>
+
+              <button onClick={() => setView('templates')} style={{ ...cardBase, cursor: 'pointer', textAlign: 'left' }}>
+                <div style={{ fontSize: 28, marginBottom: 'var(--space-3)' }}>&#9638;</div>
+                <div style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--space-1)' }}>Use a Template</div>
+                <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{templates.length} industry templates</div>
+              </button>
+
+              <button onClick={() => setView('csv')} style={{ ...cardBase, cursor: 'pointer', textAlign: 'left' }}>
+                <div style={{ fontSize: 28, marginBottom: 'var(--space-3)' }}>&#8613;</div>
+                <div style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--space-1)' }}>Import CSV</div>
+                <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Upload a spreadsheet of agents</div>
+              </button>
+            </div>
+
+            {/* Swarm List */}
+            {swarms.length > 0 && (
+              <>
+                <div style={{
+                  fontSize: 'var(--text-xs)', fontWeight: 600, letterSpacing: '0.12em',
+                  textTransform: 'uppercase', color: 'var(--accent-primary)', marginBottom: 'var(--space-4)',
+                }}>Your Swarms</div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                  {swarms.map(s => (
+                    <button key={s.id} onClick={() => onOpenSwarm(s.id)} style={{
+                      ...cardBase, cursor: 'pointer', textAlign: 'left',
+                      display: 'flex', alignItems: 'center', gap: 'var(--space-4)',
+                      padding: 'var(--space-4) var(--space-5)',
+                    }}>
                       <div style={{
-                        width: 10, height: 10, borderRadius: '50%', background: '#22c55e',
-                        boxShadow: '0 0 6px #22c55e',
+                        width: 40, height: 40, borderRadius: 'var(--radius-md)',
+                        background: 'var(--accent-primary-muted)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 18, flexShrink: 0,
+                      }}>
+                        {s.agents.length > 0 ? s.agents.length : '+'}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>{s.name}</div>
+                        {s.description && <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.description}</div>}
+                      </div>
+                      <div style={{ display: 'flex', gap: 'var(--space-3)', flexShrink: 0 }}>
+                        <span style={{ ...badgeStyle, background: 'var(--accent-primary-muted)', color: 'var(--accent-primary)', borderColor: 'rgba(0,200,184,0.2)' }}>{s.agents.length} agents</span>
+                        <span style={{ ...badgeStyle }}>{s.relationships.length} rel</span>
+                        <span style={{ ...badgeStyle }}>{s.layers.length} layers</span>
+                      </div>
+                      <div style={{
+                        width: 8, height: 8, borderRadius: 'var(--radius-full)',
+                        background: 'var(--gem-emerald-400)', boxShadow: '0 0 6px var(--gem-emerald-500)',
+                        flexShrink: 0,
                       }} />
-                    </div>
-                    {s.description && (
-                      <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 10, lineHeight: 1.4 }}>
-                        {s.description.slice(0, 120)}{s.description.length > 120 ? '...' : ''}
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#64748b' }}>
-                      <span>{s.agents.length} agents</span>
-                      <span>{s.relationships.length} relationships</span>
-                      <span>{s.layers.length} layers</span>
-                    </div>
-                    {s.templateSource && (
-                      <div style={{ fontSize: 11, color: '#00d9ff', marginTop: 6 }}>
-                        From: {s.templateSource}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {swarms.length === 0 && (
+              <div style={{
+                textAlign: 'center', padding: 'var(--space-16) var(--space-8)',
+                color: 'var(--text-tertiary)', fontSize: 'var(--text-base)',
+                border: '1px dashed var(--border-default)', borderRadius: 'var(--radius-lg)',
+              }}>
+                No swarms yet. Create one above to get started.
               </div>
             )}
           </>
@@ -159,44 +172,35 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
 
         {view === 'templates' && (
           <>
-            <button onClick={() => setView('home')} style={{
-              background: 'none', border: 'none', color: '#00d9ff', cursor: 'pointer',
-              fontSize: 13, marginBottom: 20, padding: 0,
-            }}>Back to Dashboard</button>
+            <button onClick={() => setView('home')} style={backBtn}>Back to Dashboard</button>
+            <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--accent-primary)', marginBottom: 'var(--space-2)' }}>Templates</div>
+            <h2 style={{ fontSize: 'var(--text-3xl)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--space-8)' }}>Choose a starting point</h2>
 
-            <h2 style={{ color: '#e2e8f0', fontSize: 20, marginBottom: 16 }}>Choose a Template</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 'var(--space-4)' }}>
               {templates.map(t => {
-                const color = domainColors[t.domain] || '#8b9dc3';
+                const color = domainColors[t.domain] || 'var(--text-secondary)';
                 return (
-                  <div key={t.id} onClick={() => {
+                  <button key={t.id} onClick={() => {
                     const name = prompt(`Name your ${t.name} swarm:`, `My ${t.name}`);
                     if (name) handleInstantiateTemplate(t.id, name);
-                  }} style={{
-                    padding: 20, borderRadius: 14, cursor: 'pointer', transition: 'all 0.2s',
-                    background: 'linear-gradient(145deg, #1e293b, #0f172a)',
-                    border: `2px solid ${color}30`,
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  }} style={{ ...cardBase, cursor: 'pointer', textAlign: 'left' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-3)' }}>
                       <div>
-                        <div style={{ fontSize: 18, fontWeight: 600, color: '#e2e8f0' }}>{t.name}</div>
-                        <div style={{ fontSize: 12, color, marginTop: 2 }}>{t.domain}</div>
+                        <div style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>{t.name}</div>
+                        <div style={{ fontSize: 'var(--text-xs)', fontWeight: 500, color, marginTop: 2 }}>{t.domain}</div>
                       </div>
-                      <div style={{ textAlign: 'right', fontSize: 12, color: '#64748b' }}>
+                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', textAlign: 'right' }}>
                         <div>{t.agentCount} agents</div>
                         <div>{t.layerCount} layers</div>
                       </div>
                     </div>
-                    <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 10, lineHeight: 1.4 }}>{t.description}</div>
-                    <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
-                      {t.tags.map(tag => (
-                        <span key={tag} style={{
-                          fontSize: 10, padding: '2px 8px', borderRadius: 8,
-                          background: 'rgba(255,255,255,0.06)', color: '#8b9dc3',
-                        }}>{tag}</span>
+                    <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 'var(--space-3)' }}>{t.description}</div>
+                    <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+                      {t.tags.slice(0, 4).map(tag => (
+                        <span key={tag} style={{ ...badgeStyle }}>{tag}</span>
                       ))}
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -205,42 +209,36 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
 
         {view === 'csv' && (
           <>
-            <button onClick={() => setView('home')} style={{
-              background: 'none', border: 'none', color: '#00d9ff', cursor: 'pointer',
-              fontSize: 13, marginBottom: 20, padding: 0,
-            }}>Back to Dashboard</button>
+            <button onClick={() => setView('home')} style={backBtn}>Back to Dashboard</button>
+            <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--accent-primary)', marginBottom: 'var(--space-2)' }}>Import</div>
+            <h2 style={{ fontSize: 'var(--text-3xl)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--space-8)' }}>Import from CSV</h2>
 
-            <h2 style={{ color: '#e2e8f0', fontSize: 20, marginBottom: 16 }}>Import from CSV</h2>
-            <div style={{
-              padding: 20, borderRadius: 14,
-              background: 'linear-gradient(145deg, #1e293b, #0f172a)',
-              border: '2px solid rgba(251,191,36,0.2)',
-            }}>
-              <div style={{ marginBottom: 16 }}>
-                <a href={getCSVTemplateUrl()} download style={{ color: '#00d9ff', fontSize: 13, fontWeight: 600 }}>
+            <div style={{ ...cardBase, maxWidth: 600 }}>
+              <div style={{ marginBottom: 'var(--space-4)' }}>
+                <a href={getCSVTemplateUrl()} download style={{ color: 'var(--accent-primary)', fontSize: 'var(--text-sm)', fontWeight: 600, textDecoration: 'none' }}>
                   Download CSV Template
                 </a>
               </div>
-              <label style={{ fontSize: 12, color: '#8b9dc3', display: 'block', marginBottom: 6 }}>Swarm Name</label>
-              <input value={csvName} onChange={e => setCsvName(e.target.value)} placeholder="My Imported Swarm"
-                style={inputStyle} />
-              <label style={{ fontSize: 12, color: '#8b9dc3', display: 'block', marginTop: 12, marginBottom: 6 }}>Upload or Paste CSV</label>
-              <div style={{
-                border: '2px dashed rgba(251,191,36,0.3)', borderRadius: 10, padding: '30px 16px',
-                textAlign: 'center', cursor: 'pointer', marginBottom: 12,
-              }} onClick={() => document.getElementById('csvFileInput2')?.click()}>
-                <div style={{ color: '#94a3b8', fontSize: 14 }}>Click to upload CSV file</div>
+              <div style={{ marginBottom: 'var(--space-3)' }}>
+                <label style={labelStyle}>Swarm Name</label>
+                <input value={csvName} onChange={e => setCsvName(e.target.value)} placeholder="My Imported Swarm" style={inputStyle} />
               </div>
-              <input type="file" id="csvFileInput2" accept=".csv" style={{ display: 'none' }} onChange={async (e) => {
+              <div style={{
+                border: '2px dashed var(--border-default)', borderRadius: 'var(--radius-md)',
+                padding: 'var(--space-8) var(--space-4)', textAlign: 'center', cursor: 'pointer',
+                marginBottom: 'var(--space-3)', transition: 'border-color 0.2s',
+              }} onClick={() => document.getElementById('csvFileInput3')?.click()}>
+                <div style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>Click to upload CSV file</div>
+              </div>
+              <input type="file" id="csvFileInput3" accept=".csv" style={{ display: 'none' }} onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (file) { const text = await file.text(); setCsvData(text); }
               }} />
               <textarea value={csvData} onChange={e => setCsvData(e.target.value)} placeholder="Or paste CSV data here..."
-                style={{ ...inputStyle, minHeight: 120, fontFamily: 'monospace', fontSize: 11 }} />
+                style={{ ...inputStyle, minHeight: 120, fontFamily: "'SF Mono', 'Fira Code', monospace", fontSize: 'var(--text-xs)' }} />
               <button onClick={handleCSVImport} disabled={creating || !csvData.trim() || !csvName.trim()} style={{
-                width: '100%', marginTop: 12, padding: 12, borderRadius: 10, border: 'none',
-                background: '#fbbf24', color: '#0a0e27', fontWeight: 700, fontSize: 15,
-                cursor: creating ? 'default' : 'pointer', opacity: (creating || !csvData.trim() || !csvName.trim()) ? 0.5 : 1,
+                ...btnPrimary, width: '100%', marginTop: 'var(--space-3)',
+                opacity: (creating || !csvData.trim() || !csvName.trim()) ? 0.5 : 1,
               }}>
                 {creating ? 'Importing...' : 'Import'}
               </button>
@@ -252,22 +250,50 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
   );
 }
 
-function ActionCard({ title, description, color, onClick }: { title: string; description: string; color: string; onClick: () => void }) {
-  return (
-    <div onClick={onClick} style={{
-      padding: 'var(--space-6)', borderRadius: 'var(--radius-lg)', cursor: 'pointer', transition: 'all 0.2s',
-      background: 'var(--bg-surface)',
-      border: `1px solid var(--border-default)`, textAlign: 'center',
-    }}>
-      <div style={{ fontSize: 'var(--text-lg)', fontWeight: 600, color }}>{title}</div>
-      <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 'var(--space-2)' }}>{description}</div>
-    </div>
-  );
-}
+// Shared inline styles using CSS variables
+const cardBase: React.CSSProperties = {
+  background: 'var(--bg-surface)',
+  border: '1px solid var(--border-default)',
+  borderRadius: 'var(--radius-lg)',
+  padding: 'var(--space-6)',
+  transition: 'border-color 0.2s, box-shadow 0.2s',
+  fontFamily: 'var(--font-primary)',
+  color: 'var(--text-primary)',
+};
+
+const badgeStyle: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: 5,
+  fontSize: 'var(--text-xs)', fontWeight: 500,
+  padding: '3px var(--space-2)', borderRadius: 'var(--radius-sm)',
+  background: 'var(--bg-elevated)', color: 'var(--text-secondary)',
+  border: '1px solid var(--border-default)',
+  fontFamily: 'var(--font-primary)',
+};
+
+const backBtn: React.CSSProperties = {
+  background: 'none', border: 'none', color: 'var(--accent-primary)',
+  cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 500,
+  padding: 0, marginBottom: 'var(--space-6)',
+  fontFamily: 'var(--font-primary)',
+};
+
+const labelStyle: React.CSSProperties = {
+  fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-secondary)',
+  marginBottom: 'var(--space-1)', display: 'block',
+};
 
 const inputStyle: React.CSSProperties = {
-  width: '100%', padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius-md)',
-  border: '1px solid var(--border-default)', background: 'var(--bg-surface)',
-  color: 'var(--text-primary)', fontSize: 'var(--text-sm)', outline: 'none', boxSizing: 'border-box',
-  resize: 'vertical' as const, fontFamily: 'var(--font-primary)',
+  fontFamily: 'var(--font-primary)', fontSize: 'var(--text-sm)',
+  color: 'var(--text-primary)', background: 'var(--bg-surface)',
+  border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)',
+  padding: 'var(--space-3) var(--space-4)', width: '100%',
+  outline: 'none', boxSizing: 'border-box', resize: 'vertical' as const,
+};
+
+const btnPrimary: React.CSSProperties = {
+  fontFamily: 'var(--font-primary)', fontSize: 'var(--text-sm)',
+  fontWeight: 600, borderRadius: 'var(--radius-md)',
+  cursor: 'pointer', border: 'none',
+  background: 'var(--accent-primary)', color: 'var(--bg-base)',
+  padding: 'var(--space-3) var(--space-5)',
 };
