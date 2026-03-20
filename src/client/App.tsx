@@ -9,6 +9,13 @@ import { ValidationPanel, validateSwarm } from './components/ValidationPanel.js'
 import { ChatPanel } from './components/ChatPanel.js';
 import { TemplateBrowser } from './components/TemplateBrowser.js';
 import { HealthDashboard } from './components/HealthDashboard.js';
+import { DecisionTraceViewer } from './components/DecisionTraceViewer.js';
+import { GovernancePanel } from './components/GovernancePanel.js';
+import { CollaborationPanel } from './components/CollaborationPanel.js';
+import { OptimizationPanel } from './components/OptimizationPanel.js';
+import { DocViewer } from './components/DocViewer.js';
+import { OnboardingOverlay } from './components/OnboardingOverlay.js';
+import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp.js';
 import {
   getSwarm, getBlastRadius, exportSwarm, importSwarm,
   getSwarmHealthSummary,
@@ -19,6 +26,7 @@ import type { SwarmHealthSummary } from './api.js';
 import type { Swarm, Agent, BlastRadiusResult, RelationshipType, Badge } from '../shared/types/index.js';
 
 const DEFAULT_SWARM_ID = 'ecommerce-standard-v1';
+const ONBOARDING_KEY = 'agentModusMap_onboardingDismissed';
 
 export function App() {
   const [swarmId, setSwarmId] = useState(DEFAULT_SWARM_ID);
@@ -35,6 +43,13 @@ export function App() {
   const [templateBrowserOpen, setTemplateBrowserOpen] = useState(false);
   const [healthDashboardOpen, setHealthDashboardOpen] = useState(false);
   const [healthSummary, setHealthSummary] = useState<SwarmHealthSummary | null>(null);
+  const [tracesOpen, setTracesOpen] = useState(false);
+  const [governanceOpen, setGovernanceOpen] = useState(false);
+  const [collaborationOpen, setCollaborationOpen] = useState(false);
+  const [optimizationOpen, setOptimizationOpen] = useState(false);
+  const [docsOpen, setDocsOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem(ONBOARDING_KEY));
 
   const reloadSwarm = useCallback(async (id?: string) => {
     const targetId = id || swarmId;
@@ -57,6 +72,39 @@ export function App() {
     }, 15000);
     return () => clearInterval(interval);
   }, [swarmId]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Skip if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      switch (e.key) {
+        case '?': setShortcutsOpen(v => !v); break;
+        case 'p': case 'P': setPaletteOpen(v => !v); break;
+        case 'v': case 'V': setValidationOpen(v => !v); break;
+        case 'c': case 'C': setChatOpen(v => !v); break;
+        case 'h': case 'H': setHealthDashboardOpen(v => !v); break;
+        case 't': case 'T': setTemplateBrowserOpen(v => !v); break;
+        case 'd': case 'D': setTracesOpen(v => !v); break;
+        case 'g': case 'G': setGovernanceOpen(v => !v); break;
+        case 'o': case 'O': setOptimizationOpen(v => !v); break;
+        case 'l': case 'L': setCollaborationOpen(v => !v); break;
+        case 'Escape':
+          setSelectedAgent(null);
+          setEditorOpen(false);
+          setShortcutsOpen(false);
+          break;
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  const dismissOnboarding = useCallback(() => {
+    localStorage.setItem(ONBOARDING_KEY, 'true');
+    setShowOnboarding(false);
+  }, []);
 
   const handleSelectAgent = useCallback(async (agent: Agent | null) => {
     setSelectedAgent(agent);
@@ -223,6 +271,11 @@ export function App() {
           onExport={handleExport}
           onImport={handleImport}
           onOpenHealth={() => setHealthDashboardOpen(true)}
+          onOpenTraces={() => setTracesOpen(true)}
+          onOpenGovernance={() => setGovernanceOpen(true)}
+          onOpenOptimization={() => setOptimizationOpen(true)}
+          onOpenCollaboration={() => setCollaborationOpen(true)}
+          onOpenDocs={() => setDocsOpen(true)}
           healthStatus={healthSummary?.overall}
         />
         <div style={{ flex: 1, position: 'relative' }}>
@@ -291,6 +344,44 @@ export function App() {
         isOpen={healthDashboardOpen}
         onClose={() => setHealthDashboardOpen(false)}
       />
+
+      <DecisionTraceViewer
+        swarmId={swarmId}
+        isOpen={tracesOpen}
+        onClose={() => setTracesOpen(false)}
+      />
+
+      <GovernancePanel
+        swarmId={swarmId}
+        isOpen={governanceOpen}
+        onClose={() => setGovernanceOpen(false)}
+      />
+
+      <CollaborationPanel
+        swarmId={swarmId}
+        swarm={swarm}
+        isOpen={collaborationOpen}
+        onClose={() => setCollaborationOpen(false)}
+      />
+
+      <OptimizationPanel
+        swarmId={swarmId}
+        isOpen={optimizationOpen}
+        onClose={() => setOptimizationOpen(false)}
+      />
+
+      <DocViewer
+        swarmId={swarmId}
+        isOpen={docsOpen}
+        onClose={() => setDocsOpen(false)}
+      />
+
+      <KeyboardShortcutsHelp
+        isOpen={shortcutsOpen}
+        onClose={() => setShortcutsOpen(false)}
+      />
+
+      {showOnboarding && <OnboardingOverlay onDismiss={dismissOnboarding} />}
     </ReactFlowProvider>
   );
 }

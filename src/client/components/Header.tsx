@@ -10,6 +10,11 @@ interface HeaderProps {
   onExport: () => void;
   onImport: () => void;
   onOpenHealth: () => void;
+  onOpenTraces: () => void;
+  onOpenGovernance: () => void;
+  onOpenOptimization: () => void;
+  onOpenCollaboration: () => void;
+  onOpenDocs: () => void;
   healthStatus?: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
 }
 
@@ -29,7 +34,9 @@ export function Header({
   swarmName, agentCount, relationshipCount,
   showBlastRadius, onToggleBlastRadius,
   onOpenTemplates, onExport, onImport,
-  onOpenHealth, healthStatus,
+  onOpenHealth, onOpenTraces, onOpenGovernance,
+  onOpenOptimization, onOpenCollaboration, onOpenDocs,
+  healthStatus,
 }: HeaderProps) {
   const healthColors: Record<string, string> = {
     healthy: '#22c55e', degraded: '#fbbf24', unhealthy: '#ef4444', unknown: '#6b7280',
@@ -73,15 +80,14 @@ export function Header({
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: hColor, boxShadow: `0 0 6px ${hColor}` }} />
           Health
         </button>
-        <button onClick={onOpenTemplates} style={btnStyle}>
-          + Template
-        </button>
-        <button onClick={onImport} style={btnStyle}>
-          Import
-        </button>
-        <button onClick={onExport} style={btnStyle}>
-          Export
-        </button>
+        <button onClick={onOpenTraces} style={btnStyle}>Traces</button>
+        <button onClick={onOpenGovernance} style={btnStyle}>Governance</button>
+        <button onClick={onOpenOptimization} style={btnStyle}>Optimize</button>
+        <button onClick={onOpenCollaboration} style={btnStyle}>Collab</button>
+        <button onClick={onOpenDocs} style={btnStyle}>Docs</button>
+        <button onClick={onOpenTemplates} style={btnStyle}>+ Template</button>
+        <button onClick={onImport} style={btnStyle}>Import</button>
+        <button onClick={onExport} style={btnStyle}>Export</button>
         <button
           onClick={onToggleBlastRadius}
           style={{

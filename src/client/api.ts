@@ -167,3 +167,168 @@ export async function exportSwarm(swarmId: string): Promise<unknown> {
 export async function importSwarm(data: unknown): Promise<Swarm> {
   return postJson('/swarms/import', data);
 }
+
+// Decision Traces
+export interface DecisionTrace {
+  id: string;
+  swarmId: string;
+  agentId: string;
+  agentNickname: string;
+  title: string;
+  timestamp: string;
+  stages: Array<{ stage: string; content: string; data?: Record<string, unknown>; timestamp: string }>;
+  tags: string[];
+  confidence: number;
+  durationMs: number;
+}
+
+export interface TracePattern {
+  pattern: string;
+  occurrences: number;
+  agents: string[];
+  avgConfidence: number;
+  avgDurationMs: number;
+}
+
+export async function getDecisionTraces(swarmId: string, opts?: { agentId?: string; tag?: string }): Promise<DecisionTrace[]> {
+  let url = `/traces/${swarmId}?limit=50`;
+  if (opts?.agentId) url += `&agentId=${encodeURIComponent(opts.agentId)}`;
+  if (opts?.tag) url += `&tag=${encodeURIComponent(opts.tag)}`;
+  return fetchJson(url);
+}
+
+export async function getTracePatterns(swarmId: string): Promise<TracePattern[]> {
+  return fetchJson(`/traces/${swarmId}/patterns`);
+}
+
+// Governance
+export interface AuditEntry {
+  id: string;
+  swarmId: string;
+  action: string;
+  userId: string;
+  userName: string;
+  details: Record<string, unknown>;
+  timestamp: string;
+  checksum: string;
+}
+
+export interface ComplianceReport {
+  status: 'compliant' | 'partial' | 'non-compliant';
+  checks: Array<{ name: string; status: string; description: string }>;
+  auditEntryCount: number;
+}
+
+export async function getAuditLog(swarmId: string, opts?: { action?: string; limit?: number }): Promise<AuditEntry[]> {
+  let url = `/governance/${swarmId}/audit?limit=${opts?.limit || 100}`;
+  if (opts?.action) url += `&action=${encodeURIComponent(opts.action)}`;
+  return fetchJson(url);
+}
+
+export async function getComplianceReport(swarmId: string): Promise<ComplianceReport> {
+  return fetchJson(`/governance/${swarmId}/compliance`);
+}
+
+// Collaboration
+export interface SwarmVersionInfo {
+  id: string;
+  swarmId: string;
+  version: number;
+  changeDescription: string;
+  userId: string;
+  userName: string;
+  timestamp: string;
+}
+
+export interface VersionDiff {
+  added: { agents: string[]; relationships: string[] };
+  removed: { agents: string[]; relationships: string[] };
+  modified: string[];
+}
+
+export interface SwarmComment {
+  id: string;
+  swarmId: string;
+  agentId?: string;
+  userId: string;
+  userName: string;
+  content: string;
+  resolved: boolean;
+  timestamp: string;
+}
+
+export async function getVersionHistory(swarmId: string): Promise<SwarmVersionInfo[]> {
+  return fetchJson(`/collaboration/${swarmId}/versions`);
+}
+
+export async function saveVersion(swarmId: string, snapshot: unknown, description: string): Promise<SwarmVersionInfo> {
+  return postJson(`/collaboration/${swarmId}/versions`, { snapshot, changeDescription: description });
+}
+
+export async function getVersionDiff(swarmId: string, v1: number, v2: number): Promise<VersionDiff> {
+  return fetchJson(`/collaboration/${swarmId}/diff?v1=${v1}&v2=${v2}`);
+}
+
+export async function getComments(swarmId: string, agentId?: string): Promise<SwarmComment[]> {
+  let url = `/collaboration/${swarmId}/comments`;
+  if (agentId) url += `?agentId=${encodeURIComponent(agentId)}`;
+  return fetchJson(url);
+}
+
+export async function addComment(swarmId: string, content: string, agentId?: string): Promise<SwarmComment> {
+  return postJson(`/collaboration/${swarmId}/comments`, { content, agentId, userName: 'Designer' });
+}
+
+export async function resolveComment(swarmId: string, commentId: string): Promise<void> {
+  await putJson(`/collaboration/${swarmId}/comments/${commentId}/resolve`, {});
+}
+
+// Optimization
+export interface BottleneckResult {
+  agentId: string;
+  nickname: string;
+  score: number;
+  inDegree: number;
+  outDegree: number;
+  dependents: number;
+  reason: string;
+}
+
+export interface WhatIfResult {
+  scenario: string;
+  impactedAgents: Array<{ nickname: string; impact: 'high' | 'medium' | 'low' }>;
+  riskScore: number;
+  recommendation: string;
+}
+
+export interface CostEstimate {
+  totalAgents: number;
+  totalRelationships: number;
+  estimatedMonthlyCost: number;
+  breakdown: Array<{ layer: string; agents: number; estimatedCost: number }>;
+  optimizationSuggestions: string[];
+}
+
+export async function getBottlenecks(swarmId: string): Promise<BottleneckResult[]> {
+  return fetchJson(`/optimization/${swarmId}/bottlenecks`);
+}
+
+export async function getWhatIf(swarmId: string, agentNickname: string): Promise<WhatIfResult> {
+  return fetchJson(`/optimization/${swarmId}/what-if?remove=${encodeURIComponent(agentNickname)}`);
+}
+
+export async function getCostEstimate(swarmId: string): Promise<CostEstimate> {
+  return fetchJson(`/optimization/${swarmId}/cost`);
+}
+
+// Doc Generation
+export interface GeneratedDoc {
+  markdown: string;
+  swarmId: string;
+  name: string;
+  generatedAt: string;
+}
+
+export async function generateSwarmDocs(swarmId: string): Promise<GeneratedDoc> {
+  return fetchJson(`/docs/${swarmId}`);
+}
