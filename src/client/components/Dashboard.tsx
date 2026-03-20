@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { listSwarms, createBlankSwarm, importFromCSV, getCSVTemplateUrl, getTemplates, instantiateTemplate } from '../api.js';
 import { ThemeToggle } from './ThemeToggle.js';
+import { LogoWithText } from './Logo.js';
 import { useTheme } from '../hooks/useTheme.js';
 import type { Swarm } from '../../shared/types/index.js';
 import type { TemplateInfo } from '../api.js';
@@ -69,9 +70,7 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
           marginBottom: 'var(--space-12)', paddingBottom: 'var(--space-6)',
           borderBottom: '1px solid var(--border-default)',
         }}>
-          <div style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-            Agent<span style={{ color: 'var(--accent-primary)' }}>Modus</span>
-          </div>
+          <LogoWithText size={36} />
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
         </header>
 

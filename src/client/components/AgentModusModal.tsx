@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Logo } from './Logo.js';
 import type { Agent, Badge, LayerDefinition, Swarm, RelationshipType } from '../../shared/types/index.js';
 
 interface Props {
@@ -157,7 +158,10 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
               style={{ width: 80, textAlign: 'center', fontSize: 24, ...inp, marginTop: 0 }} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 36, fontWeight: 700, color: '#00d9ff', marginBottom: 4 }}>Agent Modus</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 4 }}>
+              <Logo size={32} />
+              <span style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--accent-primary)' }}>Agent Modus</span>
+            </div>
             <div style={{ display: 'flex', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 200 }}>
                 <label style={lbl}>Formal Name</label>

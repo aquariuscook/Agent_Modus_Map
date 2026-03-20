@@ -1,5 +1,6 @@
 import React from 'react';
 import { ThemeToggle } from './ThemeToggle.js';
+import { Logo } from './Logo.js';
 import { useTheme } from '../hooks/useTheme.js';
 
 export type EditorMode = 'design' | 'monitor' | 'analyze';
@@ -80,14 +81,15 @@ export function EditorToolbar(props: EditorToolbarProps) {
       gap: 12,
       zIndex: 10,
     }}>
-      {/* Back + Swarm Name */}
+      {/* Back + Logo + Swarm Name */}
       <button onClick={onBack} style={{
-        background: 'none', border: 'none', color: '#64748b', cursor: 'pointer',
+        background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer',
         fontSize: 16, padding: '2px 6px',
       }}>{'<'}</button>
+      <Logo size={28} />
       <div>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#e2e8f0' }}>{swarmName}</div>
-        <div style={{ fontSize: 11, color: '#64748b' }}>{agentCount} agents, {relationshipCount} rel</div>
+        <div style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-primary)' }}>{swarmName}</div>
+        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>{agentCount} agents, {relationshipCount} rel</div>
       </div>
 
       {/* Health dot */}
