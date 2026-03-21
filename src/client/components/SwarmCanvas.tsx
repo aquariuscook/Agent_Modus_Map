@@ -45,6 +45,56 @@ function getLayerColor(layerId: string, layers: Swarm['layers']): string {
   return layer?.colorTheme || '#8b9dc3';
 }
 
+const REL_LEGEND = [
+  { label: 'Depends On', color: '#00d9ff', dash: '' },
+  { label: 'Feeds Into', color: '#7c3aed', dash: '8,4' },
+  { label: 'Collaborates', color: '#fbbf24', dash: '3,3' },
+  { label: 'Can Override', color: '#ef4444', dash: '' },
+];
+
+function LegendPanel({ layers }: { layers: Swarm['layers'] }) {
+  const [open, setOpen] = React.useState(true);
+  return (
+    <div style={{
+      position: 'absolute', bottom: 60, left: 12, zIndex: 5,
+      background: 'var(--bg-surface)', border: '1px solid var(--border-default)',
+      borderRadius: 10, fontSize: 11, color: 'var(--text-secondary)',
+      ...(open ? { padding: '10px 14px', minWidth: 140, maxWidth: 400, overflow: 'auto', resize: 'both' } : { padding: '6px 12px' }),
+    }}>
+      <div
+        onClick={() => setOpen(!open)}
+        style={{ fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
+      >
+        <span>Legend</span>
+        <span style={{ fontSize: 9 }}>{open ? '\u25BC' : '\u25B6'}</span>
+      </div>
+      {open && <>
+        <div style={{ marginTop: 6 }}>
+          {REL_LEGEND.map(item => (
+            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+              <svg width={28} height={8}>
+                <line x1={0} y1={4} x2={28} y2={4}
+                  stroke={item.color} strokeWidth={item.label === 'Can Override' ? 3 : 2}
+                  strokeDasharray={item.dash || undefined} />
+              </svg>
+              <span>{item.label}</span>
+            </div>
+          ))}
+        </div>
+        {layers.length > 0 && <>
+          <div style={{ fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginTop: 8, marginBottom: 6 }}>Layers</div>
+          {[...layers].sort((a, b) => a.order - b.order).map(layer => (
+            <div key={layer.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+              <div style={{ width: 10, height: 10, borderRadius: 3, background: layer.colorTheme, flexShrink: 0 }} />
+              <span>{layer.name}</span>
+            </div>
+          ))}
+        </>}
+      </>}
+    </div>
+  );
+}
+
 export function SwarmCanvas({
   swarm, selectedAgent, onSelectAgent, blastRadius, showBlastRadius,
   onNodeDragStop, onConnect, onDropAgent, onDeleteEdge, agentHealthMap, onOpenAgentDetail,
@@ -225,38 +275,7 @@ export function SwarmCanvas({
       </ReactFlow>
 
       {/* Legend */}
-      <div style={{
-        position: 'absolute', bottom: 60, left: 12, zIndex: 5,
-        background: 'var(--bg-surface)', border: '1px solid var(--border-default)',
-        borderRadius: 10, padding: '10px 14px', fontSize: 11,
-        color: 'var(--text-secondary)', minWidth: 160,
-      }}>
-        <div style={{ fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: 6 }}>Relationships</div>
-        {[
-          { label: 'Depends On', color: '#00d9ff', dash: '' },
-          { label: 'Feeds Into', color: '#7c3aed', dash: '8,4' },
-          { label: 'Collaborates', color: '#fbbf24', dash: '3,3' },
-          { label: 'Can Override', color: '#ef4444', dash: '' },
-        ].map(item => (
-          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-            <svg width={28} height={8}>
-              <line x1={0} y1={4} x2={28} y2={4}
-                stroke={item.color} strokeWidth={item.label === 'Can Override' ? 3 : 2}
-                strokeDasharray={item.dash || undefined} />
-            </svg>
-            <span>{item.label}</span>
-          </div>
-        ))}
-        {swarm.layers.length > 0 && <>
-          <div style={{ fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginTop: 8, marginBottom: 6 }}>Layers</div>
-          {swarm.layers.sort((a, b) => a.order - b.order).map(layer => (
-            <div key={layer.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-              <div style={{ width: 10, height: 10, borderRadius: 3, background: layer.colorTheme, flexShrink: 0 }} />
-              <span>{layer.name}</span>
-            </div>
-          ))}
-        </>}
-      </div>
+      <LegendPanel layers={swarm.layers} />
 
       {pendingConnection && (
         <ConnectionTypeModal
