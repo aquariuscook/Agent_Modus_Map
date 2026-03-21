@@ -71,7 +71,8 @@ export async function runLiveExecution(swarm: Swarm, userInput: string): Promise
   let totalOutputTokens = 0;
   let totalCost = 0;
 
-  while (queue.length > 0) {
+  const maxAgents = Math.min(swarm.agents.length, 15);
+  while (queue.length > 0 && stepOrder < maxAgents) {
     const { agent, input } = queue.shift()!;
     if (visited.has(agent.id)) continue;
     visited.add(agent.id);
@@ -91,13 +92,20 @@ export async function runLiveExecution(swarm: Swarm, userInput: string): Promise
     let step: LiveExecutionStep;
 
     try {
+      // Limit input length to prevent token overflow
+      const truncatedInput = input.slice(0, 2000);
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
+
       const response = await client.messages.create({
         model,
-        max_tokens: maxTokens,
+        max_tokens: Math.min(maxTokens, 1024),
         temperature,
         system: systemPrompt,
-        messages: [{ role: 'user', content: input }],
+        messages: [{ role: 'user', content: truncatedInput }],
       });
+      clearTimeout(timeout);
 
       const output = response.content
         .filter(block => block.type === 'text')
@@ -132,7 +140,7 @@ export async function runLiveExecution(swarm: Swarm, userInput: string): Promise
       for (const targetId of downstreamIds) {
         const targetAgent = swarm.agents.find(a => a.id === targetId);
         if (targetAgent && !visited.has(targetId)) {
-          const contextInput = `Previous agent "${agent.nickname}" produced this output:\n\n${output}\n\nProcess this according to your role.`;
+          const contextInput = `Previous agent "${agent.nickname}" produced this output:\n\n${output.slice(0, 800)}\n\nProcess this according to your role.`;
           queue.push({ agent: targetAgent, input: contextInput });
           dataFlow.push({
             from: agent.nickname,
