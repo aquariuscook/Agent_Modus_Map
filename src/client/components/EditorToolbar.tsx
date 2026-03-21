@@ -3,7 +3,7 @@ import { ThemeToggle } from './ThemeToggle.js';
 import { Logo } from './Logo.js';
 import { useTheme } from '../hooks/useTheme.js';
 
-export type EditorMode = 'design' | 'monitor' | 'analyze';
+export type EditorMode = 'build' | 'watch' | 'test' | 'ship';
 
 interface EditorToolbarProps {
   swarmName: string;
@@ -14,25 +14,27 @@ interface EditorToolbarProps {
   onBack: () => void;
   healthStatus?: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
 
-  // Design mode actions
+  // Build mode actions
   onTogglePalette: () => void;
   onToggleChat: () => void;
   onToggleValidation: () => void;
   onToggleOrchestrator: () => void;
 
-  // Monitor mode actions
+  // Watch mode actions
   onOpenHealth: () => void;
   onOpenTraces: () => void;
   onOpenGovernance: () => void;
   onOpenCollaboration: () => void;
 
-  // Analyze mode actions
+  // Test mode actions
+  onToggleSimulation: () => void;
   onOpenOptimization: () => void;
   onOpenDocs: () => void;
+
+  // Ship mode actions
   onExportJSON: () => void;
   onExportHTML: () => void;
   onExportHandoff: () => void;
-  onToggleSimulation: () => void;
   onImport: () => void;
 
   // Blast radius
@@ -41,9 +43,17 @@ interface EditorToolbarProps {
 }
 
 const modeColors: Record<EditorMode, string> = {
-  design: '#00d9ff',
-  monitor: '#22c55e',
-  analyze: '#a855f7',
+  build: '#00d9ff',
+  watch: '#22c55e',
+  test: '#fbbf24',
+  ship: '#a855f7',
+};
+
+const modeLabels: Record<EditorMode, string> = {
+  build: 'Build',
+  watch: 'Watch',
+  test: 'Test',
+  ship: 'Ship',
 };
 
 const btnStyle = (active?: boolean, color?: string): React.CSSProperties => ({
@@ -57,6 +67,7 @@ const btnStyle = (active?: boolean, color?: string): React.CSSProperties => ({
   fontWeight: 600,
   transition: 'all 0.2s',
   whiteSpace: 'nowrap' as const,
+  fontFamily: 'var(--font-primary)',
 });
 
 export function EditorToolbar(props: EditorToolbarProps) {
@@ -100,22 +111,20 @@ export function EditorToolbar(props: EditorToolbarProps) {
         boxShadow: `0 0 6px ${hColor}`, marginLeft: 4,
       }} />
 
-      {/* Spacer */}
-      <div style={{ flex: 1 }} />
-
       {/* Mode Switcher */}
       <div style={{
         display: 'flex', gap: 2, background: 'rgba(255,255,255,0.04)',
-        borderRadius: 8, padding: 2,
+        borderRadius: 8, padding: 2, marginLeft: 'auto',
       }}>
-        {(['design', 'monitor', 'analyze'] as EditorMode[]).map(m => (
+        {(['build', 'watch', 'test', 'ship'] as EditorMode[]).map(m => (
           <button key={m} onClick={() => onModeChange(m)} style={{
-            padding: '6px 16px', borderRadius: 6, border: 'none', cursor: 'pointer',
-            fontSize: 12, fontWeight: 700, textTransform: 'capitalize',
+            padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer',
+            fontSize: 12, fontWeight: 700,
             background: mode === m ? modeColors[m] : 'transparent',
-            color: mode === m ? 'var(--text-inverse)' : '#64748b',
+            color: mode === m ? '#fff' : '#64748b',
             transition: 'all 0.2s',
-          }}>{m}</button>
+            fontFamily: 'var(--font-primary)',
+          }}>{modeLabels[m]}</button>
         ))}
       </div>
 
@@ -123,35 +132,40 @@ export function EditorToolbar(props: EditorToolbarProps) {
       <div style={{ flex: 1 }} />
 
       {/* Mode-specific actions */}
-      {mode === 'design' && (
+      {mode === 'build' && (
         <div style={{ display: 'flex', gap: 6 }}>
           <button onClick={props.onTogglePalette} style={btnStyle(false, mColor)}>+ Agent</button>
           <button onClick={props.onToggleOrchestrator} style={btnStyle(false, mColor)}>Connect</button>
           <button onClick={props.onToggleValidation} style={btnStyle(false, mColor)}>Validate</button>
           <button onClick={props.onToggleChat} style={btnStyle(false, mColor)}>Chat</button>
           <button onClick={props.onToggleBlastRadius} style={btnStyle(props.showBlastRadius, '#ef4444')}>
-            {props.showBlastRadius ? 'Blast: ON' : 'Blast'}
+            {props.showBlastRadius ? 'Impact: ON' : 'Impact'}
           </button>
         </div>
       )}
 
-      {mode === 'monitor' && (
+      {mode === 'watch' && (
         <div style={{ display: 'flex', gap: 6 }}>
           <button onClick={props.onOpenHealth} style={btnStyle(false, mColor)}>Health</button>
-          <button onClick={props.onOpenTraces} style={btnStyle(false, mColor)}>Traces</button>
-          <button onClick={props.onOpenGovernance} style={btnStyle(false, mColor)}>Governance</button>
-          <button onClick={props.onOpenCollaboration} style={btnStyle(false, mColor)}>Collab</button>
+          <button onClick={props.onOpenTraces} style={btnStyle(false, mColor)}>Decisions</button>
+          <button onClick={props.onOpenGovernance} style={btnStyle(false, mColor)}>Audit</button>
+          <button onClick={props.onOpenCollaboration} style={btnStyle(false, mColor)}>History</button>
         </div>
       )}
 
-      {mode === 'analyze' && (
+      {mode === 'test' && (
         <div style={{ display: 'flex', gap: 6 }}>
-          <button onClick={props.onToggleSimulation} style={btnStyle(false, mColor)}>Simulate</button>
+          <button onClick={props.onToggleSimulation} style={btnStyle(false, mColor)}>Run Test</button>
           <button onClick={props.onOpenOptimization} style={btnStyle(false, mColor)}>Optimize</button>
           <button onClick={props.onOpenDocs} style={btnStyle(false, mColor)}>Docs</button>
+        </div>
+      )}
+
+      {mode === 'ship' && (
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button onClick={props.onExportHandoff} style={btnStyle(false, mColor)}>Handoff Doc</button>
           <button onClick={props.onExportJSON} style={btnStyle(false, mColor)}>Export JSON</button>
           <button onClick={props.onExportHTML} style={btnStyle(false, mColor)}>Export HTML</button>
-          <button onClick={props.onExportHandoff} style={btnStyle(false, mColor)}>Handoff Doc</button>
           <button onClick={props.onImport} style={btnStyle(false, mColor)}>Import</button>
         </div>
       )}

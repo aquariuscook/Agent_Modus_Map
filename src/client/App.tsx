@@ -42,7 +42,7 @@ export function App() {
   const [blastRadius, setBlastRadius] = useState<BlastRadiusResult[]>([]);
   const [showBlastRadius, setShowBlastRadius] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [editorMode, setEditorMode] = useState<EditorMode>('design');
+  const [editorMode, setEditorMode] = useState<EditorMode>('build');
 
   // Panel states
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -314,7 +314,7 @@ export function App() {
         <div style={{ flex: 1, position: 'relative' }}>
           <CollaborationCursors cursors={collab.cursors} users={collab.users} connected={collab.connected} />
 
-          {editorMode === 'design' && (
+          {editorMode === 'build' && (
             <AgentPalette layers={swarm.layers} onDragStart={() => {}} isOpen={paletteOpen} onToggle={() => setPaletteOpen(!paletteOpen)} />
           )}
 
@@ -332,7 +332,7 @@ export function App() {
             onOpenAgentDetail={handleOpenAgentDetail}
           />
 
-          {editorMode === 'design' && (
+          {editorMode === 'build' && (
             <ValidationPanel messages={validationMessages} isOpen={validationOpen} onToggle={() => setValidationOpen(!validationOpen)} />
           )}
 
@@ -350,7 +350,7 @@ export function App() {
             />
           )}
 
-          {editorMode === 'design' && (
+          {editorMode === 'build' && (
             <RelationshipOrchestrator
               swarm={swarm}
               isOpen={orchestratorOpen}
