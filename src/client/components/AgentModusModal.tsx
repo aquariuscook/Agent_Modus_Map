@@ -154,9 +154,7 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
         {/* Header - Agent Identity */}
         <div style={{ padding: '24px 30px', borderBottom: `2px solid ${borderColor}40`, display: 'flex', gap: 24, alignItems: 'flex-start', flexShrink: 0 }}>
           <div style={{ flex: '0 0 auto' }}>
-            <div style={{ fontSize: 64, textAlign: 'center', marginBottom: 8 }}>{getAgentEmoji(agent.nickname, agent.formalName, config.emoji)}</div>
-            <input value={config.emoji || ''} onChange={e => updateConfig({ emoji: e.target.value })} placeholder="🤖" maxLength={4}
-              style={{ width: 80, textAlign: 'center', fontSize: 24, ...inp, marginTop: 0 }} />
+            <div style={{ fontSize: 64, textAlign: 'center' }}>{getAgentEmoji(agent.nickname, agent.formalName, config.emoji)}</div>
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 4 }}>
@@ -189,8 +187,8 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
             </div>
           </div>
           <button onClick={onClose} style={{
-            width: 36, height: 36, borderRadius: '50%', background: 'rgba(239,68,68,0.2)',
-            border: '2px solid #ef4444', color: '#ef4444', cursor: 'pointer', fontSize: 18,
+            width: 36, height: 36, borderRadius: '50%', background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-default)', color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: 18,
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
           }}>X</button>
         </div>
