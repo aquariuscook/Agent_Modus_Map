@@ -21,7 +21,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle }: Props) {
     setLoading(true);
     try {
       const res = await runSimulation(swarmId, sampleInput || undefined);
-      setSimResult(res.data);
+      setSimResult(res);
     } catch { setSimResult(null); }
     setLoading(false);
   }
@@ -31,7 +31,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle }: Props) {
     try {
       const cpd = callsPerDay ? Number(callsPerDay) : undefined;
       const res = await getSwarmCostEstimate(swarmId, cpd);
-      setCostResult(res.data);
+      setCostResult(res);
     } catch { setCostResult(null); }
     setLoading(false);
   }
@@ -42,7 +42,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle }: Props) {
     <div style={{
       position: 'fixed', top: 60, right: 20, width: 480, maxHeight: 'calc(100vh - 120px)',
       background: 'var(--bg-base)', border: '1px solid var(--border-default)', borderRadius: 12,
-      display: 'flex', flexDirection: 'column', zIndex: 25,
+      display: 'flex', flexDirection: 'column', zIndex: 1000,
       boxShadow: '0 10px 40px rgba(0,0,0,0.6)',
     }}>
       {/* Header */}
