@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { askQuestion, type RAGResponse } from '../api.js';
+import { Logo } from './Logo.js';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -67,24 +68,23 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
         style={{
           position: 'absolute',
           bottom: 20,
-          left: 20,
-          width: 48,
-          height: 48,
+          right: 20,
+          width: 52,
+          height: 52,
           borderRadius: '50%',
-          background: '#00d9ff',
-          border: 'none',
-          color: 'var(--text-inverse)',
-          fontSize: 22,
+          background: 'var(--bg-elevated)',
+          border: '2px solid var(--accent-primary)',
           cursor: 'pointer',
-          boxShadow: '0 4px 20px rgba(0, 217, 255, 0.4)',
+          boxShadow: '0 4px 20px rgba(0, 217, 255, 0.3)',
           zIndex: 20,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          padding: 0,
         }}
         title="Ask about your swarm"
       >
-        ?
+        <Logo size={36} />
       </button>
     );
   }
@@ -93,7 +93,7 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
     <div style={{
       position: 'absolute',
       bottom: 20,
-      left: 20,
+      right: 20,
       width: 420,
       height: 500,
       background: 'rgba(15, 23, 42, 0.97)',
