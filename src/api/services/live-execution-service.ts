@@ -2,6 +2,7 @@
 // Runs real LLM calls through the agent graph, one request at a time
 import Anthropic from '@anthropic-ai/sdk';
 import type { Swarm, Agent } from '../../shared/types/index.js';
+import { searchWeb, formatSearchResults } from './web-search-service.js';
 
 export interface LiveExecutionStep {
   agentId: string;
@@ -106,8 +107,29 @@ async function runLiveExecutionInternal(swarm: Swarm, userInput: string, onProgr
     console.log(`[LIVE] Agent ${stepOrder + 1}: ${agent.nickname} (${model}, max ${Math.min(maxTokens, 1024)} tokens)...`);
 
     try {
+      // For entry agents with search capability, do web searches first
+      let searchContext = '';
+      const skills = (config.skills as Array<{ name: string }>) || [];
+      const hasMcp = (config.mcp as any)?.servers?.length > 0;
+      const isEntry = agent.badges.includes('ENTRY');
+      const coreTask = (config.coreTask as string) || '';
+      const needsSearch = isEntry || coreTask.toLowerCase().includes('search') || coreTask.toLowerCase().includes('find') || coreTask.toLowerCase().includes('monitor') || coreTask.toLowerCase().includes('identify');
+
+      if (needsSearch) {
+        console.log(`[LIVE] Searching web for ${agent.nickname}...`);
+        const queries = generateSearchQueries(input, coreTask);
+        const allResults = [];
+        for (const q of queries.slice(0, 3)) {
+          const results = await searchWeb(q, 5);
+          allResults.push(...results);
+        }
+        if (allResults.length > 0) {
+          searchContext = '\n\nWEB SEARCH RESULTS:\n' + formatSearchResults(allResults);
+        }
+      }
+
       // Limit input length to prevent token overflow
-      const truncatedInput = input.slice(0, 2000);
+      const truncatedInput = (input + searchContext).slice(0, 3000);
 
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 30000);
@@ -235,6 +257,34 @@ function buildSystemPrompt(agent: Agent, config: Record<string, any>): string {
   }
 
   return parts.join('\n');
+}
+
+function generateSearchQueries(input: string, coreTask: string): string[] {
+  const queries: string[] = [];
+  const lower = (input + ' ' + coreTask).toLowerCase();
+
+  if (lower.includes('training') || lower.includes('ai training')) {
+    queries.push('companies hiring AI training consultant 2024 2025');
+    queries.push('small business AI adoption training services RFP');
+  }
+  if (lower.includes('automat') || lower.includes('process')) {
+    queries.push('companies looking for process automation consulting');
+    queries.push('small business automation RFP proposal request');
+  }
+  if (lower.includes('customer service') || lower.includes('cx') || lower.includes('chatbot')) {
+    queries.push('companies modernizing customer service AI chatbot');
+    queries.push('customer service automation consulting opportunities');
+  }
+  if (lower.includes('consulting') || lower.includes('prospect')) {
+    queries.push('companies hiring technology consultants small business');
+  }
+
+  // Always add a general query based on the input
+  if (queries.length === 0) {
+    queries.push(input.slice(0, 100));
+  }
+
+  return queries;
 }
 
 function findEntryPoints(swarm: Swarm): Agent[] {
