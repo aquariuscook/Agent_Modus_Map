@@ -32,6 +32,7 @@ interface EditorToolbarProps {
   onExportJSON: () => void;
   onExportHTML: () => void;
   onExportHandoff: () => void;
+  onToggleSimulation: () => void;
   onImport: () => void;
 
   // Blast radius
@@ -145,6 +146,7 @@ export function EditorToolbar(props: EditorToolbarProps) {
 
       {mode === 'analyze' && (
         <div style={{ display: 'flex', gap: 6 }}>
+          <button onClick={props.onToggleSimulation} style={btnStyle(false, mColor)}>Simulate</button>
           <button onClick={props.onOpenOptimization} style={btnStyle(false, mColor)}>Optimize</button>
           <button onClick={props.onOpenDocs} style={btnStyle(false, mColor)}>Docs</button>
           <button onClick={props.onExportJSON} style={btnStyle(false, mColor)}>Export JSON</button>

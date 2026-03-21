@@ -426,6 +426,17 @@ export function getHandoffDocUrl(swarmId: string): string {
   return `${BASE}/docs/${swarmId}/handoff`;
 }
 
+// Simulation
+export async function runSimulation(swarmId: string, input?: string): Promise<any> {
+  return postJson(`/simulate/${swarmId}`, { input });
+}
+
+// Cost Estimation (full swarm)
+export async function getSwarmCostEstimate(swarmId: string, callsPerDay?: number): Promise<any> {
+  const params = callsPerDay ? `?callsPerDay=${callsPerDay}` : '';
+  return fetchJson(`/simulate/${swarmId}/cost${params}`);
+}
+
 // Health check with LLM status
 export async function getApiHealth(): Promise<{ status: string; llmAvailable: boolean }> {
   return fetchJson('/health');

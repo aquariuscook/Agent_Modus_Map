@@ -14,6 +14,7 @@ import { DecisionTraceViewer } from './components/DecisionTraceViewer.js';
 import { GovernancePanel } from './components/GovernancePanel.js';
 import { CollaborationPanel } from './components/CollaborationPanel.js';
 import { OptimizationPanel } from './components/OptimizationPanel.js';
+import { SimulationPanel } from './components/SimulationPanel.js';
 import { DocViewer } from './components/DocViewer.js';
 import { OnboardingOverlay } from './components/OnboardingOverlay.js';
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp.js';
@@ -55,6 +56,7 @@ export function App() {
   const [governanceOpen, setGovernanceOpen] = useState(false);
   const [collaborationOpen, setCollaborationOpen] = useState(false);
   const [optimizationOpen, setOptimizationOpen] = useState(false);
+  const [simulationOpen, setSimulationOpen] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [healthSummary, setHealthSummary] = useState<SwarmHealthSummary | null>(null);
@@ -303,6 +305,7 @@ export function App() {
           onExportJSON={handleExportJSON}
           onExportHTML={handleExportHTML}
           onExportHandoff={handleExportHandoff}
+          onToggleSimulation={() => setSimulationOpen(!simulationOpen)}
           onImport={handleImport}
           showBlastRadius={showBlastRadius}
           onToggleBlastRadius={handleToggleBlastRadius}
@@ -364,6 +367,7 @@ export function App() {
       <GovernancePanel swarmId={swarmId} isOpen={governanceOpen} onClose={() => setGovernanceOpen(false)} />
       <CollaborationPanel swarmId={swarmId} swarm={swarm} isOpen={collaborationOpen} onClose={() => setCollaborationOpen(false)} />
       <OptimizationPanel swarmId={swarmId} isOpen={optimizationOpen} onClose={() => setOptimizationOpen(false)} />
+          <SimulationPanel swarmId={swarmId} isOpen={simulationOpen} onToggle={() => setSimulationOpen(!simulationOpen)} />
       <DocViewer swarmId={swarmId} isOpen={docsOpen} onClose={() => setDocsOpen(false)} />
       <KeyboardShortcutsHelp isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 
