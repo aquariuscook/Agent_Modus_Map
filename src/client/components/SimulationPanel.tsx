@@ -242,7 +242,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent }: Prop
               </div>
             )}
 
-            {liveResult && liveResult.steps && (
+            {liveResult && liveResult.steps && (<>
               <div style={{ marginTop: 16 }}>
                 <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
                   <Stat label="Agents" value={`${liveResult.agentsProcessed}/${liveResult.agentsTotal}`} />
@@ -303,9 +303,8 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent }: Prop
                 ))}
               </div>
 
-              {/* Diagnostics */}
               <DiagnosticsSection steps={liveResult.steps} onOpenAgent={onOpenAgent} />
-            )}
+            </>)}
           </div>
         )}
 
@@ -542,7 +541,6 @@ function analyzeLiveResults(steps: any[]): Diagnostic[] {
   }
 
   // Check for agents that were skipped entirely
-  const processedIds = new Set(steps.map((s: any) => s.agentId));
   for (const step of steps) {
     for (const downstream of step.downstreamAgents || []) {
       // downstream is a nickname, not ID, so we check by name
