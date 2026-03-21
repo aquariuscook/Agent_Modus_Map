@@ -79,9 +79,10 @@ export async function runLiveExecution(swarm: Swarm, userInput: string): Promise
 
     const config = agent.config as Record<string, any>;
     const modelConfig = config.modelConfig || {};
-    const model = modelConfig.model || 'claude-sonnet-4-6';
+    // Use Haiku for live tests to keep them fast and cheap
+    const model = 'claude-haiku-4-5-20251001';
     const temperature = modelConfig.temperature ?? 0.7;
-    const maxTokens = Math.min(modelConfig.maxTokens || 2048, 4096);
+    const maxTokens = 512;
 
     // Build system prompt from agent config
     const systemPrompt = buildSystemPrompt(agent, config);
@@ -90,6 +91,7 @@ export async function runLiveExecution(swarm: Swarm, userInput: string): Promise
 
     const stepStart = Date.now();
     let step: LiveExecutionStep;
+    console.log(`[LIVE] Agent ${stepOrder + 1}: ${agent.nickname} (${model}, max ${Math.min(maxTokens, 1024)} tokens)...`);
 
     try {
       // Limit input length to prevent token overflow
