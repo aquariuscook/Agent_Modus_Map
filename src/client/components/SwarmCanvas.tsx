@@ -54,27 +54,47 @@ const REL_LEGEND = [
 
 function LegendPanel({ layers }: { layers: Swarm['layers'] }) {
   const [open, setOpen] = React.useState(true);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [scale, setScale] = React.useState(1);
+
+  React.useEffect(() => {
+    if (!open || !containerRef.current) return;
+    const obs = new ResizeObserver(entries => {
+      const w = entries[0]?.contentRect.width || 140;
+      setScale(Math.max(1, w / 140));
+    });
+    obs.observe(containerRef.current);
+    return () => obs.disconnect();
+  }, [open]);
+
+  const fs = Math.round(11 * scale);
+  const hfs = Math.round(10 * scale);
+  const gap = Math.round(8 * scale);
+  const mb = Math.round(4 * scale);
+  const sw = Math.round(28 * scale);
+  const dotSize = Math.round(10 * scale);
+
   return (
-    <div style={{
+    <div ref={containerRef} style={{
       position: 'absolute', bottom: 60, left: 12, zIndex: 5,
       background: 'var(--bg-surface)', border: '1px solid var(--border-default)',
-      borderRadius: 10, fontSize: 11, color: 'var(--text-secondary)',
-      ...(open ? { padding: '10px 14px', minWidth: 140, maxWidth: 400, overflow: 'auto', resize: 'both' } : { padding: '6px 12px' }),
+      borderRadius: 10, color: 'var(--text-secondary)',
+      ...(open ? { padding: `${Math.round(10 * scale)}px ${Math.round(14 * scale)}px`, minWidth: 140, maxWidth: 600, overflow: 'auto', resize: 'both' } : { padding: '6px 12px', fontSize: 11 }),
     }}>
       <div
         onClick={() => setOpen(!open)}
-        style={{ fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
+        style={{ fontWeight: 700, fontSize: open ? hfs : 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
       >
         <span>Legend</span>
-        <span style={{ fontSize: 9 }}>{open ? '\u25BC' : '\u25B6'}</span>
+        <span style={{ fontSize: open ? Math.round(9 * scale) : 9 }}>{open ? '\u25BC' : '\u25B6'}</span>
       </div>
       {open && <>
-        <div style={{ marginTop: 6 }}>
+        <div style={{ marginTop: mb * 2 }}>
           {REL_LEGEND.map(item => (
-            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-              <svg width={28} height={8}>
-                <line x1={0} y1={4} x2={28} y2={4}
-                  stroke={item.color} strokeWidth={item.label === 'Can Override' ? 3 : 2}
+            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap, marginBottom: mb, fontSize: fs }}>
+              <svg width={sw} height={Math.round(8 * scale)}>
+                <line x1={0} y1={Math.round(4 * scale)} x2={sw} y2={Math.round(4 * scale)}
+                  stroke={item.color} strokeWidth={item.label === 'Can Override' ? 3 * scale : 2 * scale}
                   strokeDasharray={item.dash || undefined} />
               </svg>
               <span>{item.label}</span>
@@ -82,10 +102,10 @@ function LegendPanel({ layers }: { layers: Swarm['layers'] }) {
           ))}
         </div>
         {layers.length > 0 && <>
-          <div style={{ fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginTop: 8, marginBottom: 6 }}>Layers</div>
+          <div style={{ fontWeight: 700, fontSize: hfs, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginTop: gap, marginBottom: mb * 2 }}>Layers</div>
           {[...layers].sort((a, b) => a.order - b.order).map(layer => (
-            <div key={layer.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-              <div style={{ width: 10, height: 10, borderRadius: 3, background: layer.colorTheme, flexShrink: 0 }} />
+            <div key={layer.id} style={{ display: 'flex', alignItems: 'center', gap, marginBottom: mb, fontSize: fs }}>
+              <div style={{ width: dotSize, height: dotSize, borderRadius: 3, background: layer.colorTheme, flexShrink: 0 }} />
               <span>{layer.name}</span>
             </div>
           ))}
