@@ -122,6 +122,7 @@ export function SwarmCanvas({
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
   const [pendingConnection, setPendingConnection] = React.useState<{ source: string; target: string } | null>(null);
+  const [showMiniMap, setShowMiniMap] = React.useState(false);
 
   const blastNicknames = useMemo(() => {
     const map = new Map<string, number>();
@@ -279,8 +280,11 @@ export function SwarmCanvas({
           position="bottom-left"
           style={{ background: 'var(--bg-elevated)', border: '1px solid rgba(0, 217, 255, 0.3)', borderRadius: 10 }}
         />
-        <MiniMap
+        {showMiniMap && <MiniMap
           position="top-right"
+          pannable
+          zoomable
+          nodeStrokeWidth={3}
           style={{
             background: 'var(--bg-surface)',
             border: '1px solid rgba(0, 217, 255, 0.2)',
@@ -290,9 +294,23 @@ export function SwarmCanvas({
             const data = node.data as unknown as AgentNodeData;
             return data?.layerColor || '#8b9dc3';
           }}
-          maskColor="rgba(10, 14, 39, 0.8)"
-        />
+          maskColor="rgba(20, 14, 24, 0.7)"
+        />}
       </ReactFlow>
+
+      {/* MiniMap Toggle */}
+      <button
+        onClick={() => setShowMiniMap(!showMiniMap)}
+        style={{
+          position: 'absolute', top: 12, right: 12, zIndex: 5,
+          padding: '4px 10px', borderRadius: 6, fontSize: 10, fontWeight: 600,
+          background: showMiniMap ? 'var(--accent-primary)' : 'var(--bg-surface)',
+          color: showMiniMap ? 'var(--text-inverse)' : 'var(--text-tertiary)',
+          border: '1px solid var(--border-default)',
+          cursor: 'pointer', fontFamily: 'var(--font-primary)',
+        }}
+        title="Toggle mini map"
+      >Map</button>
 
       {/* Legend */}
       <LegendPanel layers={swarm.layers} />
