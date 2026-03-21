@@ -17,15 +17,50 @@ import type { Swarm, Agent, BlastRadiusResult, RelationshipType } from '../../sh
 
 const nodeTypes = { agent: AgentNode };
 
-// Default emojis based on agent nickname or formal name keywords
+// Default emojis based on agent nickname
 const NICKNAME_EMOJIS: Record<string, string> = {
+  // E-Commerce
   Doorbell: '🔔', Compass: '🧭', Vibe: '💜', Courier: '📨', Echo: '👂',
   Handshake: '🤝', Catalog: '📚', Spark: '✨', Polish: '💎', Lens: '🔍',
   Rosetta: '🌍', Domino: '🎯', Gavel: '⚖️', Knot: '🔗', Relay: '🔌',
   Scribe: '📝', Pulse: '💓', Sentinel: '🛡️', Thermometer: '🌡️',
   Howler: '🚨', Mirror: '🪞', Clockwork: '⚙️', Sherlock: '🕵️', Mosaic: '📊',
-  Grease: '🔧', Portal: '🚪', Triage: '🏥', Router: '🔀', Resolver: '✅',
-  Escalator: '📢', Analyst: '📈',
+  Grease: '🔧',
+  // Customer Service
+  Portal: '🚪', Triage: '🏥', Router: '🔀', Resolver: '✅', Escalator: '📢',
+  Analyst: '📈', Feedback: '💬', Score: '⭐', Mood: '🎭', Coach: '🎓',
+  Welcome: '👋', Buddy: '🙋', Follow: '📎',
+  // Content Ops
+  Writer: '✍️', Editor: '📐', Brand: '🏷️', Translate: '🗣️', Pixel: '🎨',
+  Clip: '🎬', Quill: '🖋️', Format: '📄', Broadcast: '📡', Trend: '📈',
+  Suggest: '💡', Brief: '📋', Summarize: '📑',
+  // DevOps
+  Builder: '🏗️', Lint: '🧹', Unit: '🧪', Scanner: '🔬', Pipeline: '🚀',
+  Canary: '🐤', Release: '📦', Rollback: '⏪', Patch: '🩹', Provision: '☁️',
+  Deps: '📦', Cache: '💾',
+  // Data Pipeline
+  Collector: '🪣', Schema: '🗂️', Transform: '🔄', Validate: '✅',
+  Enrich: '🧬', Enricher: '🧬', Lake: '🌊', Stream: '🌊', Warehouse: '🏢',
+  Query: '❓', Batch: '📥', Lineage: '🌳', ML: '🧠',
+  // Security SOC
+  Watcher: '👁️', NetWatch: '🌐', Alarm: '🚨', Alert: '⚡', Forensic: '🔎',
+  Quarantine: '🔒', Responder: '🚒', Compliance: '📜', Comply: '📜',
+  Endpoint: '💻', PostMortem: '📋', Witness: '👀',
+  // Research
+  WebSearch: '🌐', DocSearch: '📂', DocScan: '📂', Cite: '📎', FactCheck: '✅',
+  Synthesizer: '🧪', GraphSearch: '🕸️', Verify: '🔍', Insight: '💡',
+  Report: '📄', Hypothesis: '🔮',
+  // Sales
+  Prospect: '🎯', Outreach: '📧', Compete: '⚔️', Proposal: '📝',
+  Forecast: '🔮', Win: '🏆', Tracker: '📍', Progress: '📊',
+  // HR
+  Hire: '👥', Schedule: '📅', Scheduler: '📅', Ladder: '🪜', Legal: '⚖️',
+  Board: '📌', Dash: '📊', Dashboard: '📊', HRDash: '📊',
+  // General
+  Solver: '🧩', Integration: '🔌', Metrics: '📊', Auditor: '🔍',
+  Security: '🛡️', Scorer: '⭐', Checklist: '✅', Gate: '🚧',
+  Anomaly: '⚠️', Boost: '🚀', Captain: '🧑‍✈️', Atlas: '🗺️',
+  Assign: '📋', Scribble: '📝',
 };
 
 function getDefaultEmoji(nickname: string, formalName: string): string {
