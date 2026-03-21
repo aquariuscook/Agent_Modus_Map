@@ -8,7 +8,7 @@ interface SparklineProps {
   fillColor?: string;
 }
 
-export function Sparkline({ data, width = 120, height = 30, color = '#d4722a', fillColor }: SparklineProps) {
+export function Sparkline({ data, width = 120, height = 30, color = '#00d9ff', fillColor }: SparklineProps) {
   if (data.length < 2) return null;
 
   const max = Math.max(...data);

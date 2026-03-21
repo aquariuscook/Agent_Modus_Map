@@ -21,7 +21,8 @@ import { CollaborationCursors } from './components/CollaborationCursors.js';
 import { useCollaboration } from './hooks/useCollaboration.js';
 import {
   getSwarm, getBlastRadius, exportSwarm, importSwarm,
-  getSwarmHealthSummary, getHTMLExportUrl, getHandoffDocUrl,
+  getSwarmHealthSummary, getSwarmHealth, getHTMLExportUrl, getHandoffDocUrl,
+  type AgentHealthSummary,
   createAgent, updateAgent, deleteAgent,
   createRelationship, deleteRelationship,
 } from './api.js';
@@ -57,6 +58,7 @@ export function App() {
   const [docsOpen, setDocsOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [healthSummary, setHealthSummary] = useState<SwarmHealthSummary | null>(null);
+  const [agentHealthMap, setAgentHealthMap] = useState<Record<string, AgentHealthSummary['status']>>({});
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem(ONBOARDING_KEY));
 
   const collab = useCollaboration(swarmId);
@@ -96,10 +98,16 @@ export function App() {
   // Poll health
   useEffect(() => {
     if (!swarmId || view !== 'editor') return;
-    getSwarmHealthSummary(swarmId).then(setHealthSummary).catch(() => {});
-    const interval = setInterval(() => {
+    const fetchHealth = () => {
       getSwarmHealthSummary(swarmId).then(setHealthSummary).catch(() => {});
-    }, 15000);
+      getSwarmHealth(swarmId).then(agents => {
+        const map: Record<string, AgentHealthSummary['status']> = {};
+        for (const a of agents) map[a.agentId] = a.status;
+        setAgentHealthMap(map);
+      }).catch(() => {});
+    };
+    fetchHealth();
+    const interval = setInterval(fetchHealth, 15000);
     return () => clearInterval(interval);
   }, [swarmId, view]);
 
@@ -260,7 +268,7 @@ export function App() {
   // Loading state
   if (loading || !swarm) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#d4722a', fontSize: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#00d9ff', fontSize: 20 }}>
         Loading swarm...
       </div>
     );
@@ -313,6 +321,7 @@ export function App() {
             onConnect={handleConnect}
             onDropAgent={handleDropAgent}
             onDeleteEdge={handleDeleteEdge}
+            agentHealthMap={agentHealthMap}
           />
 
           {editorMode === 'design' && (

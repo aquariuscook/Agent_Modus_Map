@@ -1,5 +1,5 @@
 // Design system tokens from ADR-002
-// Warm Plum + Toasted Pumpkin + Sage + Oxblood palette
+// Gem tone palette on warm plum backgrounds
 
 export const colors = {
   bg: {
@@ -9,35 +9,35 @@ export const colors = {
     cardSolid: '#271d2e',
   },
   text: {
-    primary: '#eeebed',
-    secondary: '#b5adb9',
-    muted: '#968a9c',
+    primary: '#ffffff',
+    secondary: '#8b9dc3',
+    muted: '#a0aec0',
   },
   layers: {
-    customer: '#5fa878',
-    product: '#b07cc4',
-    order: '#5fa878',
-    operations: '#d4722a',
-    intelligence: '#e09050',
+    customer: '#00d9ff',
+    product: '#a855f7',
+    order: '#22c55e',
+    operations: '#fb923c',
+    intelligence: '#fbbf24',
   },
   relationships: {
-    dependsOn: { color: '#5fa878', style: 'solid', width: 3 },
-    feedsInto: { color: '#7a3d8f', style: 'dashed', width: 3 },
-    collaboratesWith: { color: '#d4722a', style: 'dotted', width: 2 },
-    canOverride: { color: '#8A2E3B', style: 'solid', width: 4 },
+    dependsOn: { color: '#00d9ff', style: 'solid', width: 3 },
+    feedsInto: { color: '#7c3aed', style: 'dashed', width: 3 },
+    collaboratesWith: { color: '#fbbf24', style: 'dotted', width: 2 },
+    canOverride: { color: '#ef4444', style: 'solid', width: 4 },
   },
   badges: {
-    hub: { bg: 'rgba(212, 114, 42, 0.2)', border: '#d4722a' },
-    critical: { bg: 'rgba(138, 46, 59, 0.2)', border: '#8A2E3B' },
-    entry: { bg: 'rgba(95, 168, 120, 0.2)', border: '#5fa878' },
-    human: { bg: 'rgba(176, 124, 196, 0.2)', border: '#b07cc4' },
-    auto: { bg: 'rgba(95, 168, 120, 0.2)', border: '#5fa878' },
+    hub: { bg: 'rgba(251, 191, 36, 0.2)', border: '#fbbf24' },
+    critical: { bg: 'rgba(239, 68, 68, 0.2)', border: '#ef4444' },
+    entry: { bg: 'rgba(34, 197, 94, 0.2)', border: '#22c55e' },
+    human: { bg: 'rgba(168, 85, 247, 0.2)', border: '#a855f7' },
+    auto: { bg: 'rgba(0, 217, 255, 0.2)', border: '#00d9ff' },
   },
   health: {
-    healthy: '#5fa878',
-    degraded: '#d4722a',
-    unhealthy: '#8A2E3B',
-    unknown: '#76677e',
+    healthy: '#22c55e',
+    degraded: '#fbbf24',
+    unhealthy: '#ef4444',
+    unknown: '#6b7280',
   },
 } as const;
 

@@ -10,10 +10,10 @@ interface RelationshipPanelProps {
 }
 
 const typeLabels: Record<string, { label: string; color: string; icon: string }> = {
-  dependsOn: { label: 'Depends On', color: '#d4722a', icon: '\u2190' },
+  dependsOn: { label: 'Depends On', color: '#00d9ff', icon: '\u2190' },
   feedsInto: { label: 'Feeds Into', color: '#7c3aed', icon: '\u2192' },
-  collaboratesWith: { label: 'Collaborates With', color: '#e09050', icon: '\u2194' },
-  canOverride: { label: 'Can Override', color: '#8A2E3B', icon: '\u26A1' },
+  collaboratesWith: { label: 'Collaborates With', color: '#fbbf24', icon: '\u2194' },
+  canOverride: { label: 'Can Override', color: '#ef4444', icon: '\u26A1' },
 };
 
 function getAgentNickname(agentId: string, agents: Agent[]): string {
@@ -49,8 +49,8 @@ export function RelationshipPanel({ agent, swarm, blastRadius, showBlastRadius, 
       bottom: 20,
       left: '50%',
       transform: 'translateX(-50%)',
-      background: 'linear-gradient(145deg, #271d2e 0%, #1e1524 100%)',
-      border: `2px solid ${layer?.colorTheme || '#d4722a'}`,
+      background: 'linear-gradient(145deg, #1e293b 0%, #0f172a 100%)',
+      border: `2px solid ${layer?.colorTheme || '#00d9ff'}`,
       borderRadius: 16,
       padding: '20px 28px',
       maxWidth: 700,
@@ -76,8 +76,8 @@ export function RelationshipPanel({ agent, swarm, blastRadius, showBlastRadius, 
           height: 28,
           borderRadius: '50%',
           background: 'rgba(239, 68, 68, 0.2)',
-          border: '2px solid #8A2E3B',
-          color: '#8A2E3B',
+          border: '2px solid #ef4444',
+          color: '#ef4444',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
@@ -91,13 +91,13 @@ export function RelationshipPanel({ agent, swarm, blastRadius, showBlastRadius, 
 
       <div style={{ marginBottom: 12 }}>
         <span style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{agent.nickname}</span>
-        <span style={{ fontSize: 13, color: '#b5adb9', marginLeft: 10 }}>{agent.formalName}</span>
-        <span style={{ fontSize: 12, color: '#968a9c', marginLeft: 10, fontStyle: 'italic' }}>"{agent.descriptor}"</span>
+        <span style={{ fontSize: 13, color: '#8b9dc3', marginLeft: 10 }}>{agent.formalName}</span>
+        <span style={{ fontSize: 12, color: '#a0aec0', marginLeft: 10, fontStyle: 'italic' }}>"{agent.descriptor}"</span>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         {Object.entries(grouped).map(([type, agents]) => {
-          const meta = typeLabels[type] || { label: type, color: '#b5adb9', icon: '' };
+          const meta = typeLabels[type] || { label: type, color: '#8b9dc3', icon: '' };
           return (
             <div key={type} style={{
               background: 'rgba(255, 255, 255, 0.04)',
@@ -105,7 +105,7 @@ export function RelationshipPanel({ agent, swarm, blastRadius, showBlastRadius, 
               borderRadius: 10,
               borderLeft: `4px solid ${meta.color}`,
             }}>
-              <div style={{ fontSize: 11, color: '#b5adb9', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+              <div style={{ fontSize: 11, color: '#8b9dc3', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
                 {meta.label}
               </div>
               {agents.map(name => (
@@ -124,9 +124,9 @@ export function RelationshipPanel({ agent, swarm, blastRadius, showBlastRadius, 
           padding: 12,
           background: 'rgba(239, 68, 68, 0.1)',
           borderRadius: 10,
-          borderLeft: '4px solid #8A2E3B',
+          borderLeft: '4px solid #ef4444',
         }}>
-          <div style={{ fontSize: 11, color: '#8A2E3B', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+          <div style={{ fontSize: 11, color: '#ef4444', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
             Blast Radius ({blastRadius.length} agents affected)
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>

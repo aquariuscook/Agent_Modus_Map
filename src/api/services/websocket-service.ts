@@ -17,7 +17,7 @@ interface WSMessage {
   payload: any;
 }
 
-const COLORS = ['#5fa878', '#b07cc4', '#d4722a', '#88c49e', '#9254a8', '#e09050', '#cba4d9', '#A3404F'];
+const COLORS = ['#00d9ff', '#a855f7', '#22c55e', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#84cc16'];
 let colorIndex = 0;
 
 export class CollaborationServer {

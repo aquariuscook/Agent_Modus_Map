@@ -42,14 +42,14 @@ export function OnboardingOverlay({ onDismiss }: Props) {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       <div style={{
-        background: '#140e18', border: '1px solid #d4722a', borderRadius: 16,
+        background: '#0a1628', border: '1px solid #00d9ff', borderRadius: 16,
         padding: 32, maxWidth: 500, width: '90%', textAlign: 'center',
       }}>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 24 }}>
           {STEPS.map((_, i) => (
             <div key={i} style={{
               width: 8, height: 8, borderRadius: '50%',
-              background: i === step ? '#d4722a' : '#312639',
+              background: i === step ? '#00d9ff' : '#1e3a5f',
               transition: 'background 0.2s',
             }} />
           ))}
@@ -61,32 +61,32 @@ export function OnboardingOverlay({ onDismiss }: Props) {
         <p style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.7, margin: '0 0 16px' }}>
           {current.content}
         </p>
-        <p style={{ color: '#d4722a', fontSize: 13, fontStyle: 'italic', margin: '0 0 24px' }}>
+        <p style={{ color: '#00d9ff', fontSize: 13, fontStyle: 'italic', margin: '0 0 24px' }}>
           {current.highlight}
         </p>
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
           {step > 0 && (
             <button onClick={() => setStep(step - 1)} style={{
-              padding: '10px 20px', borderRadius: 8, border: '1px solid #312639',
+              padding: '10px 20px', borderRadius: 8, border: '1px solid #1e3a5f',
               background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontSize: 14,
             }}>Back</button>
           )}
           {step < STEPS.length - 1 ? (
             <button onClick={() => setStep(step + 1)} style={{
               padding: '10px 24px', borderRadius: 8, border: 'none',
-              background: '#d4722a', color: '#140e18', cursor: 'pointer', fontSize: 14, fontWeight: 600,
+              background: '#00d9ff', color: '#0a1628', cursor: 'pointer', fontSize: 14, fontWeight: 600,
             }}>Next</button>
           ) : (
             <button onClick={onDismiss} style={{
               padding: '10px 24px', borderRadius: 8, border: 'none',
-              background: '#d4722a', color: '#140e18', cursor: 'pointer', fontSize: 14, fontWeight: 600,
+              background: '#00d9ff', color: '#0a1628', cursor: 'pointer', fontSize: 14, fontWeight: 600,
             }}>Start Designing</button>
           )}
           {step < STEPS.length - 1 && (
             <button onClick={onDismiss} style={{
               padding: '10px 16px', borderRadius: 8, border: 'none',
-              background: 'transparent', color: '#76677e', cursor: 'pointer', fontSize: 13,
+              background: 'transparent', color: '#64748b', cursor: 'pointer', fontSize: 13,
             }}>Skip</button>
           )}
         </div>

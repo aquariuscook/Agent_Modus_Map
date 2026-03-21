@@ -35,11 +35,11 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       <div style={{
-        background: '#140e18', border: '1px solid #312639', borderRadius: 12,
+        background: '#0a1628', border: '1px solid #1e3a5f', borderRadius: 12,
         width: '90%', maxWidth: 850, maxHeight: '85vh', overflow: 'hidden',
         display: 'flex', flexDirection: 'column',
       }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #312639', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #1e3a5f', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
             <h2 style={{ margin: 0, color: '#e2e8f0', fontSize: 18 }}>Optimization</h2>
             <div style={{ display: 'flex', gap: 4 }}>
@@ -54,11 +54,11 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
         <div style={{ flex: 1, overflow: 'auto', padding: 20 }}>
           {tab === 'bottlenecks' && (
             <div>
-              {bottlenecks.length === 0 && <p style={{ color: '#76677e' }}>No bottlenecks detected. Your swarm topology looks well-distributed.</p>}
+              {bottlenecks.length === 0 && <p style={{ color: '#64748b' }}>No bottlenecks detected. Your swarm topology looks well-distributed.</p>}
               {bottlenecks.map(b => (
                 <div key={b.agentId} style={{
                   padding: 14, marginBottom: 10, borderRadius: 8, background: '#0f1f35',
-                  border: '1px solid #312639',
+                  border: '1px solid #1e3a5f',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ color: '#e2e8f0', fontWeight: 600, fontSize: 14 }}>{b.nickname}</span>
@@ -71,12 +71,12 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
                     </div>
                   </div>
                   <div style={{ color: '#94a3b8', fontSize: 12, marginTop: 6 }}>{b.reason}</div>
-                  <div style={{ display: 'flex', gap: 16, marginTop: 8, color: '#76677e', fontSize: 12 }}>
+                  <div style={{ display: 'flex', gap: 16, marginTop: 8, color: '#64748b', fontSize: 12 }}>
                     <span>In: {b.inDegree}</span>
                     <span>Out: {b.outDegree}</span>
                     <span>Dependents: {b.dependents}</span>
                   </div>
-                  <div style={{ marginTop: 8, height: 6, background: '#271d2e', borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{ marginTop: 8, height: 6, background: '#1e293b', borderRadius: 3, overflow: 'hidden' }}>
                     <div style={{
                       width: `${b.score}%`, height: '100%', borderRadius: 3,
                       background: b.score >= 70 ? '#dc2626' : b.score >= 40 ? '#d97706' : '#2563eb',
@@ -94,15 +94,15 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
                 display: 'flex', gap: 24,
               }}>
                 <div>
-                  <div style={{ color: '#76677e', fontSize: 11, textTransform: 'uppercase' }}>Monthly Est.</div>
-                  <div style={{ color: '#d4722a', fontSize: 28, fontWeight: 700 }}>${cost.estimatedMonthlyCost}</div>
+                  <div style={{ color: '#64748b', fontSize: 11, textTransform: 'uppercase' }}>Monthly Est.</div>
+                  <div style={{ color: '#00d9ff', fontSize: 28, fontWeight: 700 }}>${cost.estimatedMonthlyCost}</div>
                 </div>
                 <div>
-                  <div style={{ color: '#76677e', fontSize: 11, textTransform: 'uppercase' }}>Agents</div>
+                  <div style={{ color: '#64748b', fontSize: 11, textTransform: 'uppercase' }}>Agents</div>
                   <div style={{ color: '#e2e8f0', fontSize: 28, fontWeight: 700 }}>{cost.totalAgents}</div>
                 </div>
                 <div>
-                  <div style={{ color: '#76677e', fontSize: 11, textTransform: 'uppercase' }}>Relationships</div>
+                  <div style={{ color: '#64748b', fontSize: 11, textTransform: 'uppercase' }}>Relationships</div>
                   <div style={{ color: '#e2e8f0', fontSize: 28, fontWeight: 700 }}>{cost.totalRelationships}</div>
                 </div>
               </div>
@@ -114,7 +114,7 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
                   display: 'flex', justifyContent: 'space-between',
                 }}>
                   <span style={{ color: '#e2e8f0', fontSize: 13 }}>{b.layer} ({b.agents} agents)</span>
-                  <span style={{ color: '#d4722a', fontWeight: 600 }}>${b.estimatedCost}/mo</span>
+                  <span style={{ color: '#00d9ff', fontWeight: 600 }}>${b.estimatedCost}/mo</span>
                 </div>
               ))}
 
@@ -124,7 +124,7 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
                   {cost.optimizationSuggestions.map((s, i) => (
                     <div key={i} style={{
                       padding: '8px 12px', marginBottom: 6, borderRadius: 8,
-                      background: '#1a1a2e', borderLeft: '3px solid #c8611a', color: '#e09050', fontSize: 13,
+                      background: '#1a1a2e', borderLeft: '3px solid #f59e0b', color: '#fbbf24', fontSize: 13,
                     }}>{s}</div>
                   ))}
                 </>
@@ -141,13 +141,13 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
                   onKeyDown={e => e.key === 'Enter' && runWhatIf()}
                   placeholder="Agent nickname to simulate removing..."
                   style={{
-                    flex: 1, padding: '8px 12px', borderRadius: 6, border: '1px solid #312639',
+                    flex: 1, padding: '8px 12px', borderRadius: 6, border: '1px solid #1e3a5f',
                     background: '#0f1f35', color: '#e2e8f0', fontSize: 13, outline: 'none',
                   }}
                 />
                 <button onClick={runWhatIf} style={{
                   padding: '8px 16px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                  background: '#8A2E3B', color: '#fff', fontWeight: 600, fontSize: 13,
+                  background: '#ef4444', color: '#fff', fontWeight: 600, fontSize: 13,
                 }}>Simulate Removal</button>
               </div>
 
@@ -161,7 +161,7 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{whatIf.scenario}</span>
                       <span style={{
-                        color: whatIf.riskScore >= 70 ? '#A3404F' : whatIf.riskScore >= 40 ? '#e09050' : '#4ade80',
+                        color: whatIf.riskScore >= 70 ? '#f87171' : whatIf.riskScore >= 40 ? '#fbbf24' : '#4ade80',
                         fontWeight: 700,
                       }}>Risk: {whatIf.riskScore}/100</span>
                     </div>
@@ -189,7 +189,7 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
                 </div>
               )}
 
-              {!whatIf && <p style={{ color: '#76677e' }}>Enter an agent nickname and click "Simulate Removal" to see the impact analysis.</p>}
+              {!whatIf && <p style={{ color: '#64748b' }}>Enter an agent nickname and click "Simulate Removal" to see the impact analysis.</p>}
             </div>
           )}
         </div>
@@ -201,7 +201,7 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
 function tabStyle(active: boolean): React.CSSProperties {
   return {
     padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
-    background: active ? '#d4722a' : '#312639',
-    color: active ? '#140e18' : '#94a3b8',
+    background: active ? '#00d9ff' : '#1e3a5f',
+    color: active ? '#0a1628' : '#94a3b8',
   };
 }

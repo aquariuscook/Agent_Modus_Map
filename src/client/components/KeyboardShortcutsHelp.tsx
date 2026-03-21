@@ -33,7 +33,7 @@ export function KeyboardShortcutsHelp({ isOpen, onClose }: Props) {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       <div style={{
-        background: '#140e18', border: '1px solid #312639', borderRadius: 12,
+        background: '#0a1628', border: '1px solid #1e3a5f', borderRadius: 12,
         padding: '24px 32px', maxWidth: 450, width: '90%',
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -44,14 +44,14 @@ export function KeyboardShortcutsHelp({ isOpen, onClose }: Props) {
         {SHORTCUTS.map((s, i) => (
           <div key={i} style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: '6px 0', borderBottom: i < SHORTCUTS.length - 1 ? '1px solid #271d2e' : 'none',
+            padding: '6px 0', borderBottom: i < SHORTCUTS.length - 1 ? '1px solid #1e293b' : 'none',
           }}>
             <span style={{ color: '#94a3b8', fontSize: 13 }}>{s.description}</span>
             <div style={{ display: 'flex', gap: 4 }}>
               {s.keys.map(k => (
                 <kbd key={k} style={{
                   padding: '2px 8px', borderRadius: 4, fontSize: 12, fontWeight: 600,
-                  background: '#271d2e', color: '#e2e8f0', border: '1px solid #334155',
+                  background: '#1e293b', color: '#e2e8f0', border: '1px solid #334155',
                   fontFamily: '"SF Mono", monospace',
                 }}>{k}</kbd>
               ))}

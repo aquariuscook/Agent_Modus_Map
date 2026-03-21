@@ -30,11 +30,11 @@ const agentTemplates: AgentTemplate[] = [
 ];
 
 const categoryColors: Record<string, string> = {
-  'Customer Journey': '#d4722a',
-  'Product & Content': '#b07cc4',
-  'Order Processing': '#5fa878',
-  'Operations': '#d4722a',
-  'Intelligence': '#e09050',
+  'Customer Journey': '#00d9ff',
+  'Product & Content': '#a855f7',
+  'Order Processing': '#22c55e',
+  'Operations': '#00d9ff',
+  'Intelligence': '#fbbf24',
 };
 
 interface AgentPaletteProps {
@@ -65,7 +65,7 @@ export function AgentPalette({ layers, onDragStart, isOpen, onToggle }: AgentPal
       width: isOpen ? 260 : 0,
       height: '100%',
       background: 'rgba(15, 23, 42, 0.97)',
-      borderRight: isOpen ? '1px solid rgba(212, 114, 42, 0.2)' : 'none',
+      borderRight: isOpen ? '1px solid rgba(0, 217, 255, 0.2)' : 'none',
       overflow: 'hidden',
       transition: 'width 0.25s ease',
       zIndex: 20,
@@ -83,9 +83,9 @@ export function AgentPalette({ layers, onDragStart, isOpen, onToggle }: AgentPal
           width: 32,
           height: 32,
           borderRadius: 8,
-          background: '#271d2e',
-          border: '1px solid rgba(212, 114, 42, 0.3)',
-          color: '#d4722a',
+          background: '#1e293b',
+          border: '1px solid rgba(0, 217, 255, 0.3)',
+          color: '#00d9ff',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
@@ -100,7 +100,7 @@ export function AgentPalette({ layers, onDragStart, isOpen, onToggle }: AgentPal
       {isOpen && (
         <>
           <div style={{ padding: '16px 14px 8px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ fontSize: 13, color: '#d4722a', fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
+            <div style={{ fontSize: 13, color: '#00d9ff', fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
               Agent Palette
             </div>
             <input
@@ -112,14 +112,14 @@ export function AgentPalette({ layers, onDragStart, isOpen, onToggle }: AgentPal
                 width: '100%',
                 padding: '6px 10px',
                 borderRadius: 6,
-                border: '1px solid rgba(212, 114, 42, 0.2)',
+                border: '1px solid rgba(0, 217, 255, 0.2)',
                 background: 'rgba(0, 0, 0, 0.3)',
                 color: '#fff',
                 fontSize: 12,
                 outline: 'none',
               }}
             />
-            <div style={{ fontSize: 11, color: '#b5adb9', marginTop: 6 }}>
+            <div style={{ fontSize: 11, color: '#8b9dc3', marginTop: 6 }}>
               Drag an agent onto the canvas
             </div>
           </div>
@@ -128,7 +128,7 @@ export function AgentPalette({ layers, onDragStart, isOpen, onToggle }: AgentPal
             {categories.map(category => {
               const items = filtered.filter(t => t.category === category);
               if (items.length === 0) return null;
-              const color = categoryColors[category] || '#b5adb9';
+              const color = categoryColors[category] || '#8b9dc3';
 
               return (
                 <div key={category} style={{ marginBottom: 14 }}>
@@ -171,7 +171,7 @@ export function AgentPalette({ layers, onDragStart, isOpen, onToggle }: AgentPal
                       }}
                     >
                       <div style={{ fontSize: 13, color: '#fff', fontWeight: 600 }}>{template.nickname}</div>
-                      <div style={{ fontSize: 10, color: '#968a9c', fontStyle: 'italic' }}>"{template.descriptor}"</div>
+                      <div style={{ fontSize: 10, color: '#a0aec0', fontStyle: 'italic' }}>"{template.descriptor}"</div>
                       <div style={{ display: 'flex', gap: 3, marginTop: 4, flexWrap: 'wrap' }}>
                         {template.badges.slice(0, 3).map(b => (
                           <span key={b} style={{
@@ -179,7 +179,7 @@ export function AgentPalette({ layers, onDragStart, isOpen, onToggle }: AgentPal
                             padding: '1px 5px',
                             borderRadius: 6,
                             background: 'rgba(255,255,255,0.08)',
-                            color: '#b5adb9',
+                            color: '#8b9dc3',
                           }}>
                             {b.replace('_', ' ')}
                           </span>

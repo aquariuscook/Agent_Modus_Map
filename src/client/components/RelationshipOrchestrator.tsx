@@ -10,10 +10,10 @@ interface Props {
 }
 
 const REL_COLORS: Record<RelationshipType, string> = {
-  dependsOn: '#d4722a',
-  feedsInto: '#b07cc4',
-  collaboratesWith: '#e09050',
-  canOverride: '#8A2E3B',
+  dependsOn: '#00d9ff',
+  feedsInto: '#a855f7',
+  collaboratesWith: '#fbbf24',
+  canOverride: '#ef4444',
 };
 
 const REL_LABELS: Record<RelationshipType, string> = {
@@ -87,7 +87,7 @@ export function RelationshipOrchestrator({ swarm, isOpen, onToggle, onCreateRela
   return (
     <div style={{
       position: 'absolute', bottom: 0, left: 0, right: 0, height: 280,
-      background: 'rgba(15, 23, 42, 0.97)', borderTop: '2px solid rgba(212,114,42,0.3)',
+      background: 'rgba(15, 23, 42, 0.97)', borderTop: '2px solid rgba(0,217,255,0.3)',
       zIndex: 20, display: 'flex', flexDirection: 'column',
       animation: 'slideUpOrch 0.2s ease',
     }}>
@@ -99,12 +99,12 @@ export function RelationshipOrchestrator({ swarm, isOpen, onToggle, onCreateRela
           {(['quick', 'pipeline', 'bulk', 'existing'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600,
-              background: tab === t ? '#d4722a' : 'rgba(255,255,255,0.06)',
-              color: tab === t ? '#140e18' : '#76677e',
+              background: tab === t ? '#00d9ff' : 'rgba(255,255,255,0.06)',
+              color: tab === t ? '#0a1628' : '#64748b',
             }}>{t === 'quick' ? 'Quick Connect' : t === 'pipeline' ? 'Pipeline Builder' : t === 'bulk' ? 'Bulk / Suggest' : 'Existing'}</button>
           ))}
         </div>
-        <button onClick={onToggle} style={{ background: 'none', border: 'none', color: '#76677e', cursor: 'pointer', fontSize: 16 }}>X</button>
+        <button onClick={onToggle} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 16 }}>X</button>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
@@ -133,8 +133,8 @@ export function RelationshipOrchestrator({ swarm, isOpen, onToggle, onCreateRela
             </div>
             <button onClick={handleQuickConnect} disabled={!sourceNickname || !targetNickname} style={{
               padding: '8px 20px', borderRadius: 6, border: 'none', cursor: 'pointer',
-              background: sourceNickname && targetNickname ? '#d4722a' : '#271d2e',
-              color: sourceNickname && targetNickname ? '#140e18' : '#475569',
+              background: sourceNickname && targetNickname ? '#00d9ff' : '#1e293b',
+              color: sourceNickname && targetNickname ? '#0a1628' : '#475569',
               fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap',
             }}>Connect</button>
           </div>
@@ -150,15 +150,15 @@ export function RelationshipOrchestrator({ swarm, isOpen, onToggle, onCreateRela
               {pipelineAgents.map((name, i) => (
                 <React.Fragment key={i}>
                   <span style={{
-                    padding: '4px 10px', borderRadius: 8, background: '#271d2e',
-                    color: '#d4722a', fontSize: 12, fontWeight: 600, border: '1px solid #d4722a30',
+                    padding: '4px 10px', borderRadius: 8, background: '#1e293b',
+                    color: '#00d9ff', fontSize: 12, fontWeight: 600, border: '1px solid #00d9ff30',
                   }}>
                     {name}
                     <button onClick={() => setPipelineAgents(pipelineAgents.filter((_, j) => j !== i))} style={{
-                      background: 'none', border: 'none', color: '#8A2E3B', cursor: 'pointer', marginLeft: 6, fontSize: 12,
+                      background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', marginLeft: 6, fontSize: 12,
                     }}>x</button>
                   </span>
-                  {i < pipelineAgents.length - 1 && <span style={{ color: '#b07cc4', fontSize: 16, alignSelf: 'center' }}>{'→'}</span>}
+                  {i < pipelineAgents.length - 1 && <span style={{ color: '#a855f7', fontSize: 16, alignSelf: 'center' }}>{'→'}</span>}
                 </React.Fragment>
               ))}
             </div>
@@ -169,7 +169,7 @@ export function RelationshipOrchestrator({ swarm, isOpen, onToggle, onCreateRela
               </select>
               <button onClick={handlePipelineCreate} disabled={pipelineAgents.length < 2} style={{
                 padding: '8px 20px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                background: pipelineAgents.length >= 2 ? '#b07cc4' : '#271d2e',
+                background: pipelineAgents.length >= 2 ? '#a855f7' : '#1e293b',
                 color: pipelineAgents.length >= 2 ? '#fff' : '#475569',
                 fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap',
               }}>Create Pipeline ({Math.max(0, pipelineAgents.length - 1)} connections)</button>
@@ -182,7 +182,7 @@ export function RelationshipOrchestrator({ swarm, isOpen, onToggle, onCreateRela
           <div>
             {suggestions.length > 0 && (
               <>
-                <p style={{ color: '#e09050', fontSize: 12, fontWeight: 600, marginBottom: 8 }}>Suggested Connections</p>
+                <p style={{ color: '#fbbf24', fontSize: 12, fontWeight: 600, marginBottom: 8 }}>Suggested Connections</p>
                 {suggestions.slice(0, 6).map((s, i) => (
                   <div key={i} style={{
                     display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
@@ -191,21 +191,21 @@ export function RelationshipOrchestrator({ swarm, isOpen, onToggle, onCreateRela
                     <span style={{ color: '#e2e8f0', fontSize: 12, fontWeight: 600 }}>{s.source}</span>
                     <span style={{ color: REL_COLORS[s.type], fontSize: 11 }}>{REL_LABELS[s.type]}</span>
                     <span style={{ color: '#e2e8f0', fontSize: 12, fontWeight: 600 }}>{s.target}</span>
-                    <span style={{ color: '#76677e', fontSize: 10, flex: 1 }}>{s.reason}</span>
+                    <span style={{ color: '#64748b', fontSize: 10, flex: 1 }}>{s.reason}</span>
                     <button onClick={() => {
                       const src = agentMap.get(s.source);
                       const tgt = agentMap.get(s.target);
                       if (src && tgt) onCreateRelationship(src.id, tgt.id, s.type);
                     }} style={{
                       padding: '3px 10px', borderRadius: 4, border: 'none', cursor: 'pointer',
-                      background: '#5fa878', color: '#fff', fontSize: 10, fontWeight: 700,
+                      background: '#22c55e', color: '#fff', fontSize: 10, fontWeight: 700,
                     }}>Add</button>
                   </div>
                 ))}
               </>
             )}
             {suggestions.length === 0 && (
-              <p style={{ color: '#76677e', fontSize: 12 }}>No suggestions. Your agents are well-connected based on their badges and layers.</p>
+              <p style={{ color: '#64748b', fontSize: 12 }}>No suggestions. Your agents are well-connected based on their badges and layers.</p>
             )}
           </div>
         )}
@@ -228,7 +228,7 @@ export function RelationshipOrchestrator({ swarm, isOpen, onToggle, onCreateRela
                   <span style={{ color: '#e2e8f0', fontSize: 12, fontWeight: 600 }}>{target.nickname}</span>
                   <div style={{ flex: 1 }} />
                   <button onClick={() => onDeleteRelationship(rel.id)} style={{
-                    background: 'none', border: 'none', color: '#8A2E3B', cursor: 'pointer', fontSize: 12,
+                    background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 12,
                   }}>x</button>
                 </div>
               );
@@ -240,5 +240,5 @@ export function RelationshipOrchestrator({ swarm, isOpen, onToggle, onCreateRela
   );
 }
 
-const lbl: React.CSSProperties = { fontSize: 10, color: '#76677e', textTransform: 'uppercase', display: 'block', marginBottom: 4 };
+const lbl: React.CSSProperties = { fontSize: 10, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: 4 };
 const sel: React.CSSProperties = { width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.3)', color: '#fff', fontSize: 12, outline: 'none', cursor: 'pointer' };

@@ -115,7 +115,7 @@ function parseAndImportCSV(
   }
 
   // Default layer colors
-  const layerColors = ['#d4722a', '#b07cc4', '#5fa878', '#e09050', '#8A2E3B', '#06b6d4', '#ec4899', '#f97316'];
+  const layerColors = ['#00d9ff', '#a855f7', '#22c55e', '#fbbf24', '#ef4444', '#06b6d4', '#ec4899', '#f97316'];
   const layerArr = [...layerNames].map((name, i) => ({
     name,
     colorTheme: layerColors[i % layerColors.length],

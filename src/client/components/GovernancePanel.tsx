@@ -10,12 +10,12 @@ interface Props {
 
 const ACTION_COLORS: Record<string, string> = {
   'agent.created': '#10b981',
-  'agent.updated': '#9254a8',
-  'agent.deleted': '#8A2E3B',
+  'agent.updated': '#3b82f6',
+  'agent.deleted': '#ef4444',
   'relationship.created': '#10b981',
-  'relationship.deleted': '#8A2E3B',
+  'relationship.deleted': '#ef4444',
   'swarm.created': '#8b5cf6',
-  'swarm.imported': '#c8611a',
+  'swarm.imported': '#f59e0b',
   'swarm.exported': '#06b6d4',
 };
 
@@ -38,11 +38,11 @@ export function GovernancePanel({ swarmId, isOpen, onClose }: Props) {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       <div style={{
-        background: '#140e18', border: '1px solid #312639', borderRadius: 12,
+        background: '#0a1628', border: '1px solid #1e3a5f', borderRadius: 12,
         width: '90%', maxWidth: 800, maxHeight: '85vh', overflow: 'hidden',
         display: 'flex', flexDirection: 'column',
       }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #312639', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #1e3a5f', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
             <h2 style={{ margin: 0, color: '#e2e8f0', fontSize: 18 }}>Governance</h2>
             <div style={{ display: 'flex', gap: 4 }}>
@@ -56,7 +56,7 @@ export function GovernancePanel({ swarmId, isOpen, onClose }: Props) {
         <div style={{ flex: 1, overflow: 'auto', padding: 20 }}>
           {tab === 'audit' && (
             <div>
-              {audit.length === 0 && <p style={{ color: '#76677e' }}>No audit entries yet. Actions on the swarm will be logged here.</p>}
+              {audit.length === 0 && <p style={{ color: '#64748b' }}>No audit entries yet. Actions on the swarm will be logged here.</p>}
               {audit.map(entry => (
                 <div key={entry.id} style={{
                   padding: '10px 14px', marginBottom: 8, borderRadius: 8, background: '#0f1f35',
@@ -64,13 +64,13 @@ export function GovernancePanel({ swarmId, isOpen, onClose }: Props) {
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ color: '#e2e8f0', fontSize: 13, fontWeight: 600 }}>{entry.action}</span>
-                    <span style={{ color: '#76677e', fontSize: 11 }}>{new Date(entry.timestamp).toLocaleString()}</span>
+                    <span style={{ color: '#64748b', fontSize: 11 }}>{new Date(entry.timestamp).toLocaleString()}</span>
                   </div>
                   <div style={{ color: '#94a3b8', fontSize: 12, marginTop: 4 }}>
                     by {entry.userName}
                   </div>
                   {Object.keys(entry.details).length > 0 && (
-                    <pre style={{ color: '#76677e', fontSize: 11, marginTop: 6, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+                    <pre style={{ color: '#64748b', fontSize: 11, marginTop: 6, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
                       {JSON.stringify(entry.details, null, 2)}
                     </pre>
                   )}
@@ -87,7 +87,7 @@ export function GovernancePanel({ swarmId, isOpen, onClose }: Props) {
                 border: `1px solid ${compliance.status === 'compliant' ? '#16a34a' : compliance.status === 'partial' ? '#d97706' : '#dc2626'}`,
               }}>
                 <div style={{
-                  color: compliance.status === 'compliant' ? '#4ade80' : compliance.status === 'partial' ? '#e09050' : '#A3404F',
+                  color: compliance.status === 'compliant' ? '#4ade80' : compliance.status === 'partial' ? '#fbbf24' : '#f87171',
                   fontSize: 16, fontWeight: 700, textTransform: 'uppercase',
                 }}>
                   {compliance.status}
@@ -127,7 +127,7 @@ export function GovernancePanel({ swarmId, isOpen, onClose }: Props) {
 function tabStyle(active: boolean): React.CSSProperties {
   return {
     padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
-    background: active ? '#d4722a' : '#312639',
-    color: active ? '#140e18' : '#94a3b8',
+    background: active ? '#00d9ff' : '#1e3a5f',
+    color: active ? '#0a1628' : '#94a3b8',
   };
 }

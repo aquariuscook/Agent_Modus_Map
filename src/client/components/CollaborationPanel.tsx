@@ -53,11 +53,11 @@ export function CollaborationPanel({ swarmId, swarm, isOpen, onClose }: Props) {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       <div style={{
-        background: '#140e18', border: '1px solid #312639', borderRadius: 12,
+        background: '#0a1628', border: '1px solid #1e3a5f', borderRadius: 12,
         width: '90%', maxWidth: 700, maxHeight: '85vh', overflow: 'hidden',
         display: 'flex', flexDirection: 'column',
       }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #312639', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #1e3a5f', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
             <h2 style={{ margin: 0, color: '#e2e8f0', fontSize: 18 }}>Collaboration</h2>
             <div style={{ display: 'flex', gap: 4 }}>
@@ -82,29 +82,29 @@ export function CollaborationPanel({ swarmId, swarm, isOpen, onClose }: Props) {
                   onKeyDown={e => e.key === 'Enter' && handleAddComment()}
                   placeholder="Add a comment..."
                   style={{
-                    flex: 1, padding: '8px 12px', borderRadius: 6, border: '1px solid #312639',
+                    flex: 1, padding: '8px 12px', borderRadius: 6, border: '1px solid #1e3a5f',
                     background: '#0f1f35', color: '#e2e8f0', fontSize: 13, outline: 'none',
                   }}
                 />
                 <button onClick={handleAddComment} style={{
                   padding: '8px 16px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                  background: '#d4722a', color: '#140e18', fontWeight: 600, fontSize: 13,
+                  background: '#00d9ff', color: '#0a1628', fontWeight: 600, fontSize: 13,
                 }}>Post</button>
               </div>
 
-              {comments.length === 0 && <p style={{ color: '#76677e' }}>No comments yet. Start a conversation about this swarm design.</p>}
+              {comments.length === 0 && <p style={{ color: '#64748b' }}>No comments yet. Start a conversation about this swarm design.</p>}
               {comments.map(c => (
                 <div key={c.id} style={{
                   padding: '10px 14px', marginBottom: 8, borderRadius: 8, background: '#0f1f35',
                   opacity: c.resolved ? 0.5 : 1,
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#d4722a', fontSize: 12, fontWeight: 600 }}>{c.userName}</span>
+                    <span style={{ color: '#00d9ff', fontSize: 12, fontWeight: 600 }}>{c.userName}</span>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <span style={{ color: '#76677e', fontSize: 11 }}>{new Date(c.timestamp).toLocaleString()}</span>
+                      <span style={{ color: '#64748b', fontSize: 11 }}>{new Date(c.timestamp).toLocaleString()}</span>
                       {!c.resolved && (
                         <button onClick={() => handleResolve(c.id)} style={{
-                          background: 'none', border: '1px solid #312639', color: '#76677e',
+                          background: 'none', border: '1px solid #1e3a5f', color: '#64748b',
                           padding: '2px 8px', borderRadius: 4, cursor: 'pointer', fontSize: 11,
                         }}>Resolve</button>
                       )}
@@ -121,21 +121,21 @@ export function CollaborationPanel({ swarmId, swarm, isOpen, onClose }: Props) {
             <div>
               <button onClick={handleSaveVersion} style={{
                 padding: '8px 16px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                background: '#d4722a', color: '#140e18', fontWeight: 600, fontSize: 13, marginBottom: 16,
+                background: '#00d9ff', color: '#0a1628', fontWeight: 600, fontSize: 13, marginBottom: 16,
               }}>Save Current Version</button>
 
-              {versions.length === 0 && <p style={{ color: '#76677e' }}>No versions saved yet. Save a snapshot to track changes over time.</p>}
+              {versions.length === 0 && <p style={{ color: '#64748b' }}>No versions saved yet. Save a snapshot to track changes over time.</p>}
               {versions.map(v => (
                 <div key={v.id} style={{
                   padding: '10px 14px', marginBottom: 8, borderRadius: 8, background: '#0f1f35',
-                  border: '1px solid #312639',
+                  border: '1px solid #1e3a5f',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#d4722a', fontWeight: 600 }}>v{v.version}</span>
-                    <span style={{ color: '#76677e', fontSize: 11 }}>{new Date(v.timestamp).toLocaleString()}</span>
+                    <span style={{ color: '#00d9ff', fontWeight: 600 }}>v{v.version}</span>
+                    <span style={{ color: '#64748b', fontSize: 11 }}>{new Date(v.timestamp).toLocaleString()}</span>
                   </div>
                   <div style={{ color: '#e2e8f0', fontSize: 13, marginTop: 4 }}>{v.changeDescription || 'No description'}</div>
-                  <div style={{ color: '#76677e', fontSize: 11, marginTop: 4 }}>by {v.userName}</div>
+                  <div style={{ color: '#64748b', fontSize: 11, marginTop: 4 }}>by {v.userName}</div>
                 </div>
               ))}
             </div>
@@ -149,7 +149,7 @@ export function CollaborationPanel({ swarmId, swarm, isOpen, onClose }: Props) {
 function tabStyle(active: boolean): React.CSSProperties {
   return {
     padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
-    background: active ? '#d4722a' : '#312639',
-    color: active ? '#140e18' : '#94a3b8',
+    background: active ? '#00d9ff' : '#1e3a5f',
+    color: active ? '#0a1628' : '#94a3b8',
   };
 }

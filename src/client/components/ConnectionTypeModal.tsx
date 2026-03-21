@@ -2,10 +2,10 @@ import React from 'react';
 import type { RelationshipType } from '../../shared/types/index.js';
 
 const types: Array<{ type: RelationshipType; label: string; color: string; description: string }> = [
-  { type: 'dependsOn', label: 'Depends On', color: '#d4722a', description: 'Source requires data or services from target' },
+  { type: 'dependsOn', label: 'Depends On', color: '#00d9ff', description: 'Source requires data or services from target' },
   { type: 'feedsInto', label: 'Feeds Into', color: '#7c3aed', description: 'Source sends output to target for processing' },
-  { type: 'collaboratesWith', label: 'Collaborates With', color: '#e09050', description: 'Agents coordinate as peers' },
-  { type: 'canOverride', label: 'Can Override', color: '#8A2E3B', description: 'Source has authority to block or supersede target' },
+  { type: 'collaboratesWith', label: 'Collaborates With', color: '#fbbf24', description: 'Agents coordinate as peers' },
+  { type: 'canOverride', label: 'Can Override', color: '#ef4444', description: 'Source has authority to block or supersede target' },
 ];
 
 interface ConnectionTypeModalProps {
@@ -32,15 +32,15 @@ export function ConnectionTypeModal({ onSelect, onCancel }: ConnectionTypeModalP
     >
       <div
         style={{
-          background: 'linear-gradient(145deg, #271d2e, #1e1524)',
-          border: '2px solid rgba(212, 114, 42, 0.3)',
+          background: 'linear-gradient(145deg, #1e293b, #0f172a)',
+          border: '2px solid rgba(0, 217, 255, 0.3)',
           borderRadius: 16,
           padding: 24,
           width: 340,
         }}
         onClick={e => e.stopPropagation()}
       >
-        <h3 style={{ color: '#d4722a', fontSize: 16, marginBottom: 16, textAlign: 'center' }}>
+        <h3 style={{ color: '#00d9ff', fontSize: 16, marginBottom: 16, textAlign: 'center' }}>
           Select Relationship Type
         </h3>
 
@@ -68,7 +68,7 @@ export function ConnectionTypeModal({ onSelect, onCancel }: ConnectionTypeModalP
               }}
             >
               <div style={{ color: t.color, fontWeight: 600, fontSize: 14 }}>{t.label}</div>
-              <div style={{ color: '#b5adb9', fontSize: 11, marginTop: 2 }}>{t.description}</div>
+              <div style={{ color: '#8b9dc3', fontSize: 11, marginTop: 2 }}>{t.description}</div>
             </button>
           ))}
         </div>
@@ -82,7 +82,7 @@ export function ConnectionTypeModal({ onSelect, onCancel }: ConnectionTypeModalP
             borderRadius: 8,
             border: '1px solid rgba(255,255,255,0.15)',
             background: 'transparent',
-            color: '#b5adb9',
+            color: '#8b9dc3',
             cursor: 'pointer',
             fontSize: 12,
           }}

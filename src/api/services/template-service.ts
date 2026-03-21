@@ -37,10 +37,10 @@ const templates: SwarmTemplate[] = [
     layerCount: 4,
     tags: ['customer-service', 'support', 'escalation', 'sentiment'],
     layers: [
-      { name: 'Intake & Triage', colorTheme: '#5fa878', order: 1 },
-      { name: 'Resolution', colorTheme: '#b07cc4', order: 2 },
-      { name: 'Escalation & Oversight', colorTheme: '#5fa878', order: 3 },
-      { name: 'Analytics & Learning', colorTheme: '#e09050', order: 4 },
+      { name: 'Intake & Triage', colorTheme: '#22c55e', order: 1 },
+      { name: 'Resolution', colorTheme: '#a855f7', order: 2 },
+      { name: 'Escalation & Oversight', colorTheme: '#22c55e', order: 3 },
+      { name: 'Analytics & Learning', colorTheme: '#fbbf24', order: 4 },
     ],
     agents: [
       { nickname: 'Portal', formalName: 'Interface-Intake-Multichannel', descriptor: 'The Front Door', layerIndex: 0, badges: ['ENTRY', 'AUTO'], positionIndex: 0 },
@@ -84,10 +84,10 @@ const templates: SwarmTemplate[] = [
     layerCount: 4,
     tags: ['content', 'media', 'marketing', 'publishing', 'seo'],
     layers: [
-      { name: 'Content Creation', colorTheme: '#b07cc4', order: 1 },
-      { name: 'Review & Compliance', colorTheme: '#5fa878', order: 2 },
-      { name: 'Optimization & Distribution', colorTheme: '#5fa878', order: 3 },
-      { name: 'Analytics & Performance', colorTheme: '#e09050', order: 4 },
+      { name: 'Content Creation', colorTheme: '#a855f7', order: 1 },
+      { name: 'Review & Compliance', colorTheme: '#22c55e', order: 2 },
+      { name: 'Optimization & Distribution', colorTheme: '#22c55e', order: 3 },
+      { name: 'Analytics & Performance', colorTheme: '#fbbf24', order: 4 },
     ],
     agents: [
       { nickname: 'Brief', formalName: 'Workflow-ContentBrief-Intake', descriptor: 'The Planner', layerIndex: 0, badges: ['ENTRY', 'AUTO'], positionIndex: 0 },
@@ -126,10 +126,10 @@ const templates: SwarmTemplate[] = [
     layerCount: 4,
     tags: ['devops', 'cicd', 'deployment', 'monitoring', 'automation'],
     layers: [
-      { name: 'Source & Build', colorTheme: '#9254a8', order: 1 },
-      { name: 'Test & Quality', colorTheme: '#b07cc4', order: 2 },
-      { name: 'Deploy & Release', colorTheme: '#5fa878', order: 3 },
-      { name: 'Monitor & Respond', colorTheme: '#8A2E3B', order: 4 },
+      { name: 'Source & Build', colorTheme: '#3b82f6', order: 1 },
+      { name: 'Test & Quality', colorTheme: '#a855f7', order: 2 },
+      { name: 'Deploy & Release', colorTheme: '#22c55e', order: 3 },
+      { name: 'Monitor & Respond', colorTheme: '#ef4444', order: 4 },
     ],
     agents: [
       { nickname: 'Watcher', formalName: 'Source-Git-WebhookListener', descriptor: 'The Trigger', layerIndex: 0, badges: ['ENTRY', 'ALWAYS_ON'], positionIndex: 0 },
@@ -170,8 +170,8 @@ const templates: SwarmTemplate[] = [
     layers: [
       { name: 'Ingestion', colorTheme: '#06b6d4', order: 1 },
       { name: 'Processing & Quality', colorTheme: '#8b5cf6', order: 2 },
-      { name: 'Storage & Serving', colorTheme: '#5fa878', order: 3 },
-      { name: 'Analytics & Intelligence', colorTheme: '#e09050', order: 4 },
+      { name: 'Storage & Serving', colorTheme: '#22c55e', order: 3 },
+      { name: 'Analytics & Intelligence', colorTheme: '#fbbf24', order: 4 },
     ],
     agents: [
       { nickname: 'Collector', formalName: 'Ingest-Source-Connector', descriptor: 'The Gatherer', layerIndex: 0, badges: ['ENTRY', 'ALWAYS_ON'], positionIndex: 0 },
@@ -212,9 +212,9 @@ const templates: SwarmTemplate[] = [
     layerCount: 3,
     tags: ['security', 'soc', 'incident-response', 'compliance', 'threat-detection'],
     layers: [
-      { name: 'Detection & Monitoring', colorTheme: '#8A2E3B', order: 1 },
-      { name: 'Analysis & Response', colorTheme: '#c8611a', order: 2 },
-      { name: 'Governance & Compliance', colorTheme: '#5fa878', order: 3 },
+      { name: 'Detection & Monitoring', colorTheme: '#ef4444', order: 1 },
+      { name: 'Analysis & Response', colorTheme: '#f59e0b', order: 2 },
+      { name: 'Governance & Compliance', colorTheme: '#22c55e', order: 3 },
     ],
     agents: [
       { nickname: 'Sentinel', formalName: 'Detect-SIEM-Collector', descriptor: 'The Watcher', layerIndex: 0, badges: ['ENTRY', 'ALWAYS_ON', 'CRITICAL'], positionIndex: 0 },
@@ -248,9 +248,9 @@ const templates: SwarmTemplate[] = [
     layerCount: 3,
     tags: ['research', 'knowledge', 'rag', 'fact-check', 'synthesis'],
     layers: [
-      { name: 'Discovery & Gathering', colorTheme: '#9254a8', order: 1 },
-      { name: 'Analysis & Synthesis', colorTheme: '#b07cc4', order: 2 },
-      { name: 'Output & Review', colorTheme: '#5fa878', order: 3 },
+      { name: 'Discovery & Gathering', colorTheme: '#3b82f6', order: 1 },
+      { name: 'Analysis & Synthesis', colorTheme: '#a855f7', order: 2 },
+      { name: 'Output & Review', colorTheme: '#22c55e', order: 3 },
     ],
     agents: [
       { nickname: 'Query', formalName: 'Discovery-Query-Parser', descriptor: 'The Listener', layerIndex: 0, badges: ['ENTRY', 'AUTO'], positionIndex: 0 },
@@ -284,7 +284,7 @@ const templates: SwarmTemplate[] = [
     layers: [
       { name: 'Lead Generation', colorTheme: '#06b6d4', order: 1 },
       { name: 'Pipeline Management', colorTheme: '#8b5cf6', order: 2 },
-      { name: 'Intelligence & Reporting', colorTheme: '#e09050', order: 3 },
+      { name: 'Intelligence & Reporting', colorTheme: '#fbbf24', order: 3 },
     ],
     agents: [
       { nickname: 'Prospect', formalName: 'Lead-Source-Identifier', descriptor: 'The Hunter', layerIndex: 0, badges: ['ENTRY', 'AUTO'], positionIndex: 0 },
@@ -318,9 +318,9 @@ const templates: SwarmTemplate[] = [
     layerCount: 3,
     tags: ['hr', 'onboarding', 'training', 'compliance', 'employee'],
     layers: [
-      { name: 'Intake & Processing', colorTheme: '#9254a8', order: 1 },
-      { name: 'Setup & Training', colorTheme: '#5fa878', order: 2 },
-      { name: 'Tracking & Compliance', colorTheme: '#c8611a', order: 3 },
+      { name: 'Intake & Processing', colorTheme: '#3b82f6', order: 1 },
+      { name: 'Setup & Training', colorTheme: '#22c55e', order: 2 },
+      { name: 'Tracking & Compliance', colorTheme: '#f59e0b', order: 3 },
     ],
     agents: [
       { nickname: 'Hire', formalName: 'Intake-NewHire-Register', descriptor: 'The Welcome Mat', layerIndex: 0, badges: ['ENTRY', 'AUTO'], positionIndex: 0 },

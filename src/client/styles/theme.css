@@ -1,4 +1,4 @@
-/* Agent Modus Design Tokens - Warm Plum + Toasted Pumpkin + Sage + Oxblood */
+/* Agent Modus Design Tokens - Gem Tone Palette on Warm Plum + Outfit Font */
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
@@ -34,75 +34,43 @@
   --radius-xl: 20px;
   --radius-full: 9999px;
 
-  /* Plum - Brand Identity (warm earthy purple) */
-  --plum-900: #1f0e28;
-  --plum-800: #3a1a4a;
-  --plum-700: #5c2d6e;
-  --plum-600: #7a3d8f;
-  --plum-500: #9254a8;
-  --plum-400: #b07cc4;
-  --plum-300: #cba4d9;
-  --plum-glow: rgba(146, 84, 168, 0.15);
+  /* Gem Tone Palette (original) */
+  --gem-cyan-900: #003d3a;
+  --gem-cyan-700: #007a72;
+  --gem-cyan-500: #00c8b8;
+  --gem-cyan-400: #22d3c8;
+  --gem-cyan-300: #5eead4;
+  --gem-cyan-glow: rgba(0, 200, 184, 0.25);
 
-  /* Toasted Pumpkin - Primary Action */
-  --pumpkin-700: #9a3412;
-  --pumpkin-600: #b45216;
-  --pumpkin-500: #c8611a;
-  --pumpkin-400: #d4722a;
-  --pumpkin-300: #e09050;
-  --pumpkin-200: #edb882;
-  --pumpkin-glow: rgba(212, 114, 42, 0.15);
+  --gem-sapphire-500: #3b82f6;
+  --gem-sapphire-400: #60a5fa;
+  --gem-sapphire-glow: rgba(59, 130, 246, 0.25);
 
-  /* Sage - Cool Accent */
-  --sage-600: #3d6b4f;
-  --sage-500: #4d8b62;
-  --sage-400: #5fa878;
-  --sage-300: #88c49e;
-  --sage-glow: rgba(95, 168, 120, 0.12);
+  --gem-amethyst-700: #7c3aed;
+  --gem-amethyst-500: #8b5cf6;
+  --gem-amethyst-400: #a78bfa;
+  --gem-amethyst-glow: rgba(139, 92, 246, 0.25);
 
-  /* Oxblood - Alerts Only */
-  --oxblood-700: #6B1D2A;
-  --oxblood-500: #8A2E3B;
-  --oxblood-400: #A3404F;
-  --oxblood-glow: rgba(107, 29, 42, 0.25);
+  --gem-emerald-500: #10b981;
+  --gem-emerald-400: #34d399;
+  --gem-emerald-glow: rgba(16, 185, 129, 0.25);
 
-  /* Legacy gem aliases (for components that still reference them) */
-  --gem-cyan-900: var(--sage-600);
-  --gem-cyan-700: var(--sage-600);
-  --gem-cyan-500: var(--sage-500);
-  --gem-cyan-400: var(--sage-400);
-  --gem-cyan-300: var(--sage-300);
-  --gem-cyan-glow: var(--sage-glow);
+  --gem-amber-500: #f59e0b;
+  --gem-amber-400: #fbbf24;
+  --gem-amber-glow: rgba(245, 158, 11, 0.25);
 
-  --gem-sapphire-500: var(--plum-600);
-  --gem-sapphire-400: var(--plum-500);
-  --gem-sapphire-glow: var(--plum-glow);
-
-  --gem-amethyst-700: var(--plum-700);
-  --gem-amethyst-500: var(--plum-500);
-  --gem-amethyst-400: var(--plum-400);
-  --gem-amethyst-glow: var(--plum-glow);
-
-  --gem-emerald-500: var(--sage-500);
-  --gem-emerald-400: var(--sage-400);
-  --gem-emerald-glow: var(--sage-glow);
-
-  --gem-amber-500: var(--pumpkin-500);
-  --gem-amber-400: var(--pumpkin-400);
-  --gem-amber-glow: var(--pumpkin-glow);
-
-  --gem-ruby-500: var(--oxblood-500);
-  --gem-ruby-400: var(--oxblood-400);
-  --gem-ruby-glow: var(--oxblood-glow);
+  --gem-ruby-500: #ef4444;
+  --gem-ruby-400: #f87171;
+  --gem-ruby-glow: rgba(239, 68, 68, 0.25);
 
   /* Status */
-  --status-active: var(--sage-400);
-  --status-warning: var(--pumpkin-400);
-  --status-error: var(--oxblood-500);
-  --status-idle: #6b6478;
+  --status-active: var(--gem-emerald-400);
+  --status-warning: var(--gem-amber-400);
+  --status-error: var(--gem-ruby-400);
+  --status-idle: #64748b;
 }
 
-/* Dark Mode (default) */
+/* Dark Mode (default) - Warm Plum backgrounds with Gem Tones */
 [data-theme="dark"] {
   --bg-base: #140e18;
   --bg-subtle: #1a1320;
@@ -113,30 +81,29 @@
   --border-subtle: rgba(255, 255, 255, 0.05);
   --border-default: rgba(255, 255, 255, 0.09);
   --border-strong: rgba(255, 255, 255, 0.15);
-  --border-accent: rgba(146, 84, 168, 0.35);
+  --border-accent: rgba(0, 200, 184, 0.35);
 
-  --text-primary: #eeebed;
-  --text-secondary: #b5adb9;
-  --text-tertiary: #76677e;
-  --text-disabled: #423449;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-tertiary: #64748b;
+  --text-disabled: #334155;
   --text-inverse: #140e18;
-  --text-accent: var(--pumpkin-400);
+  --text-accent: var(--gem-cyan-400);
 
-  --accent-primary: var(--pumpkin-500);
-  --accent-primary-hover: var(--pumpkin-400);
-  --accent-primary-muted: rgba(212, 114, 42, 0.12);
+  --accent-primary: var(--gem-cyan-500);
+  --accent-primary-hover: var(--gem-cyan-400);
+  --accent-primary-muted: rgba(0, 200, 184, 0.12);
 
   --scrollbar-track: #1e1524;
   --scrollbar-thumb: #312639;
 
-  /* Logo colors */
-  --logo-sage: var(--sage-400);
-  --logo-plum: var(--plum-400);
-  /* Legacy logo aliases */
-  --logo-cyan: var(--sage-400);
-  --logo-amethyst: var(--plum-400);
-  --logo-sapphire: var(--plum-600);
-  --logo-emerald: var(--sage-500);
+  /* Logo colors - 500 level (AAA on dark bg) */
+  --logo-cyan: #00c8b8;
+  --logo-amethyst: #8b5cf6;
+  --logo-sapphire: #3b82f6;
+  --logo-emerald: #10b981;
+  --logo-sage: #00c8b8;
+  --logo-plum: #8b5cf6;
 
   color-scheme: dark;
 }
@@ -152,30 +119,29 @@
   --border-subtle: rgba(0, 0, 0, 0.05);
   --border-default: rgba(0, 0, 0, 0.09);
   --border-strong: rgba(0, 0, 0, 0.15);
-  --border-accent: rgba(122, 61, 143, 0.35);
+  --border-accent: rgba(0, 150, 138, 0.35);
 
-  --text-primary: #1a0e22;
-  --text-secondary: #5a4a62;
-  --text-tertiary: #968a9c;
-  --text-disabled: #d8d3db;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #94a3b8;
+  --text-disabled: #cbd5e1;
   --text-inverse: #ffffff;
-  --text-accent: var(--pumpkin-600);
+  --text-accent: #007a72;
 
-  --accent-primary: var(--pumpkin-600);
-  --accent-primary-hover: var(--pumpkin-500);
-  --accent-primary-muted: rgba(180, 82, 22, 0.1);
+  --accent-primary: #009990;
+  --accent-primary-hover: #007a72;
+  --accent-primary-muted: rgba(0, 153, 144, 0.1);
 
   --scrollbar-track: #efedf1;
   --scrollbar-thumb: #d8d3db;
 
-  /* Logo colors */
-  --logo-sage: var(--sage-600);
-  --logo-plum: var(--plum-700);
-  /* Legacy logo aliases */
-  --logo-cyan: var(--sage-600);
-  --logo-amethyst: var(--plum-700);
-  --logo-sapphire: var(--plum-700);
-  --logo-emerald: var(--sage-600);
+  /* Logo colors - 700/900 level (AA+ on light bg) */
+  --logo-cyan: #005f58;
+  --logo-amethyst: #5b21b6;
+  --logo-sapphire: #1e40af;
+  --logo-emerald: #047857;
+  --logo-sage: #005f58;
+  --logo-plum: #5b21b6;
 
   color-scheme: light;
 }

@@ -23,10 +23,10 @@ export class SwarmService {
 
     // Seed default layers if none provided
     const layers = data.layers || [
-      { name: 'Interface', colorTheme: '#5fa878', order: 1 },
-      { name: 'Processing', colorTheme: '#b07cc4', order: 2 },
-      { name: 'Intelligence', colorTheme: '#d4722a', order: 3 },
-      { name: 'Operations', colorTheme: '#e09050', order: 4 },
+      { name: 'Interface', colorTheme: '#00d9ff', order: 1 },
+      { name: 'Processing', colorTheme: '#a855f7', order: 2 },
+      { name: 'Intelligence', colorTheme: '#22c55e', order: 3 },
+      { name: 'Operations', colorTheme: '#fbbf24', order: 4 },
     ];
 
     const insertLayer = this.db.prepare(

@@ -9,9 +9,9 @@ export interface ValidationMessage {
 }
 
 const severityStyles: Record<string, { color: string; bg: string; icon: string }> = {
-  error: { color: '#8A2E3B', bg: 'rgba(239, 68, 68, 0.1)', icon: '\u26D4' },
-  warning: { color: '#e09050', bg: 'rgba(251, 191, 36, 0.1)', icon: '\u26A0' },
-  advisory: { color: '#d4722a', bg: 'rgba(212, 114, 42, 0.08)', icon: '\u2139' },
+  error: { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)', icon: '\u26D4' },
+  warning: { color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.1)', icon: '\u26A0' },
+  advisory: { color: '#00d9ff', bg: 'rgba(0, 217, 255, 0.08)', icon: '\u2139' },
 };
 
 export function validateSwarm(swarm: Swarm): ValidationMessage[] {
@@ -145,9 +145,9 @@ export function ValidationPanel({ messages, isOpen, onToggle }: ValidationPanelP
           transform: 'translateX(-50%)',
           padding: '6px 14px',
           borderRadius: 8,
-          border: `1px solid ${errorCount > 0 ? '#8A2E3B' : warningCount > 0 ? '#e09050' : '#5fa878'}`,
+          border: `1px solid ${errorCount > 0 ? '#ef4444' : warningCount > 0 ? '#fbbf24' : '#22c55e'}`,
           background: errorCount > 0 ? 'rgba(239,68,68,0.15)' : warningCount > 0 ? 'rgba(251,191,36,0.1)' : 'rgba(34,197,94,0.1)',
-          color: errorCount > 0 ? '#8A2E3B' : warningCount > 0 ? '#e09050' : '#5fa878',
+          color: errorCount > 0 ? '#ef4444' : warningCount > 0 ? '#fbbf24' : '#22c55e',
           cursor: 'pointer',
           fontSize: 12,
           fontWeight: 600,
@@ -173,7 +173,7 @@ export function ValidationPanel({ messages, isOpen, onToggle }: ValidationPanelP
           maxHeight: 320,
           overflowY: 'auto',
           background: 'rgba(15, 23, 42, 0.97)',
-          border: '1px solid rgba(212, 114, 42, 0.2)',
+          border: '1px solid rgba(0, 217, 255, 0.2)',
           borderRadius: 12,
           padding: 12,
           zIndex: 30,

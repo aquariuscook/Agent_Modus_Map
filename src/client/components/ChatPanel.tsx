@@ -71,12 +71,12 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
           width: 48,
           height: 48,
           borderRadius: '50%',
-          background: '#d4722a',
+          background: '#00d9ff',
           border: 'none',
-          color: '#140e18',
+          color: '#0a1628',
           fontSize: 22,
           cursor: 'pointer',
-          boxShadow: '0 4px 20px rgba(212, 114, 42, 0.4)',
+          boxShadow: '0 4px 20px rgba(0, 217, 255, 0.4)',
           zIndex: 20,
           display: 'flex',
           alignItems: 'center',
@@ -97,7 +97,7 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
       width: 420,
       height: 500,
       background: 'rgba(15, 23, 42, 0.97)',
-      border: '1px solid rgba(212, 114, 42, 0.3)',
+      border: '1px solid rgba(0, 217, 255, 0.3)',
       borderRadius: 16,
       display: 'flex',
       flexDirection: 'column',
@@ -112,9 +112,9 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
         justifyContent: 'space-between',
         alignItems: 'center',
       }}>
-        <span style={{ fontSize: 14, fontWeight: 600, color: '#d4722a' }}>Ask Your Swarm</span>
+        <span style={{ fontSize: 14, fontWeight: 600, color: '#00d9ff' }}>Ask Your Swarm</span>
         <button onClick={onToggle} style={{
-          background: 'none', border: 'none', color: '#b5adb9', cursor: 'pointer', fontSize: 18,
+          background: 'none', border: 'none', color: '#8b9dc3', cursor: 'pointer', fontSize: 18,
         }}>{'\u00D7'}</button>
       </div>
 
@@ -131,8 +131,8 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
               maxWidth: '90%',
               padding: '10px 14px',
               borderRadius: 12,
-              background: msg.role === 'user' ? 'rgba(212, 114, 42, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-              border: `1px solid ${msg.role === 'user' ? 'rgba(212, 114, 42, 0.3)' : 'rgba(255,255,255,0.08)'}`,
+              background: msg.role === 'user' ? 'rgba(0, 217, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+              border: `1px solid ${msg.role === 'user' ? 'rgba(0, 217, 255, 0.3)' : 'rgba(255,255,255,0.08)'}`,
             }}>
               <div style={{ fontSize: 13, color: '#fff', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
                 {msg.content}
@@ -140,9 +140,9 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
 
               {msg.sources && msg.sources.length > 0 && (
                 <div style={{ marginTop: 8, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 6 }}>
-                  <div style={{ fontSize: 10, color: '#b5adb9', marginBottom: 4 }}>Sources:</div>
+                  <div style={{ fontSize: 10, color: '#8b9dc3', marginBottom: 4 }}>Sources:</div>
                   {msg.sources.map((s, j) => (
-                    <div key={j} style={{ fontSize: 11, color: '#968a9c', marginBottom: 2 }}>
+                    <div key={j} style={{ fontSize: 11, color: '#a0aec0', marginBottom: 2 }}>
                       {s.title}
                     </div>
                   ))}
@@ -150,7 +150,7 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
               )}
 
               {msg.queryType && (
-                <div style={{ marginTop: 4, fontSize: 10, color: '#b5adb9' }}>
+                <div style={{ marginTop: 4, fontSize: 10, color: '#8b9dc3' }}>
                   {msg.queryType === 'graph' ? 'From your swarm data' :
                    msg.queryType === 'both' ? 'Swarm data + best practices' :
                    'From best practices'}
@@ -160,7 +160,7 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
           </div>
         ))}
         {loading && (
-          <div style={{ fontSize: 12, color: '#b5adb9', fontStyle: 'italic' }}>Thinking...</div>
+          <div style={{ fontSize: 12, color: '#8b9dc3', fontStyle: 'italic' }}>Thinking...</div>
         )}
         <div ref={messagesEndRef} />
       </div>
@@ -181,7 +181,7 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
             flex: 1,
             padding: '8px 12px',
             borderRadius: 8,
-            border: '1px solid rgba(212, 114, 42, 0.2)',
+            border: '1px solid rgba(0, 217, 255, 0.2)',
             background: 'rgba(0, 0, 0, 0.3)',
             color: '#fff',
             fontSize: 13,
@@ -195,8 +195,8 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
             padding: '8px 16px',
             borderRadius: 8,
             border: 'none',
-            background: '#d4722a',
-            color: '#140e18',
+            background: '#00d9ff',
+            color: '#0a1628',
             fontWeight: 600,
             cursor: loading ? 'default' : 'pointer',
             opacity: loading || !input.trim() ? 0.5 : 1,

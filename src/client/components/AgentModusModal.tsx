@@ -112,7 +112,7 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
   }
 
   const layer = layers.find(l => l.id === layerId);
-  const borderColor = layer?.colorTheme || '#d4722a';
+  const borderColor = layer?.colorTheme || '#00d9ff';
 
   // Relationships for this agent
   const rels = {
@@ -143,7 +143,7 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
     }}>
       <div style={{
-        background: 'linear-gradient(145deg, #271d2e 0%, #1e1524 100%)',
+        background: 'linear-gradient(145deg, #1e293b 0%, #0f172a 100%)',
         border: `3px solid ${borderColor}`, borderRadius: 20,
         width: '95%', maxWidth: 1000, maxHeight: '90vh',
         display: 'flex', flexDirection: 'column',
@@ -182,14 +182,14 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
                   fontSize: 10, padding: '3px 8px', borderRadius: 8, cursor: 'pointer',
                   border: `1px solid ${badges.includes(b) ? borderColor : 'rgba(255,255,255,0.15)'}`,
                   background: badges.includes(b) ? `${borderColor}25` : 'transparent',
-                  color: badges.includes(b) ? '#fff' : '#76677e',
+                  color: badges.includes(b) ? '#fff' : '#64748b',
                 }}>{b.replace('_', ' ')}</button>
               ))}
             </div>
           </div>
           <button onClick={onClose} style={{
             width: 36, height: 36, borderRadius: '50%', background: 'rgba(239,68,68,0.2)',
-            border: '2px solid #8A2E3B', color: '#8A2E3B', cursor: 'pointer', fontSize: 18,
+            border: '2px solid #ef4444', color: '#ef4444', cursor: 'pointer', fontSize: 18,
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
           }}>X</button>
         </div>
@@ -199,8 +199,8 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
           {sections.map(s => (
             <button key={s.id} onClick={() => setSection(s.id)} style={{
               padding: '10px 16px', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer',
-              background: 'transparent', color: section === s.id ? '#d4722a' : '#76677e',
-              borderBottom: section === s.id ? '2px solid #d4722a' : '2px solid transparent',
+              background: 'transparent', color: section === s.id ? '#00d9ff' : '#64748b',
+              borderBottom: section === s.id ? '2px solid #00d9ff' : '2px solid transparent',
               whiteSpace: 'nowrap',
             }}>{s.label}</button>
           ))}
@@ -213,17 +213,17 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <InfoCard title="Layer" value={layer?.name || layerId}>
                 <select value={layerId} onChange={e => { setLayerId(e.target.value); mark(); }} style={{ ...inp, cursor: 'pointer' }}>
-                  {layers.map(l => <option key={l.id} value={l.id} style={{ background: '#271d2e' }}>{l.name}</option>)}
+                  {layers.map(l => <option key={l.id} value={l.id} style={{ background: '#1e293b' }}>{l.name}</option>)}
                 </select>
               </InfoCard>
               <InfoCard title="Autonomy Level" value={config.autonomyLevel || 'Not set'}>
                 <select value={config.autonomyLevel || ''} onChange={e => updateConfig({ autonomyLevel: e.target.value })} style={{ ...inp, cursor: 'pointer' }}>
-                  <option value="" style={{ background: '#271d2e' }}>Select...</option>
-                  <option value="Fully Automated" style={{ background: '#271d2e' }}>Fully Automated</option>
-                  <option value="Human-in-Loop" style={{ background: '#271d2e' }}>Human-in-Loop</option>
-                  <option value="Hybrid" style={{ background: '#271d2e' }}>Hybrid</option>
-                  <option value="Advisory Only" style={{ background: '#271d2e' }}>Advisory Only</option>
-                  <option value="Manual" style={{ background: '#271d2e' }}>Manual</option>
+                  <option value="" style={{ background: '#1e293b' }}>Select...</option>
+                  <option value="Fully Automated" style={{ background: '#1e293b' }}>Fully Automated</option>
+                  <option value="Human-in-Loop" style={{ background: '#1e293b' }}>Human-in-Loop</option>
+                  <option value="Hybrid" style={{ background: '#1e293b' }}>Hybrid</option>
+                  <option value="Advisory Only" style={{ background: '#1e293b' }}>Advisory Only</option>
+                  <option value="Manual" style={{ background: '#1e293b' }}>Manual</option>
                 </select>
               </InfoCard>
               <InfoCard title="Relationships" value={`${rels.dependsOn.length + rels.feedsInto.length + rels.collaboratesWith.length + rels.canOverride.length} connections`} />
@@ -244,12 +244,12 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
               <textarea value={config.triggerConditions || ''} onChange={e => updateConfig({ triggerConditions: e.target.value })} placeholder="Activates whenever new content is submitted (posts, comments, uploads, profile updates)" style={{ ...inp, minHeight: 50, fontFamily: 'inherit' }} />
               <label style={lbl}>Autonomy Level</label>
               <select value={config.autonomyLevel || ''} onChange={e => updateConfig({ autonomyLevel: e.target.value })} style={{ ...inp, cursor: 'pointer' }}>
-                <option value="" style={{ background: '#271d2e' }}>Select...</option>
-                <option value="Fully Automated" style={{ background: '#271d2e' }}>Fully Automated</option>
-                <option value="Human-in-Loop" style={{ background: '#271d2e' }}>Human-in-Loop</option>
-                <option value="Hybrid" style={{ background: '#271d2e' }}>Hybrid (auto-approve obvious, flag gray areas)</option>
-                <option value="Advisory Only" style={{ background: '#271d2e' }}>Advisory Only</option>
-                <option value="Manual" style={{ background: '#271d2e' }}>Manual</option>
+                <option value="" style={{ background: '#1e293b' }}>Select...</option>
+                <option value="Fully Automated" style={{ background: '#1e293b' }}>Fully Automated</option>
+                <option value="Human-in-Loop" style={{ background: '#1e293b' }}>Human-in-Loop</option>
+                <option value="Hybrid" style={{ background: '#1e293b' }}>Hybrid (auto-approve obvious, flag gray areas)</option>
+                <option value="Advisory Only" style={{ background: '#1e293b' }}>Advisory Only</option>
+                <option value="Manual" style={{ background: '#1e293b' }}>Manual</option>
               </select>
 
               <SectionHeader title="System Prompt" />
@@ -265,7 +265,7 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
                 <div style={{ flex: 1 }}>
                   <label style={lbl}>Provider</label>
                   <select value={config.modelConfig?.provider || 'anthropic'} onChange={e => updateConfig({ modelConfig: { ...config.modelConfig, provider: e.target.value } })} style={{ ...inp, cursor: 'pointer' }}>
-                    {['anthropic','openai','google','mistral','meta','local'].map(p => <option key={p} value={p} style={{ background: '#271d2e' }}>{p}</option>)}
+                    {['anthropic','openai','google','mistral','meta','local'].map(p => <option key={p} value={p} style={{ background: '#1e293b' }}>{p}</option>)}
                   </select>
                 </div>
                 <div style={{ flex: 1 }}>
@@ -297,10 +297,10 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
           {section === 'relationships' && (
             <>
               <SectionHeader title="Relationships" />
-              <RelSection title="Depends On" color="#d4722a" agents={rels.dependsOn} agentConfig={config} type="dependsOn" onUpdateNote={(id, note) => updateConfig({ relationshipNotes: { ...config.relationshipNotes, [id]: note } })} />
-              <RelSection title="Feeds Into" color="#b07cc4" agents={rels.feedsInto} agentConfig={config} type="feedsInto" onUpdateNote={(id, note) => updateConfig({ relationshipNotes: { ...config.relationshipNotes, [id]: note } })} />
-              <RelSection title="Collaborates With" color="#e09050" agents={rels.collaboratesWith} agentConfig={config} type="collaboratesWith" onUpdateNote={(id, note) => updateConfig({ relationshipNotes: { ...config.relationshipNotes, [id]: note } })} />
-              <RelSection title="Can Override" color="#8A2E3B" agents={rels.canOverride} agentConfig={config} type="canOverride" onUpdateNote={(id, note) => updateConfig({ relationshipNotes: { ...config.relationshipNotes, [id]: note } })} />
+              <RelSection title="Depends On" color="#00d9ff" agents={rels.dependsOn} agentConfig={config} type="dependsOn" onUpdateNote={(id, note) => updateConfig({ relationshipNotes: { ...config.relationshipNotes, [id]: note } })} />
+              <RelSection title="Feeds Into" color="#a855f7" agents={rels.feedsInto} agentConfig={config} type="feedsInto" onUpdateNote={(id, note) => updateConfig({ relationshipNotes: { ...config.relationshipNotes, [id]: note } })} />
+              <RelSection title="Collaborates With" color="#fbbf24" agents={rels.collaboratesWith} agentConfig={config} type="collaboratesWith" onUpdateNote={(id, note) => updateConfig({ relationshipNotes: { ...config.relationshipNotes, [id]: note } })} />
+              <RelSection title="Can Override" color="#ef4444" agents={rels.canOverride} agentConfig={config} type="canOverride" onUpdateNote={(id, note) => updateConfig({ relationshipNotes: { ...config.relationshipNotes, [id]: note } })} />
               <RelSection title="Depended On By" color="#06b6d4" agents={rels.dependedOnBy} agentConfig={config} type="dependedOnBy" onUpdateNote={(id, note) => updateConfig({ relationshipNotes: { ...config.relationshipNotes, [id]: note } })} />
             </>
           )}
@@ -417,7 +417,7 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
               {(config.notes || []).map((n, i) => (
                 <div key={n.id} style={{ ...card, position: 'relative' }}>
                   <p style={{ color: '#e2e8f0', fontSize: 13, margin: 0, whiteSpace: 'pre-wrap' }}>{n.content}</p>
-                  <div style={{ color: '#76677e', fontSize: 10, marginTop: 6 }}>{n.author} | {new Date(n.timestamp).toLocaleString()}</div>
+                  <div style={{ color: '#64748b', fontSize: 10, marginTop: 6 }}>{n.author} | {new Date(n.timestamp).toLocaleString()}</div>
                 </div>
               ))}
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
@@ -439,18 +439,18 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
         <div style={{ padding: '12px 30px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
           <div>
             {!confirmDelete ? (
-              <button onClick={() => setConfirmDelete(true)} style={{ padding: '6px 16px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.4)', background: 'transparent', color: '#8A2E3B', cursor: 'pointer', fontSize: 12 }}>Delete Agent</button>
+              <button onClick={() => setConfirmDelete(true)} style={{ padding: '6px 16px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.4)', background: 'transparent', color: '#ef4444', cursor: 'pointer', fontSize: 12 }}>Delete Agent</button>
             ) : (
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <span style={{ color: '#8A2E3B', fontSize: 12 }}>Delete "{nickname}"?{dependentCount > 0 ? ` (${dependentCount} dependents)` : ''}</span>
-                <button onClick={() => onDelete(agent.id)} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', background: '#8A2E3B', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Yes, Delete</button>
-                <button onClick={() => setConfirmDelete(false)} style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#b5adb9', cursor: 'pointer', fontSize: 12 }}>Cancel</button>
+                <span style={{ color: '#ef4444', fontSize: 12 }}>Delete "{nickname}"?{dependentCount > 0 ? ` (${dependentCount} dependents)` : ''}</span>
+                <button onClick={() => onDelete(agent.id)} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', background: '#ef4444', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Yes, Delete</button>
+                <button onClick={() => setConfirmDelete(false)} style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#8b9dc3', cursor: 'pointer', fontSize: 12 }}>Cancel</button>
               </div>
             )}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <span style={{ color: '#475569', fontSize: 11, alignSelf: 'center' }}>ID: {agent.id.slice(0, 12)}...</span>
-            {dirty && <button onClick={handleSave} style={{ padding: '8px 24px', borderRadius: 8, border: 'none', background: '#d4722a', color: '#140e18', fontWeight: 700, cursor: 'pointer', fontSize: 14 }}>Save Changes</button>}
+            {dirty && <button onClick={handleSave} style={{ padding: '8px 24px', borderRadius: 8, border: 'none', background: '#00d9ff', color: '#0a1628', fontWeight: 700, cursor: 'pointer', fontSize: 14 }}>Save Changes</button>}
           </div>
         </div>
       </div>
@@ -460,13 +460,13 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
 
 // Sub-components
 function SectionHeader({ title }: { title: string }) {
-  return <div style={{ color: '#d4722a', fontSize: 14, fontWeight: 700, marginTop: 20, marginBottom: 8, paddingBottom: 6, borderBottom: '1px solid rgba(212,114,42,0.2)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{title}</div>;
+  return <div style={{ color: '#00d9ff', fontSize: 14, fontWeight: 700, marginTop: 20, marginBottom: 8, paddingBottom: 6, borderBottom: '1px solid rgba(0,217,255,0.2)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{title}</div>;
 }
 
 function InfoCard({ title, value, children }: { title: string; value: string; children?: React.ReactNode }) {
   return (
     <div style={{ ...card }}>
-      <div style={{ color: '#76677e', fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>{title}</div>
+      <div style={{ color: '#64748b', fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>{title}</div>
       <div style={{ color: '#e2e8f0', fontSize: 15, fontWeight: 600 }}>{value}</div>
       {children}
     </div>
@@ -491,7 +491,7 @@ function RelSection({ title, color, agents, agentConfig, type, onUpdateNote }: {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <span style={{ color: '#e2e8f0', fontWeight: 600, fontSize: 14 }}>{a.nickname}</span>
-                <span style={{ color: '#76677e', fontSize: 12, marginLeft: 8 }}>{a.descriptor}</span>
+                <span style={{ color: '#64748b', fontSize: 12, marginLeft: 8 }}>{a.descriptor}</span>
               </div>
               <span style={{ color: '#475569', fontSize: 10 }}>{a.badges.join(', ')}</span>
             </div>
@@ -507,7 +507,7 @@ function RelSection({ title, color, agents, agentConfig, type, onUpdateNote }: {
 
 // Styles
 const inp: React.CSSProperties = { width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.3)', color: '#fff', fontSize: 13, outline: 'none', marginTop: 4, boxSizing: 'border-box', resize: 'vertical' as const };
-const lbl: React.CSSProperties = { fontSize: 11, color: '#b5adb9', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 12, display: 'block' };
+const lbl: React.CSSProperties = { fontSize: 11, color: '#8b9dc3', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 12, display: 'block' };
 const card: React.CSSProperties = { padding: 12, borderRadius: 10, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.06)' };
-const addBtn: React.CSSProperties = { padding: '6px 14px', borderRadius: 6, border: '1px solid rgba(212,114,42,0.3)', background: 'rgba(212,114,42,0.08)', color: '#d4722a', cursor: 'pointer', fontSize: 12, fontWeight: 600, marginTop: 8 };
-const rmBtn: React.CSSProperties = { padding: '4px 8px', borderRadius: 4, border: 'none', background: 'rgba(239,68,68,0.2)', color: '#8A2E3B', cursor: 'pointer', fontSize: 11 };
+const addBtn: React.CSSProperties = { padding: '6px 14px', borderRadius: 6, border: '1px solid rgba(0,217,255,0.3)', background: 'rgba(0,217,255,0.08)', color: '#00d9ff', cursor: 'pointer', fontSize: 12, fontWeight: 600, marginTop: 8 };
+const rmBtn: React.CSSProperties = { padding: '4px 8px', borderRadius: 4, border: 'none', background: 'rgba(239,68,68,0.2)', color: '#ef4444', cursor: 'pointer', fontSize: 11 };

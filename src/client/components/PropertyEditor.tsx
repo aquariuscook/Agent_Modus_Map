@@ -116,7 +116,7 @@ export function PropertyEditor({ agent, layers, onSave, onDelete, onClose, depen
   }
 
   const layer = layers.find(l => l.id === layerId);
-  const borderColor = layer?.colorTheme || '#d4722a';
+  const borderColor = layer?.colorTheme || '#00d9ff';
 
   return (
     <div style={{
@@ -130,7 +130,7 @@ export function PropertyEditor({ agent, layers, onSave, onDelete, onClose, depen
       {/* Header */}
       <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>{agent.nickname}</span>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#b5adb9', cursor: 'pointer', fontSize: 18 }}>{'\u00D7'}</button>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#8b9dc3', cursor: 'pointer', fontSize: 18 }}>{'\u00D7'}</button>
       </div>
 
       {/* Tabs */}
@@ -145,8 +145,8 @@ export function PropertyEditor({ agent, layers, onSave, onDelete, onClose, depen
         ] as [Tab, string][]).map(([t, label]) => (
           <button key={t} onClick={() => setTab(t)} style={{
             padding: '8px 8px', fontSize: 10, fontWeight: 600, border: 'none', cursor: 'pointer',
-            background: 'transparent', color: tab === t ? '#d4722a' : '#76677e',
-            borderBottom: tab === t ? '2px solid #d4722a' : '2px solid transparent',
+            background: 'transparent', color: tab === t ? '#00d9ff' : '#64748b',
+            borderBottom: tab === t ? '2px solid #00d9ff' : '2px solid transparent',
             whiteSpace: 'nowrap',
           }}>{label}</button>
         ))}
@@ -187,12 +187,12 @@ export function PropertyEditor({ agent, layers, onSave, onDelete, onClose, depen
         {!confirmDelete ? (
           <button onClick={() => setConfirmDelete(true)} style={deleteBtnStyle}>Delete Agent</button>
         ) : (
-          <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: 10, borderRadius: 8, border: '1px solid #8A2E3B' }}>
-            {dependentCount > 0 && <div style={{ fontSize: 12, color: '#e09050', marginBottom: 8 }}>Warning: {dependentCount} agent{dependentCount > 1 ? 's' : ''} depend on this.</div>}
-            <div style={{ fontSize: 12, color: '#8A2E3B', marginBottom: 8 }}>Delete "{agent.nickname}" permanently?</div>
+          <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: 10, borderRadius: 8, border: '1px solid #ef4444' }}>
+            {dependentCount > 0 && <div style={{ fontSize: 12, color: '#fbbf24', marginBottom: 8 }}>Warning: {dependentCount} agent{dependentCount > 1 ? 's' : ''} depend on this.</div>}
+            <div style={{ fontSize: 12, color: '#ef4444', marginBottom: 8 }}>Delete "{agent.nickname}" permanently?</div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => onDelete(agent.id)} style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: '#8A2E3B', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Delete</button>
-              <button onClick={() => setConfirmDelete(false)} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#b5adb9', cursor: 'pointer', fontSize: 12 }}>Cancel</button>
+              <button onClick={() => onDelete(agent.id)} style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: '#ef4444', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Delete</button>
+              <button onClick={() => setConfirmDelete(false)} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#8b9dc3', cursor: 'pointer', fontSize: 12 }}>Cancel</button>
             </div>
           </div>
         )}
@@ -203,11 +203,11 @@ export function PropertyEditor({ agent, layers, onSave, onDelete, onClose, depen
 
 // Shared styles
 const inputStyle: React.CSSProperties = { width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.3)', color: '#fff', fontSize: 13, outline: 'none', marginTop: 4, boxSizing: 'border-box' };
-const labelStyle: React.CSSProperties = { fontSize: 11, color: '#b5adb9', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 12, display: 'block' };
-const smallBtnStyle: React.CSSProperties = { padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(212,114,42,0.3)', background: 'rgba(212,114,42,0.08)', color: '#d4722a', cursor: 'pointer', fontSize: 11, fontWeight: 600 };
-const removeBtnStyle: React.CSSProperties = { padding: '2px 6px', borderRadius: 4, border: 'none', background: 'rgba(239,68,68,0.2)', color: '#8A2E3B', cursor: 'pointer', fontSize: 10 };
-const saveBtnStyle: React.CSSProperties = { padding: '8px 16px', borderRadius: 8, border: 'none', background: '#d4722a', color: '#140e18', fontWeight: 600, cursor: 'pointer', fontSize: 13 };
-const deleteBtnStyle: React.CSSProperties = { padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.4)', background: 'transparent', color: '#8A2E3B', cursor: 'pointer', fontSize: 12 };
+const labelStyle: React.CSSProperties = { fontSize: 11, color: '#8b9dc3', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 12, display: 'block' };
+const smallBtnStyle: React.CSSProperties = { padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(0,217,255,0.3)', background: 'rgba(0,217,255,0.08)', color: '#00d9ff', cursor: 'pointer', fontSize: 11, fontWeight: 600 };
+const removeBtnStyle: React.CSSProperties = { padding: '2px 6px', borderRadius: 4, border: 'none', background: 'rgba(239,68,68,0.2)', color: '#ef4444', cursor: 'pointer', fontSize: 10 };
+const saveBtnStyle: React.CSSProperties = { padding: '8px 16px', borderRadius: 8, border: 'none', background: '#00d9ff', color: '#0a1628', fontWeight: 600, cursor: 'pointer', fontSize: 13 };
+const deleteBtnStyle: React.CSSProperties = { padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.4)', background: 'transparent', color: '#ef4444', cursor: 'pointer', fontSize: 12 };
 const cardStyle: React.CSSProperties = { padding: 10, borderRadius: 8, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.06)', marginTop: 8 };
 
 // ---- General Tab ----
@@ -238,7 +238,7 @@ function GeneralTab({ nickname, setNickname, formalName, setFormalName, descript
         style={{ ...inputStyle, minHeight: 60, resize: 'vertical', fontFamily: 'inherit' }} />
       <label style={labelStyle}>Layer</label>
       <select value={layerId} onChange={e => setLayerId(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-        {layers.map((l: any) => <option key={l.id} value={l.id} style={{ background: '#271d2e' }}>{l.name}</option>)}
+        {layers.map((l: any) => <option key={l.id} value={l.id} style={{ background: '#1e293b' }}>{l.name}</option>)}
       </select>
       <label style={labelStyle}>Inputs (what data this agent receives)</label>
       <input value={inputs.join(', ')} onChange={e => updateConfig({ inputs: e.target.value.split(',').map((s: string) => s.trim()).filter((s: string) => s) })}
@@ -253,12 +253,12 @@ function GeneralTab({ nickname, setNickname, formalName, setFormalName, descript
             fontSize: 10, padding: '3px 8px', borderRadius: 8, cursor: 'pointer',
             border: `1px solid ${badges.includes(badge) ? borderColor : 'rgba(255,255,255,0.15)'}`,
             background: badges.includes(badge) ? `${borderColor}25` : 'transparent',
-            color: badges.includes(badge) ? '#fff' : '#b5adb9',
+            color: badges.includes(badge) ? '#fff' : '#8b9dc3',
           }}>{badge.replace('_', ' ')}</button>
         ))}
       </div>
       <label style={labelStyle}>Agent ID</label>
-      <div style={{ fontSize: 11, color: '#76677e', fontFamily: 'monospace', marginTop: 4 }}>{agent.id}</div>
+      <div style={{ fontSize: 11, color: '#64748b', fontFamily: 'monospace', marginTop: 4 }}>{agent.id}</div>
     </>
   );
 }
@@ -281,7 +281,7 @@ function SkillsTab({ skills, onChange }: { skills: SkillEntry[]; onChange: (s: S
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <input value={s.name} onChange={e => update(s.id, { name: e.target.value })} placeholder="Skill name" style={{ ...inputStyle, marginTop: 0, flex: 1 }} />
             <div style={{ display: 'flex', gap: 4, marginLeft: 8 }}>
-              <button onClick={() => update(s.id, { enabled: !s.enabled })} style={{ ...removeBtnStyle, background: s.enabled ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)', color: s.enabled ? '#10b981' : '#8A2E3B' }}>
+              <button onClick={() => update(s.id, { enabled: !s.enabled })} style={{ ...removeBtnStyle, background: s.enabled ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)', color: s.enabled ? '#10b981' : '#ef4444' }}>
                 {s.enabled ? 'ON' : 'OFF'}
               </button>
               <button onClick={() => remove(s.id)} style={removeBtnStyle}>X</button>
@@ -290,11 +290,11 @@ function SkillsTab({ skills, onChange }: { skills: SkillEntry[]; onChange: (s: S
           <input value={s.description} onChange={e => update(s.id, { description: e.target.value })} placeholder="What does this skill do?" style={{ ...inputStyle }} />
         </div>
       ))}
-      <div style={{ marginTop: 16, padding: 10, borderRadius: 8, background: 'rgba(212,114,42,0.04)', border: '1px solid rgba(212,114,42,0.1)' }}>
-        <div style={{ color: '#d4722a', fontSize: 11, fontWeight: 600, marginBottom: 6 }}>Common Skills</div>
+      <div style={{ marginTop: 16, padding: 10, borderRadius: 8, background: 'rgba(0,217,255,0.04)', border: '1px solid rgba(0,217,255,0.1)' }}>
+        <div style={{ color: '#00d9ff', fontSize: 11, fontWeight: 600, marginBottom: 6 }}>Common Skills</div>
         {['Text Generation', 'Code Analysis', 'Data Extraction', 'Summarization', 'Classification', 'Translation', 'Sentiment Analysis', 'Image Analysis', 'API Integration', 'Database Query'].map(name => (
           <button key={name} onClick={() => onChange([...skills, { id: uid(), name, description: '', enabled: true }])}
-            style={{ fontSize: 10, padding: '3px 8px', borderRadius: 12, border: '1px solid rgba(212,114,42,0.2)', background: 'transparent', color: '#b5adb9', cursor: 'pointer', margin: '2px 2px' }}>
+            style={{ fontSize: 10, padding: '3px 8px', borderRadius: 12, border: '1px solid rgba(0,217,255,0.2)', background: 'transparent', color: '#8b9dc3', cursor: 'pointer', margin: '2px 2px' }}>
             + {name}
           </button>
         ))}
@@ -324,11 +324,11 @@ function RagTab({ rag, onChange }: { rag: RagConfig; onChange: (r: RagConfig) =>
 
       <label style={labelStyle}>Embedding Model</label>
       <select value={rag.embeddingModel} onChange={e => update({ embeddingModel: e.target.value })} style={{ ...inputStyle, cursor: 'pointer' }}>
-        <option value="text-embedding-3-small" style={{ background: '#271d2e' }}>text-embedding-3-small</option>
-        <option value="text-embedding-3-large" style={{ background: '#271d2e' }}>text-embedding-3-large</option>
-        <option value="text-embedding-ada-002" style={{ background: '#271d2e' }}>text-embedding-ada-002</option>
-        <option value="voyage-3" style={{ background: '#271d2e' }}>voyage-3</option>
-        <option value="custom" style={{ background: '#271d2e' }}>Custom</option>
+        <option value="text-embedding-3-small" style={{ background: '#1e293b' }}>text-embedding-3-small</option>
+        <option value="text-embedding-3-large" style={{ background: '#1e293b' }}>text-embedding-3-large</option>
+        <option value="text-embedding-ada-002" style={{ background: '#1e293b' }}>text-embedding-ada-002</option>
+        <option value="voyage-3" style={{ background: '#1e293b' }}>voyage-3</option>
+        <option value="custom" style={{ background: '#1e293b' }}>Custom</option>
       </select>
 
       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
@@ -355,10 +355,10 @@ function RagTab({ rag, onChange }: { rag: RagConfig; onChange: (r: RagConfig) =>
           </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
             <select value={s.type} onChange={e => updateSource(s.id, { type: e.target.value as any })} style={{ ...inputStyle, marginTop: 0, width: 100, cursor: 'pointer' }}>
-              <option value="document" style={{ background: '#271d2e' }}>Document</option>
-              <option value="graph" style={{ background: '#271d2e' }}>Graph</option>
-              <option value="web" style={{ background: '#271d2e' }}>Web</option>
-              <option value="database" style={{ background: '#271d2e' }}>Database</option>
+              <option value="document" style={{ background: '#1e293b' }}>Document</option>
+              <option value="graph" style={{ background: '#1e293b' }}>Graph</option>
+              <option value="web" style={{ background: '#1e293b' }}>Web</option>
+              <option value="database" style={{ background: '#1e293b' }}>Database</option>
             </select>
             <input value={s.uri} onChange={e => updateSource(s.id, { uri: e.target.value })} placeholder="URI / path" style={{ ...inputStyle, marginTop: 0, flex: 1 }} />
           </div>
@@ -389,17 +389,17 @@ function ApiTab({ apiCalls, onChange }: { apiCalls: ApiCallEntry[]; onChange: (a
           </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
             <select value={a.method} onChange={e => update(a.id, { method: e.target.value })} style={{ ...inputStyle, marginTop: 0, width: 70, cursor: 'pointer' }}>
-              {['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].map(m => <option key={m} value={m} style={{ background: '#271d2e' }}>{m}</option>)}
+              {['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].map(m => <option key={m} value={m} style={{ background: '#1e293b' }}>{m}</option>)}
             </select>
             <input value={a.url} onChange={e => update(a.id, { url: e.target.value })} placeholder="https://api.example.com/endpoint" style={{ ...inputStyle, marginTop: 0, flex: 1 }} />
           </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
             <select value={a.authType} onChange={e => update(a.id, { authType: e.target.value })} style={{ ...inputStyle, marginTop: 0, cursor: 'pointer' }}>
-              <option value="none" style={{ background: '#271d2e' }}>No Auth</option>
-              <option value="bearer" style={{ background: '#271d2e' }}>Bearer Token</option>
-              <option value="api-key" style={{ background: '#271d2e' }}>API Key</option>
-              <option value="oauth2" style={{ background: '#271d2e' }}>OAuth 2.0</option>
-              <option value="basic" style={{ background: '#271d2e' }}>Basic Auth</option>
+              <option value="none" style={{ background: '#1e293b' }}>No Auth</option>
+              <option value="bearer" style={{ background: '#1e293b' }}>Bearer Token</option>
+              <option value="api-key" style={{ background: '#1e293b' }}>API Key</option>
+              <option value="oauth2" style={{ background: '#1e293b' }}>OAuth 2.0</option>
+              <option value="basic" style={{ background: '#1e293b' }}>Basic Auth</option>
             </select>
           </div>
         </div>
@@ -437,28 +437,28 @@ function McpTab({ mcp, onChange }: { mcp: McpConfig; onChange: (m: McpConfig) =>
       {mcp.servers.length === 0 && <p style={{ color: '#475569', fontSize: 12, marginTop: 8 }}>No MCP servers configured. MCP allows agents to use external tools and resources.</p>}
 
       {mcp.servers.map(s => (
-        <div key={s.id} style={{ ...cardStyle, borderColor: 'rgba(212,114,42,0.15)' }}>
+        <div key={s.id} style={{ ...cardStyle, borderColor: 'rgba(0,217,255,0.15)' }}>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <input value={s.name} onChange={e => updateServer(s.id, { name: e.target.value })} placeholder="Server name" style={{ ...inputStyle, marginTop: 0, flex: 1 }} />
             <button onClick={() => removeServer(s.id)} style={removeBtnStyle}>X</button>
           </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
             <select value={s.transport} onChange={e => updateServer(s.id, { transport: e.target.value as any })} style={{ ...inputStyle, marginTop: 0, width: 100, cursor: 'pointer' }}>
-              <option value="stdio" style={{ background: '#271d2e' }}>stdio</option>
-              <option value="sse" style={{ background: '#271d2e' }}>SSE</option>
-              <option value="streamable-http" style={{ background: '#271d2e' }}>HTTP Stream</option>
+              <option value="stdio" style={{ background: '#1e293b' }}>stdio</option>
+              <option value="sse" style={{ background: '#1e293b' }}>SSE</option>
+              <option value="streamable-http" style={{ background: '#1e293b' }}>HTTP Stream</option>
             </select>
             <input value={s.url} onChange={e => updateServer(s.id, { url: e.target.value })} placeholder="npx -y @server/name or URL" style={{ ...inputStyle, marginTop: 0, flex: 1 }} />
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-            <span style={{ fontSize: 10, color: '#76677e' }}>Tools</span>
+            <span style={{ fontSize: 10, color: '#64748b' }}>Tools</span>
             <button onClick={() => addTool(s.id)} style={{ ...smallBtnStyle, fontSize: 10, padding: '2px 8px' }}>+ Tool</button>
           </div>
           {mcp.tools.filter(t => t.serverId === s.id).map(t => (
             <div key={t.id} style={{ display: 'flex', gap: 4, alignItems: 'center', marginTop: 4 }}>
               <input value={t.name} onChange={e => updateTool(t.id, { name: e.target.value })} placeholder="tool_name" style={{ ...inputStyle, marginTop: 0, flex: 1, fontSize: 11 }} />
-              <button onClick={() => updateTool(t.id, { enabled: !t.enabled })} style={{ ...removeBtnStyle, background: t.enabled ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)', color: t.enabled ? '#10b981' : '#8A2E3B' }}>
+              <button onClick={() => updateTool(t.id, { enabled: !t.enabled })} style={{ ...removeBtnStyle, background: t.enabled ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)', color: t.enabled ? '#10b981' : '#ef4444' }}>
                 {t.enabled ? 'ON' : 'OFF'}
               </button>
               <button onClick={() => removeTool(t.id)} style={removeBtnStyle}>X</button>
@@ -467,8 +467,8 @@ function McpTab({ mcp, onChange }: { mcp: McpConfig; onChange: (m: McpConfig) =>
         </div>
       ))}
 
-      <div style={{ marginTop: 16, padding: 10, borderRadius: 8, background: 'rgba(212,114,42,0.04)', border: '1px solid rgba(212,114,42,0.1)' }}>
-        <div style={{ color: '#d4722a', fontSize: 11, fontWeight: 600, marginBottom: 6 }}>Common MCP Servers</div>
+      <div style={{ marginTop: 16, padding: 10, borderRadius: 8, background: 'rgba(0,217,255,0.04)', border: '1px solid rgba(0,217,255,0.1)' }}>
+        <div style={{ color: '#00d9ff', fontSize: 11, fontWeight: 600, marginBottom: 6 }}>Common MCP Servers</div>
         {[
           { name: 'filesystem', cmd: 'npx -y @modelcontextprotocol/server-filesystem' },
           { name: 'github', cmd: 'npx -y @modelcontextprotocol/server-github' },
@@ -478,7 +478,7 @@ function McpTab({ mcp, onChange }: { mcp: McpConfig; onChange: (m: McpConfig) =>
           { name: 'puppeteer', cmd: 'npx -y @modelcontextprotocol/server-puppeteer' },
         ].map(s => (
           <button key={s.name} onClick={() => update({ servers: [...mcp.servers, { id: uid(), name: s.name, url: s.cmd, transport: 'stdio' }] })}
-            style={{ fontSize: 10, padding: '3px 8px', borderRadius: 12, border: '1px solid rgba(212,114,42,0.2)', background: 'transparent', color: '#b5adb9', cursor: 'pointer', margin: '2px 2px' }}>
+            style={{ fontSize: 10, padding: '3px 8px', borderRadius: 12, border: '1px solid rgba(0,217,255,0.2)', background: 'transparent', color: '#8b9dc3', cursor: 'pointer', margin: '2px 2px' }}>
             + {s.name}
           </button>
         ))}
@@ -509,7 +509,7 @@ function NotesTab({ notes, onChange }: { notes: NoteEntry[]; onChange: (n: NoteE
         <div key={n.id} style={{ ...cardStyle, position: 'relative' }}>
           <p style={{ color: '#e2e8f0', fontSize: 12, margin: 0, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{n.content}</p>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-            <span style={{ color: '#76677e', fontSize: 10 }}>{n.author} | {new Date(n.timestamp).toLocaleString()}</span>
+            <span style={{ color: '#64748b', fontSize: 10 }}>{n.author} | {new Date(n.timestamp).toLocaleString()}</span>
             <button onClick={() => remove(n.id)} style={removeBtnStyle}>X</button>
           </div>
         </div>
@@ -539,8 +539,8 @@ function BestPracticesTab({ agent, badges }: { agent: Agent; badges: Badge[] }) 
     <div style={{ marginTop: 8 }}>
       <p style={{ color: '#94a3b8', fontSize: 12, marginBottom: 12 }}>Recommendations for building effective agents based on current configuration.</p>
       {tips.filter(t => t.relevant).map((t, i) => (
-        <div key={i} style={{ ...cardStyle, borderLeft: '3px solid #d4722a' }}>
-          <div style={{ color: '#d4722a', fontSize: 11, fontWeight: 600, marginBottom: 4 }}>{t.category}</div>
+        <div key={i} style={{ ...cardStyle, borderLeft: '3px solid #00d9ff' }}>
+          <div style={{ color: '#00d9ff', fontSize: 11, fontWeight: 600, marginBottom: 4 }}>{t.category}</div>
           <p style={{ color: '#cbd5e1', fontSize: 12, margin: 0, lineHeight: 1.5 }}>{t.tip}</p>
         </div>
       ))}
@@ -566,7 +566,7 @@ function DatabaseTab({ db, onChange }: { db: DatabaseConfig; onChange: (d: Datab
           <button onClick={() => remove(c.id)} style={removeBtnStyle}>X</button>
         </div>
         <select value={c.type} onChange={e => update(c.id, { type: e.target.value as any })} style={{ ...inputStyle, cursor: 'pointer' }}>
-          {['postgresql', 'mysql', 'sqlite', 'mongodb', 'redis'].map(t => <option key={t} value={t} style={{ background: '#271d2e' }}>{t}</option>)}
+          {['postgresql', 'mysql', 'sqlite', 'mongodb', 'redis'].map(t => <option key={t} value={t} style={{ background: '#1e293b' }}>{t}</option>)}
         </select>
         <input value={c.connectionString} onChange={e => update(c.id, { connectionString: e.target.value })} placeholder="connection string" style={inputStyle} />
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 11, color: '#94a3b8', cursor: 'pointer' }}>
@@ -598,20 +598,20 @@ function ModelTab({ model, onChange }: { model: ModelConfig; onChange: (m: Model
   return (<>
     <label style={labelStyle}>Provider</label>
     <select value={model.provider} onChange={e => update({ provider: e.target.value })} style={{ ...inputStyle, cursor: 'pointer' }}>
-      {['anthropic', 'openai', 'google', 'mistral', 'meta', 'local', 'custom'].map(p => <option key={p} value={p} style={{ background: '#271d2e' }}>{p}</option>)}
+      {['anthropic', 'openai', 'google', 'mistral', 'meta', 'local', 'custom'].map(p => <option key={p} value={p} style={{ background: '#1e293b' }}>{p}</option>)}
     </select>
     <label style={labelStyle}>Model</label>
     {model.provider === 'anthropic' ? (
       <select value={model.model} onChange={e => update({ model: e.target.value })} style={{ ...inputStyle, cursor: 'pointer' }}>
-        {['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5-20251001'].map(m => <option key={m} value={m} style={{ background: '#271d2e' }}>{m}</option>)}
+        {['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5-20251001'].map(m => <option key={m} value={m} style={{ background: '#1e293b' }}>{m}</option>)}
       </select>
     ) : model.provider === 'openai' ? (
       <select value={model.model} onChange={e => update({ model: e.target.value })} style={{ ...inputStyle, cursor: 'pointer' }}>
-        {['gpt-4o', 'gpt-4o-mini', 'o3', 'o4-mini'].map(m => <option key={m} value={m} style={{ background: '#271d2e' }}>{m}</option>)}
+        {['gpt-4o', 'gpt-4o-mini', 'o3', 'o4-mini'].map(m => <option key={m} value={m} style={{ background: '#1e293b' }}>{m}</option>)}
       </select>
     ) : model.provider === 'google' ? (
       <select value={model.model} onChange={e => update({ model: e.target.value })} style={{ ...inputStyle, cursor: 'pointer' }}>
-        {['gemini-2.5-pro', 'gemini-2.5-flash'].map(m => <option key={m} value={m} style={{ background: '#271d2e' }}>{m}</option>)}
+        {['gemini-2.5-pro', 'gemini-2.5-flash'].map(m => <option key={m} value={m} style={{ background: '#1e293b' }}>{m}</option>)}
       </select>
     ) : (
       <input value={model.model} onChange={e => update({ model: e.target.value })} placeholder="model-name" style={inputStyle} />
@@ -639,7 +639,7 @@ function MemoryTab({ memory, onChange }: { memory: MemoryConfig; onChange: (m: M
     <input type="number" value={memory.contextWindowTokens} onChange={e => update({ contextWindowTokens: Number(e.target.value) })} step={1000} style={inputStyle} />
     <label style={labelStyle}>Backend</label>
     <select value={memory.memoryBackend} onChange={e => update({ memoryBackend: e.target.value })} style={{ ...inputStyle, cursor: 'pointer' }}>
-      {['in-memory', 'sqlite', 'redis', 'postgres', 'pinecone', 'chromadb', 'qdrant'].map(b => <option key={b} value={b} style={{ background: '#271d2e' }}>{b}</option>)}
+      {['in-memory', 'sqlite', 'redis', 'postgres', 'pinecone', 'chromadb', 'qdrant'].map(b => <option key={b} value={b} style={{ background: '#1e293b' }}>{b}</option>)}
     </select>
     <label style={labelStyle}>TTL (minutes, 0 = never)</label>
     <input type="number" value={memory.ttlMinutes} onChange={e => update({ ttlMinutes: Number(e.target.value) })} min={0} style={inputStyle} />
@@ -677,10 +677,10 @@ function TriggersTab({ triggers, onChange }: { triggers: TriggerEntry[]; onChang
       <div key={t.id} style={cardStyle}>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <select value={t.type} onChange={e => update(t.id, { type: e.target.value as any })} style={{ ...inputStyle, marginTop: 0, width: 90, cursor: 'pointer' }}>
-            {['scheduled', 'webhook', 'message', 'event', 'manual'].map(ty => <option key={ty} value={ty} style={{ background: '#271d2e' }}>{ty}</option>)}
+            {['scheduled', 'webhook', 'message', 'event', 'manual'].map(ty => <option key={ty} value={ty} style={{ background: '#1e293b' }}>{ty}</option>)}
           </select>
           <input value={t.config} onChange={e => update(t.id, { config: e.target.value })} placeholder={t.type === 'scheduled' ? 'cron expression' : 'config'} style={{ ...inputStyle, marginTop: 0, flex: 1 }} />
-          <button onClick={() => update(t.id, { enabled: !t.enabled })} style={{ ...removeBtnStyle, background: t.enabled ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)', color: t.enabled ? '#10b981' : '#8A2E3B' }}>{t.enabled ? 'ON' : 'OFF'}</button>
+          <button onClick={() => update(t.id, { enabled: !t.enabled })} style={{ ...removeBtnStyle, background: t.enabled ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)', color: t.enabled ? '#10b981' : '#ef4444' }}>{t.enabled ? 'ON' : 'OFF'}</button>
           <button onClick={() => remove(t.id)} style={removeBtnStyle}>X</button>
         </div>
       </div>
@@ -757,7 +757,7 @@ function ContextSourcesTab({ sources, onChange }: { sources: ContextSourceEntry[
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <input value={s.agentNickname} onChange={e => update(s.id, { agentNickname: e.target.value })} placeholder="Agent nickname" style={{ ...inputStyle, marginTop: 0, flex: 1 }} />
           <select value={s.dataType} onChange={e => update(s.id, { dataType: e.target.value })} style={{ ...inputStyle, marginTop: 0, width: 80, cursor: 'pointer' }}>
-            {['output', 'state', 'memory', 'logs', 'metrics'].map(d => <option key={d} value={d} style={{ background: '#271d2e' }}>{d}</option>)}
+            {['output', 'state', 'memory', 'logs', 'metrics'].map(d => <option key={d} value={d} style={{ background: '#1e293b' }}>{d}</option>)}
           </select>
           <label style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: '#94a3b8', cursor: 'pointer', whiteSpace: 'nowrap' }}><input type="checkbox" checked={s.required} onChange={e => update(s.id, { required: e.target.checked })} /> Req</label>
           <button onClick={() => remove(s.id)} style={removeBtnStyle}>X</button>

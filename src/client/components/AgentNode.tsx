@@ -16,18 +16,18 @@ export interface AgentNodeData {
 }
 
 const badgeColors: Record<string, { bg: string; border: string }> = {
-  HUB: { bg: 'rgba(251, 191, 36, 0.25)', border: '#e09050' },
-  CRITICAL: { bg: 'rgba(239, 68, 68, 0.25)', border: '#8A2E3B' },
-  ENTRY: { bg: 'rgba(34, 197, 94, 0.25)', border: '#5fa878' },
-  HUMAN: { bg: 'rgba(168, 85, 247, 0.25)', border: '#b07cc4' },
-  AUTO: { bg: 'rgba(212, 114, 42, 0.2)', border: '#d4722a' },
-  APPROVAL: { bg: 'rgba(168, 85, 247, 0.2)', border: '#b07cc4' },
-  ALWAYS_ON: { bg: 'rgba(212, 114, 42, 0.2)', border: '#d4722a' },
-  ADVISORY: { bg: 'rgba(139, 157, 195, 0.2)', border: '#b5adb9' },
-  CAN_OVERRIDE: { bg: 'rgba(239, 68, 68, 0.2)', border: '#8A2E3B' },
-  HIGH_PRIORITY: { bg: 'rgba(251, 146, 60, 0.2)', border: '#d4722a' },
-  MEDIUM: { bg: 'rgba(139, 157, 195, 0.15)', border: '#b5adb9' },
-  LOGS_ALL: { bg: 'rgba(251, 191, 36, 0.2)', border: '#e09050' },
+  HUB: { bg: 'rgba(251, 191, 36, 0.25)', border: '#fbbf24' },
+  CRITICAL: { bg: 'rgba(239, 68, 68, 0.25)', border: '#ef4444' },
+  ENTRY: { bg: 'rgba(34, 197, 94, 0.25)', border: '#22c55e' },
+  HUMAN: { bg: 'rgba(168, 85, 247, 0.25)', border: '#a855f7' },
+  AUTO: { bg: 'rgba(0, 217, 255, 0.2)', border: '#00d9ff' },
+  APPROVAL: { bg: 'rgba(168, 85, 247, 0.2)', border: '#a855f7' },
+  ALWAYS_ON: { bg: 'rgba(0, 217, 255, 0.2)', border: '#00d9ff' },
+  ADVISORY: { bg: 'rgba(139, 157, 195, 0.2)', border: '#8b9dc3' },
+  CAN_OVERRIDE: { bg: 'rgba(239, 68, 68, 0.2)', border: '#ef4444' },
+  HIGH_PRIORITY: { bg: 'rgba(251, 146, 60, 0.2)', border: '#00d9ff' },
+  MEDIUM: { bg: 'rgba(139, 157, 195, 0.15)', border: '#8b9dc3' },
+  LOGS_ALL: { bg: 'rgba(251, 191, 36, 0.2)', border: '#fbbf24' },
 };
 
 function getBadgeStyle(badge: Badge) {
@@ -41,10 +41,10 @@ function AgentNodeComponent({ data }: NodeProps) {
   return (
     <div style={{
       width: 220,
-      background: 'linear-gradient(145deg, #271d2e 0%, #1e1524 100%)',
+      background: 'linear-gradient(145deg, #1e293b 0%, #0f172a 100%)',
       borderRadius: 16,
       padding: '16px 14px',
-      border: `3px solid ${d.isSelected ? '#ffffff' : d.isInBlastRadius ? '#8A2E3B' : d.layerColor}`,
+      border: `3px solid ${d.isSelected ? '#ffffff' : d.isInBlastRadius ? '#ef4444' : d.layerColor}`,
       boxShadow: isHighlighted
         ? `0 0 ${d.isSelected ? 30 : 20}px ${d.isSelected ? d.layerColor : 'rgba(239, 68, 68, 0.6)'}`
         : '0 4px 20px rgba(0, 0, 0, 0.3)',
@@ -66,14 +66,14 @@ function AgentNodeComponent({ data }: NodeProps) {
           width: 26,
           height: 26,
           borderRadius: '50%',
-          background: '#8A2E3B',
+          background: '#ef4444',
           color: '#fff',
           fontSize: 12,
           fontWeight: 700,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          border: '2px solid #1e1524',
+          border: '2px solid #0f172a',
         }}>
           {d.blastRadiusHops}
         </div>
@@ -86,8 +86,8 @@ function AgentNodeComponent({ data }: NodeProps) {
         <div style={{
           position: 'absolute', top: 8, right: 8,
           width: 12, height: 12, borderRadius: '50%',
-          background: d.healthStatus === 'healthy' ? '#5fa878' : d.healthStatus === 'degraded' ? '#e09050' : '#8A2E3B',
-          boxShadow: `0 0 8px ${d.healthStatus === 'healthy' ? '#5fa878' : d.healthStatus === 'degraded' ? '#e09050' : '#8A2E3B'}`,
+          background: d.healthStatus === 'healthy' ? '#22c55e' : d.healthStatus === 'degraded' ? '#fbbf24' : '#ef4444',
+          boxShadow: `0 0 8px ${d.healthStatus === 'healthy' ? '#22c55e' : d.healthStatus === 'degraded' ? '#fbbf24' : '#ef4444'}`,
           animation: d.healthStatus !== 'healthy' ? 'healthPulse 2s ease-in-out infinite' : 'none',
         }} />
       )}
@@ -109,7 +109,7 @@ function AgentNodeComponent({ data }: NodeProps) {
       <div style={{
         fontSize: 11,
         textAlign: 'center',
-        color: '#b5adb9',
+        color: '#8b9dc3',
         marginBottom: 6,
         lineHeight: 1.3,
       }}>
@@ -119,7 +119,7 @@ function AgentNodeComponent({ data }: NodeProps) {
       <div style={{
         fontSize: 12,
         textAlign: 'center',
-        color: '#968a9c',
+        color: '#a0aec0',
         fontStyle: 'italic',
         marginBottom: 10,
       }}>

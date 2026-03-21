@@ -24,7 +24,7 @@ export function CollaborationCursors({ cursors, users, connected }: Props) {
         <div style={{
           position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)',
           display: 'flex', gap: 4, padding: '4px 12px', borderRadius: 20,
-          background: 'rgba(10, 22, 40, 0.9)', border: '1px solid rgba(212, 114, 42, 0.2)',
+          background: 'rgba(10, 22, 40, 0.9)', border: '1px solid rgba(0, 217, 255, 0.2)',
           zIndex: 50,
         }}>
           {users.map(u => (
@@ -37,7 +37,7 @@ export function CollaborationCursors({ cursors, users, connected }: Props) {
               {u.userName.charAt(0).toUpperCase()}
             </div>
           ))}
-          <span style={{ color: '#76677e', fontSize: 11, lineHeight: '24px', marginLeft: 4 }}>
+          <span style={{ color: '#64748b', fontSize: 11, lineHeight: '24px', marginLeft: 4 }}>
             {users.length} online
           </span>
         </div>
