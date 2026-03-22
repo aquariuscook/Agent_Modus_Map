@@ -80,6 +80,8 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent }: Prop
     URL.revokeObjectURL(url);
   }
 
+  const [copied, setCopied] = useState(false);
+
   function copyResults(result: any, type: 'mock' | 'live') {
     if (!result) return;
     const lines: string[] = [];
@@ -97,6 +99,8 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent }: Prop
       lines.push('');
     }
     navigator.clipboard.writeText(lines.join('\n'));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   async function handleGetCost() {
@@ -169,7 +173,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent }: Prop
                   marginBottom: 12, padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border-default)',
                   background: 'transparent', color: 'var(--accent-primary)', fontSize: 11, fontWeight: 600,
                   cursor: 'pointer', fontFamily: 'var(--font-primary)', width: '100%',
-                }}>Copy All Results</button>
+                }}>{copied ? 'Copied!' : 'Copy All Results'}</button>
 
                 <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Execution Trace</div>
                 {simResult.steps.map((step: any, i: number) => (
@@ -298,7 +302,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent }: Prop
                   marginBottom: 12, padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border-default)',
                   background: 'transparent', color: 'var(--accent-primary)', fontSize: 11, fontWeight: 600,
                   cursor: 'pointer', fontFamily: 'var(--font-primary)', width: '100%',
-                }}>Copy All Results</button>
+                }}>{copied ? 'Copied!' : 'Copy All Results'}</button>
 
                 <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Agent Responses</div>
                 {liveResult.steps.map((step: any, i: number) => (

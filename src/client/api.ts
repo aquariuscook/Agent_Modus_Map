@@ -437,6 +437,11 @@ export async function getSwarmCostEstimate(swarmId: string, callsPerDay?: number
   return fetchJson(`/simulate/${swarmId}/cost${params}`);
 }
 
+// Delete Swarm
+export async function deleteSwarm(swarmId: string): Promise<void> {
+  await fetch(`${BASE}/swarms/${swarmId}`, { method: 'DELETE' });
+}
+
 // Swarm Package Export
 export async function getSwarmPackage(swarmId: string): Promise<any> {
   return fetchJson(`/simulate/${swarmId}/export`);

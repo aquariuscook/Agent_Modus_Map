@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { listSwarms, createBlankSwarm, importFromCSV, getCSVTemplateUrl, getTemplates, instantiateTemplate } from '../api.js';
+import { listSwarms, createBlankSwarm, importFromCSV, getCSVTemplateUrl, getTemplates, instantiateTemplate, deleteSwarm } from '../api.js';
 import { ThemeToggle } from './ThemeToggle.js';
 import { LogoWithText } from './Logo.js';
 import { useTheme } from '../hooks/useTheme.js';
@@ -151,6 +151,19 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
                         background: 'var(--gem-emerald-400)', boxShadow: '0 0 6px var(--gem-emerald-500)',
                         flexShrink: 0,
                       }} />
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Delete "${s.name}"? This cannot be undone.`)) {
+                            deleteSwarm(s.id).then(() => setSwarms(swarms.filter(sw => sw.id !== s.id)));
+                          }
+                        }}
+                        style={{
+                          color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: 14,
+                          padding: '2px 6px', borderRadius: 4, flexShrink: 0,
+                        }}
+                        title="Delete swarm"
+                      >X</span>
                     </button>
                   ))}
                 </div>

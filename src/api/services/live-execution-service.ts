@@ -263,28 +263,28 @@ function generateSearchQueries(input: string, coreTask: string): string[] {
   const queries: string[] = [];
   const lower = (input + ' ' + coreTask).toLowerCase();
 
-  if (lower.includes('training') || lower.includes('ai training')) {
-    queries.push('companies hiring AI training consultant 2024 2025');
-    queries.push('small business AI adoption training services RFP');
+  // Specific, actionable queries that find real companies
+  if (lower.includes('training') || lower.includes('ai')) {
+    queries.push('"looking for" OR "seeking" AI training consulting small business 2025');
+    queries.push('site:linkedin.com "we need help with" AI automation training company');
+    queries.push('"request for proposal" OR RFP AI training consulting services');
   }
-  if (lower.includes('automat') || lower.includes('process')) {
-    queries.push('companies looking for process automation consulting');
-    queries.push('small business automation RFP proposal request');
+  if (lower.includes('automat') || lower.includes('process') || lower.includes('efficien')) {
+    queries.push('"struggling with" OR "need help" process automation small business');
+    queries.push('"hiring" "automation consultant" OR "process improvement" -enterprise');
   }
   if (lower.includes('customer service') || lower.includes('cx') || lower.includes('chatbot')) {
-    queries.push('companies modernizing customer service AI chatbot');
-    queries.push('customer service automation consulting opportunities');
+    queries.push('"modernizing customer service" OR "replacing IVR" small business');
+    queries.push('"customer experience" consulting needed small medium business');
   }
-  if (lower.includes('consulting') || lower.includes('prospect')) {
-    queries.push('companies hiring technology consultants small business');
-  }
-
-  // Always add a general query based on the input
-  if (queries.length === 0) {
-    queries.push(input.slice(0, 100));
+  if (lower.includes('consulting')) {
+    queries.push('"looking for consultant" OR "need a consultant" AI automation training 2025');
   }
 
-  return queries;
+  // Always include a direct query
+  queries.push(`${input.slice(0, 60)} small business companies opportunities 2025`);
+
+  return queries.slice(0, 3);
 }
 
 function findEntryPoints(swarm: Swarm): Agent[] {
