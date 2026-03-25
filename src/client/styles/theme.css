@@ -108,40 +108,40 @@
   color-scheme: dark;
 }
 
-/* Light Mode */
+/* Light Mode - Warm Neutral Palette */
 [data-theme="light"] {
-  --bg-base: #f7f5f8;
-  --bg-subtle: #efedf1;
+  --bg-base: #FEFCFB;
+  --bg-subtle: #FBF8F5;
   --bg-surface: #ffffff;
-  --bg-elevated: #ffffff;
-  --bg-overlay: #f2f0f4;
+  --bg-elevated: #FBF8F5;
+  --bg-overlay: #f5f0ec;
 
-  --border-subtle: rgba(0, 0, 0, 0.05);
-  --border-default: rgba(0, 0, 0, 0.09);
-  --border-strong: rgba(0, 0, 0, 0.15);
-  --border-accent: rgba(0, 150, 138, 0.35);
+  --border-subtle: rgba(132, 107, 90, 0.08);
+  --border-default: rgba(132, 107, 90, 0.15);
+  --border-strong: rgba(132, 107, 90, 0.25);
+  --border-accent: rgba(132, 107, 90, 0.35);
 
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-tertiary: #94a3b8;
-  --text-disabled: #cbd5e1;
-  --text-inverse: #ffffff;
-  --text-accent: #007a72;
+  --text-primary: #3d2e23;
+  --text-secondary: #846B5A;
+  --text-tertiary: #CAB8A9;
+  --text-disabled: #D4CAC1;
+  --text-inverse: #FEFCFB;
+  --text-accent: #846B5A;
 
-  --accent-primary: #009990;
-  --accent-primary-hover: #007a72;
-  --accent-primary-muted: rgba(0, 153, 144, 0.1);
+  --accent-primary: #846B5A;
+  --accent-primary-hover: #6b5648;
+  --accent-primary-muted: rgba(132, 107, 90, 0.1);
 
-  --scrollbar-track: #efedf1;
-  --scrollbar-thumb: #d8d3db;
+  --scrollbar-track: #FBF8F5;
+  --scrollbar-thumb: #D4CAC1;
 
-  /* Logo colors - 700/900 level (AA+ on light bg) */
-  --logo-cyan: #005f58;
-  --logo-amethyst: #5b21b6;
-  --logo-sapphire: #1e40af;
-  --logo-emerald: #047857;
-  --logo-sage: #005f58;
-  --logo-plum: #5b21b6;
+  /* Logo colors for warm light bg */
+  --logo-cyan: #5a7a6b;
+  --logo-amethyst: #846B5A;
+  --logo-sapphire: #6b5648;
+  --logo-emerald: #5a7a6b;
+  --logo-sage: #5a7a6b;
+  --logo-plum: #846B5A;
 
   color-scheme: light;
 }
