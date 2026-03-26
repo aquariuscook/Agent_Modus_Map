@@ -217,7 +217,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
   if (!isOpen) return null;
 
   return (
-    <div onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} style={{
+    <div onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()} onWheel={e => e.stopPropagation()} style={{
       position: 'fixed', top: 60, right: 20, width: 480, maxHeight: 'calc(100vh - 120px)',
       background: 'var(--bg-base)', border: '1px solid var(--border-default)', borderRadius: 12,
       display: 'flex', flexDirection: 'column', zIndex: 1000,
