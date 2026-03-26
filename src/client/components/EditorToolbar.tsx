@@ -163,7 +163,7 @@ export function EditorToolbar(props: EditorToolbarProps) {
 
       {mode === 'ship' && (
         <div style={{ display: 'flex', gap: 6 }}>
-          <button onClick={props.onToggleSimulation} style={btnStyle(false, '#22c55e')}>Deploy Package</button>
+          <button onClick={props.onToggleSimulation} style={btnStyle(false, '#22c55e')}>Deploy</button>
           <button onClick={props.onExportHandoff} style={btnStyle(false, mColor)}>Handoff Doc</button>
           <button onClick={props.onExportJSON} style={btnStyle(false, mColor)}>Export JSON</button>
           <button onClick={props.onExportHTML} style={btnStyle(false, mColor)}>Export HTML</button>

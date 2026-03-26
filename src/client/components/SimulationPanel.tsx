@@ -16,12 +16,22 @@ interface Props {
   isOpen: boolean;
   onToggle: () => void;
   onOpenAgent?: (agentId: string) => void;
+  defaultTab?: Tab;
 }
 
 type Tab = 'simulate' | 'cost' | 'live' | 'deploy';
 
-export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent }: Props) {
-  const [tab, setTab] = useState<Tab>('simulate');
+export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaultTab }: Props) {
+  const [tab, setTab] = useState<Tab>(defaultTab || 'simulate');
+  const prevDefaultTab = React.useRef(defaultTab);
+
+  // Only update tab when defaultTab actually changes (not on every render)
+  useEffect(() => {
+    if (defaultTab && defaultTab !== prevDefaultTab.current) {
+      setTab(defaultTab);
+      prevDefaultTab.current = defaultTab;
+    }
+  }, [defaultTab]);
   const [simResult, setSimResult] = useState<any>(null);
   const [costResult, setCostResult] = useState<any>(null);
   const [liveResult, setLiveResult] = useState<any>(null);
@@ -763,7 +773,7 @@ function DeployTab({ swarmId }: { swarmId: string }) {
       {results.length > 0 && (
         <div style={{ marginTop: 20 }}>
           <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
-            Run History ({results.length})
+            Results ({results.length})
           </div>
           {results.map((run: any, i: number) => (
             <details key={run.id || i} style={{

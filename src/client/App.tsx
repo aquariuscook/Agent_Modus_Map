@@ -374,7 +374,7 @@ export function App() {
       <GovernancePanel swarmId={swarmId} isOpen={governanceOpen} onClose={() => setOpenPanel(null)} />
       <CollaborationPanel swarmId={swarmId} swarm={swarm} isOpen={collaborationOpen} onClose={() => setOpenPanel(null)} />
       <OptimizationPanel swarmId={swarmId} isOpen={optimizationOpen} onClose={() => setOpenPanel(null)} />
-          <SimulationPanel swarmId={swarmId} isOpen={simulationOpen} onToggle={() => togglePanel('simulation')}
+          <SimulationPanel swarmId={swarmId} isOpen={simulationOpen} onToggle={() => togglePanel('simulation')} defaultTab={editorMode === 'ship' ? 'deploy' : 'simulate'}
             onOpenAgent={(agentId) => {
               const agent = swarm.agents.find(a => a.id === agentId);
               if (agent) { setSelectedAgent(agent); setEditorOpen(true); }
