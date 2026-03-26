@@ -3,10 +3,10 @@ import { getTemplates, instantiateTemplate, createBlankSwarm, listSwarms, import
 import type { Swarm } from '../../shared/types/index.js';
 
 const domainColors: Record<string, string> = {
-  'Support': '#00d9ff',
-  'Media': '#a855f7',
+  'Support': 'var(--accent-primary)',
+  'Media': 'var(--accent-secondary)',
   'Retail': '#22c55e',
-  'Engineering': '#00d9ff',
+  'Engineering': 'var(--accent-primary)',
   'Logistics': '#fbbf24',
   'Data': '#06b6d4',
   'Security': '#ef4444',
@@ -125,7 +125,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
               padding: 20, borderRadius: 14, border: '2px solid rgba(168,85,247,0.3)',
               background: 'rgba(168,85,247,0.05)', cursor: 'pointer', transition: 'all 0.2s',
             }}>
-              <div style={{ fontSize: 18, fontWeight: 600, color: '#a855f7' }}>Use a Template</div>
+              <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--accent-secondary)' }}>Use a Template</div>
               <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6 }}>
                 {templates.length} industry templates with pre-built agents and relationships.
               </div>
@@ -270,7 +270,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
         {/* Template mode */}
         {mode === 'template' && <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {templates.map(template => {
-            const color = domainColors[template.domain] || '#8b9dc3';
+            const color = domainColors[template.domain] || 'var(--text-secondary)';
             const isSelected = selectedTemplate?.id === template.id;
 
             return (

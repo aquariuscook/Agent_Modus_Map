@@ -83,8 +83,8 @@ export function GovernancePanel({ swarmId, isOpen, onClose }: Props) {
             <div>
               <div style={{
                 padding: 16, borderRadius: 8, marginBottom: 20,
-                background: compliance.status === 'compliant' ? '#052e16' : compliance.status === 'partial' ? '#451a03' : '#450a0a',
-                border: `1px solid ${compliance.status === 'compliant' ? '#16a34a' : compliance.status === 'partial' ? '#d97706' : '#dc2626'}`,
+                background: compliance.status === 'compliant' ? 'var(--status-ok-bg, #052e16)' : compliance.status === 'partial' ? 'var(--status-warn-bg, #451a03)' : 'var(--status-error-bg, #450a0a)',
+                border: `1px solid ${compliance.status === 'compliant' ? 'var(--status-ok-strong, #16a34a)' : compliance.status === 'partial' ? 'var(--status-warn-strong, #d97706)' : 'var(--status-error-strong, #dc2626)'}`,
               }}>
                 <div style={{
                   color: compliance.status === 'compliant' ? '#4ade80' : compliance.status === 'partial' ? '#fbbf24' : '#f87171',
@@ -105,7 +105,7 @@ export function GovernancePanel({ swarmId, isOpen, onClose }: Props) {
                   <span style={{
                     width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 12, fontWeight: 700,
-                    background: check.status === 'pass' ? '#16a34a' : check.status === 'warning' ? '#d97706' : '#dc2626',
+                    background: check.status === 'pass' ? 'var(--status-ok-strong, #16a34a)' : check.status === 'warning' ? 'var(--status-warn-strong, #d97706)' : 'var(--status-error-strong, #dc2626)',
                     color: 'var(--text-primary)',
                   }}>
                     {check.status === 'pass' ? 'P' : check.status === 'warning' ? '!' : 'F'}

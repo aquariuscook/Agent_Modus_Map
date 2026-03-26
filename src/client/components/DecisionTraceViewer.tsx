@@ -70,7 +70,7 @@ export function DecisionTraceViewer({ swarmId, isOpen, onClose }: Props) {
                     style={{
                       padding: '10px 12px', marginBottom: 8, borderRadius: 8, cursor: 'pointer',
                       background: selectedTrace?.id === trace.id ? 'var(--bg-overlay)' : 'var(--bg-surface)',
-                      border: `1px solid ${selectedTrace?.id === trace.id ? '#00d9ff' : 'var(--bg-overlay)'}`,
+                      border: `1px solid ${selectedTrace?.id === trace.id ? 'var(--accent-primary)' : 'var(--bg-overlay)'}`,
                     }}
                   >
                     <div style={{ color: 'var(--text-primary)', fontSize: 13, fontWeight: 600 }}>{trace.title}</div>

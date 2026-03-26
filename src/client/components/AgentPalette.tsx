@@ -30,10 +30,10 @@ const agentTemplates: AgentTemplate[] = [
 ];
 
 const categoryColors: Record<string, string> = {
-  'Customer Journey': '#00d9ff',
-  'Product & Content': '#a855f7',
+  'Customer Journey': 'var(--accent-primary)',
+  'Product & Content': 'var(--accent-secondary)',
   'Order Processing': '#22c55e',
-  'Operations': '#00d9ff',
+  'Operations': 'var(--accent-primary)',
   'Intelligence': '#fbbf24',
 };
 
@@ -128,7 +128,7 @@ export function AgentPalette({ layers, onDragStart, isOpen, onToggle }: AgentPal
             {categories.map(category => {
               const items = filtered.filter(t => t.category === category);
               if (items.length === 0) return null;
-              const color = categoryColors[category] || '#8b9dc3';
+              const color = categoryColors[category] || 'var(--text-secondary)';
 
               return (
                 <div key={category} style={{ marginBottom: 14 }}>

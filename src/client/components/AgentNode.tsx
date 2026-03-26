@@ -20,14 +20,14 @@ const badgeColors: Record<string, { bg: string; border: string }> = {
   HUB: { bg: 'rgba(251, 191, 36, 0.25)', border: '#fbbf24' },
   CRITICAL: { bg: 'rgba(239, 68, 68, 0.25)', border: '#ef4444' },
   ENTRY: { bg: 'rgba(34, 197, 94, 0.25)', border: '#22c55e' },
-  HUMAN: { bg: 'rgba(168, 85, 247, 0.25)', border: '#a855f7' },
-  AUTO: { bg: 'rgba(0, 217, 255, 0.2)', border: '#00d9ff' },
-  APPROVAL: { bg: 'rgba(168, 85, 247, 0.2)', border: '#a855f7' },
-  ALWAYS_ON: { bg: 'rgba(0, 217, 255, 0.2)', border: '#00d9ff' },
-  ADVISORY: { bg: 'rgba(139, 157, 195, 0.2)', border: '#8b9dc3' },
+  HUMAN: { bg: 'rgba(168, 85, 247, 0.25)', border: 'var(--accent-secondary)' },
+  AUTO: { bg: 'rgba(0, 217, 255, 0.2)', border: 'var(--accent-primary)' },
+  APPROVAL: { bg: 'rgba(168, 85, 247, 0.2)', border: 'var(--accent-secondary)' },
+  ALWAYS_ON: { bg: 'rgba(0, 217, 255, 0.2)', border: 'var(--accent-primary)' },
+  ADVISORY: { bg: 'rgba(139, 157, 195, 0.2)', border: 'var(--text-secondary)' },
   CAN_OVERRIDE: { bg: 'rgba(239, 68, 68, 0.2)', border: '#ef4444' },
-  HIGH_PRIORITY: { bg: 'rgba(251, 146, 60, 0.2)', border: '#00d9ff' },
-  MEDIUM: { bg: 'rgba(139, 157, 195, 0.15)', border: '#8b9dc3' },
+  HIGH_PRIORITY: { bg: 'rgba(251, 146, 60, 0.2)', border: 'var(--accent-primary)' },
+  MEDIUM: { bg: 'rgba(139, 157, 195, 0.15)', border: 'var(--text-secondary)' },
   LOGS_ALL: { bg: 'rgba(251, 191, 36, 0.2)', border: '#fbbf24' },
 };
 
@@ -45,7 +45,7 @@ function AgentNodeComponent({ data }: NodeProps) {
       background: 'var(--bg-elevated)',
       borderRadius: 16,
       padding: '16px 14px',
-      border: `3px solid ${d.isSelected ? '#ffffff' : d.isInBlastRadius ? '#ef4444' : d.layerColor}`,
+      border: `3px solid ${d.isSelected ? 'var(--text-inverse)' : d.isInBlastRadius ? '#ef4444' : d.layerColor}`,
       boxShadow: isHighlighted
         ? `0 0 ${d.isSelected ? 30 : 20}px ${d.isSelected ? d.layerColor : 'rgba(239, 68, 68, 0.6)'}`
         : '0 4px 20px rgba(0, 0, 0, 0.3)',

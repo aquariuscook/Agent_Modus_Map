@@ -2,10 +2,10 @@ import React from 'react';
 import type { RelationshipType } from '../../shared/types/index.js';
 
 const types: Array<{ type: RelationshipType; label: string; color: string; description: string }> = [
-  { type: 'dependsOn', label: 'Depends On', color: 'var(--text-accent)', description: 'Source requires data or services from target' },
-  { type: 'feedsInto', label: 'Feeds Into', color: '#7c3aed', description: 'Source sends output to target for processing' },
-  { type: 'collaboratesWith', label: 'Collaborates With', color: '#fbbf24', description: 'Agents coordinate as peers' },
-  { type: 'canOverride', label: 'Can Override', color: '#ef4444', description: 'Source has authority to block or supersede target' },
+  { type: 'dependsOn', label: 'Needs', color: 'var(--text-accent)', description: 'This agent needs information or services from the other agent to do its job' },
+  { type: 'feedsInto', label: 'Sends data to', color: 'var(--accent-secondary)', description: 'This agent passes its results to the other agent for further work' },
+  { type: 'collaboratesWith', label: 'Works with', color: '#fbbf24', description: 'These agents work together as equals, sharing information back and forth' },
+  { type: 'canOverride', label: 'Can overrule', color: '#ef4444', description: 'This agent has the authority to change or block the other agent\'s decisions' },
 ];
 
 interface ConnectionTypeModalProps {

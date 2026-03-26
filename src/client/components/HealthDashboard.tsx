@@ -165,7 +165,7 @@ export function HealthDashboard({ swarmId, isOpen, onClose }: HealthDashboardPro
                 </h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
                   <MetricCard label="Latency (p95)" value={`${selectedDetail.latencyP95}ms`}
-                    history={selectedDetail.history.map(h => h.latencyP95)} color="#00d9ff" />
+                    history={selectedDetail.history.map(h => h.latencyP95)} color="var(--accent-primary)" />
                   <MetricCard label="Throughput" value={`${selectedDetail.throughput} req/m`}
                     history={selectedDetail.history.map(h => h.throughput)} color="#22c55e" />
                   <MetricCard label="Error Rate" value={`${selectedDetail.errorRate}%`}

@@ -64,7 +64,7 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
                     <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: 14 }}>{b.nickname}</span>
                     <div style={{
                       padding: '2px 10px', borderRadius: 12, fontSize: 12, fontWeight: 700,
-                      background: b.score >= 70 ? '#dc2626' : b.score >= 40 ? '#d97706' : '#2563eb',
+                      background: b.score >= 70 ? 'var(--status-error-strong, #dc2626)' : b.score >= 40 ? 'var(--status-warn-strong, #d97706)' : 'var(--accent-primary)',
                       color: 'var(--text-primary)',
                     }}>
                       Risk: {b.score}
@@ -79,7 +79,7 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
                   <div style={{ marginTop: 8, height: 6, background: 'var(--bg-elevated)', borderRadius: 3, overflow: 'hidden' }}>
                     <div style={{
                       width: `${b.score}%`, height: '100%', borderRadius: 3,
-                      background: b.score >= 70 ? '#dc2626' : b.score >= 40 ? '#d97706' : '#2563eb',
+                      background: b.score >= 70 ? 'var(--status-error-strong, #dc2626)' : b.score >= 40 ? 'var(--status-warn-strong, #d97706)' : 'var(--accent-primary)',
                     }} />
                   </div>
                 </div>
@@ -155,8 +155,8 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
                 <div>
                   <div style={{
                     padding: 16, borderRadius: 8, marginBottom: 16,
-                    background: whatIf.riskScore >= 70 ? '#450a0a' : whatIf.riskScore >= 40 ? '#451a03' : '#052e16',
-                    border: `1px solid ${whatIf.riskScore >= 70 ? '#dc2626' : whatIf.riskScore >= 40 ? '#d97706' : '#16a34a'}`,
+                    background: whatIf.riskScore >= 70 ? 'var(--status-error-bg, #450a0a)' : whatIf.riskScore >= 40 ? 'var(--status-warn-bg, #451a03)' : 'var(--status-ok-bg, #052e16)',
+                    border: `1px solid ${whatIf.riskScore >= 70 ? 'var(--status-error-strong, #dc2626)' : whatIf.riskScore >= 40 ? 'var(--status-warn-strong, #d97706)' : 'var(--status-ok-strong, #16a34a)'}`,
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{whatIf.scenario}</span>
@@ -179,7 +179,7 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
                           <span style={{ color: 'var(--text-primary)', fontSize: 13 }}>{a.nickname}</span>
                           <span style={{
                             padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 600,
-                            background: a.impact === 'high' ? '#dc2626' : a.impact === 'medium' ? '#d97706' : '#2563eb',
+                            background: a.impact === 'high' ? 'var(--status-error-strong, #dc2626)' : a.impact === 'medium' ? 'var(--status-warn-strong, #d97706)' : 'var(--accent-primary)',
                             color: 'var(--text-primary)',
                           }}>{a.impact}</span>
                         </div>

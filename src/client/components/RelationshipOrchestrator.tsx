@@ -10,8 +10,8 @@ interface Props {
 }
 
 const REL_COLORS: Record<RelationshipType, string> = {
-  dependsOn: '#00d9ff',
-  feedsInto: '#a855f7',
+  dependsOn: 'var(--accent-primary)',
+  feedsInto: 'var(--accent-secondary)',
   collaboratesWith: '#fbbf24',
   canOverride: '#ef4444',
 };
@@ -99,8 +99,8 @@ export function RelationshipOrchestrator({ swarm, isOpen, onToggle, onCreateRela
           {(['quick', 'pipeline', 'bulk', 'existing'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600,
-              background: tab === t ? '#00d9ff' : 'var(--border-subtle)',
-              color: tab === t ? 'var(--text-inverse)' : '#64748b',
+              background: tab === t ? 'var(--accent-primary)' : 'var(--border-subtle)',
+              color: tab === t ? 'var(--text-inverse)' : 'var(--text-tertiary)',
             }}>{t === 'quick' ? 'Quick Connect' : t === 'pipeline' ? 'Pipeline Builder' : t === 'bulk' ? 'Bulk / Suggest' : 'Existing'}</button>
           ))}
         </div>
@@ -133,7 +133,7 @@ export function RelationshipOrchestrator({ swarm, isOpen, onToggle, onCreateRela
             </div>
             <button onClick={handleQuickConnect} disabled={!sourceNickname || !targetNickname} style={{
               padding: '8px 20px', borderRadius: 6, border: 'none', cursor: 'pointer',
-              background: sourceNickname && targetNickname ? '#00d9ff' : 'var(--bg-elevated)',
+              background: sourceNickname && targetNickname ? 'var(--accent-primary)' : 'var(--bg-elevated)',
               color: sourceNickname && targetNickname ? 'var(--text-inverse)' : 'var(--text-secondary)',
               fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap',
             }}>Connect</button>
@@ -158,7 +158,7 @@ export function RelationshipOrchestrator({ swarm, isOpen, onToggle, onCreateRela
                       background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', marginLeft: 6, fontSize: 12,
                     }}>x</button>
                   </span>
-                  {i < pipelineAgents.length - 1 && <span style={{ color: '#a855f7', fontSize: 16, alignSelf: 'center' }}>{'→'}</span>}
+                  {i < pipelineAgents.length - 1 && <span style={{ color: 'var(--accent-secondary)', fontSize: 16, alignSelf: 'center' }}>{'→'}</span>}
                 </React.Fragment>
               ))}
             </div>
@@ -169,7 +169,7 @@ export function RelationshipOrchestrator({ swarm, isOpen, onToggle, onCreateRela
               </select>
               <button onClick={handlePipelineCreate} disabled={pipelineAgents.length < 2} style={{
                 padding: '8px 20px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                background: pipelineAgents.length >= 2 ? '#a855f7' : 'var(--bg-elevated)',
+                background: pipelineAgents.length >= 2 ? 'var(--accent-secondary)' : 'var(--bg-elevated)',
                 color: pipelineAgents.length >= 2 ? '#fff' : 'var(--text-secondary)',
                 fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap',
               }}>Create Pipeline ({Math.max(0, pipelineAgents.length - 1)} connections)</button>

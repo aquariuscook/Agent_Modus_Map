@@ -11,7 +11,7 @@ export interface ValidationMessage {
 const severityStyles: Record<string, { color: string; bg: string; icon: string }> = {
   error: { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)', icon: '\u26D4' },
   warning: { color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.1)', icon: '\u26A0' },
-  advisory: { color: '#00d9ff', bg: 'rgba(0, 217, 255, 0.08)', icon: '\u2139' },
+  advisory: { color: 'var(--accent-primary)', bg: 'rgba(0, 217, 255, 0.08)', icon: '\u2139' },
 };
 
 export function validateSwarm(swarm: Swarm): ValidationMessage[] {

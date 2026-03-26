@@ -13,11 +13,56 @@ interface DashboardProps {
 
 type View = 'home' | 'templates' | 'csv';
 
+function InputModal({ title, placeholder, defaultValue, onConfirm, onCancel }: {
+  title: string; placeholder?: string; defaultValue?: string;
+  onConfirm: (value: string) => void; onCancel: () => void;
+}) {
+  const [value, setValue] = useState(defaultValue || '');
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-6)', width: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
+        <div style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--space-4)' }}>{title}</div>
+        <input
+          value={value} onChange={e => setValue(e.target.value)}
+          placeholder={placeholder}
+          autoFocus
+          onKeyDown={e => e.key === 'Enter' && value.trim() && onConfirm(value.trim())}
+          style={{ width: '100%', padding: 'var(--space-3) var(--space-4)', fontSize: 'var(--text-sm)', fontFamily: 'var(--font-primary)', background: 'var(--bg-elevated)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box' }}
+        />
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)', marginTop: 'var(--space-5)' }}>
+          <button onClick={onCancel} style={{ padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-default)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'var(--font-primary)', fontSize: 'var(--text-sm)' }}>Cancel</button>
+          <button onClick={() => value.trim() && onConfirm(value.trim())} style={{ padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--accent-primary)', color: 'var(--text-inverse)', cursor: 'pointer', fontFamily: 'var(--font-primary)', fontSize: 'var(--text-sm)', fontWeight: 600, opacity: value.trim() ? 1 : 0.4 }}>Create</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmModal({ title, message, confirmLabel, onConfirm, onCancel }: {
+  title: string; message: string; confirmLabel?: string;
+  onConfirm: () => void; onCancel: () => void;
+}) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-6)', width: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
+        <div style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--space-3)' }}>{title}</div>
+        <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: 'var(--space-5)', lineHeight: 1.5 }}>{message}</div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
+          <button onClick={onCancel} style={{ padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-default)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'var(--font-primary)', fontSize: 'var(--text-sm)' }}>Cancel</button>
+          <button onClick={onConfirm} style={{ padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--status-error-strong, #dc2626)', color: '#fff', cursor: 'pointer', fontFamily: 'var(--font-primary)', fontSize: 'var(--text-sm)', fontWeight: 600 }}>{confirmLabel || 'Delete'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Dashboard({ onOpenSwarm }: DashboardProps) {
   const { theme, toggleTheme } = useTheme();
   const [swarms, setSwarms] = useState<Swarm[]>([]);
   const [templates, setTemplates] = useState<TemplateInfo[]>([]);
   const [view, setView] = useState<View>('home');
+  const [nameModal, setNameModal] = useState<{ title: string; placeholder?: string; defaultValue?: string; onConfirm: (v: string) => void } | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
   const [creating, setCreating] = useState(false);
   const [csvData, setCsvData] = useState('');
   const [csvName, setCsvName] = useState('');
@@ -29,14 +74,20 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
   }, []);
 
   const handleCreateBlank = async () => {
-    const name = prompt('Name your swarm:');
-    if (!name?.trim()) return;
-    setCreating(true);
-    try {
-      const swarm = await createBlankSwarm(name.trim());
-      onOpenSwarm(swarm.id);
-    } finally { setCreating(false); }
+    setNameModal({
+      title: 'Name your swarm',
+      placeholder: 'e.g. Customer Support Team',
+      onConfirm: async (name) => {
+        setNameModal(null);
+        setCreating(true);
+        try {
+          const swarm = await createBlankSwarm(name);
+          onOpenSwarm(swarm.id);
+        } finally { setCreating(false); }
+      }
+    });
   };
+
 
   const handleInstantiateTemplate = async (templateId: string, name: string) => {
     setCreating(true);
@@ -161,9 +212,14 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
                       <span
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (confirm(`Delete "${s.name}"? This cannot be undone.`)) {
-                            deleteSwarm(s.id).then(() => setSwarms(swarms.filter(sw => sw.id !== s.id)));
-                          }
+                          setConfirmModal({
+                            title: `Delete "${s.name}"?`,
+                            message: 'This will permanently remove this swarm and all its agents. This cannot be undone.',
+                            onConfirm: () => {
+                              setConfirmModal(null);
+                              deleteSwarm(s.id).then(() => setSwarms(swarms.filter(sw => sw.id !== s.id)));
+                            }
+                          });
                         }}
                         style={{
                           color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: 14,
@@ -200,8 +256,12 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
                 const color = domainColors[t.domain] || 'var(--text-secondary)';
                 return (
                   <button key={t.id} onClick={() => {
-                    const name = prompt(`Name your ${t.name} swarm:`, `My ${t.name}`);
-                    if (name) handleInstantiateTemplate(t.id, name);
+                    setNameModal({
+                      title: `Name your ${t.name} swarm`,
+                      placeholder: `e.g. My ${t.name}`,
+                      defaultValue: `My ${t.name}`,
+                      onConfirm: (name) => { setNameModal(null); handleInstantiateTemplate(t.id, name); }
+                    });
                   }} style={{ ...cardBase, cursor: 'pointer', textAlign: 'left' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-3)' }}>
                       <div>
@@ -266,6 +326,8 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
         )}
       </div>
       <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      {nameModal && <InputModal {...nameModal} onCancel={() => setNameModal(null)} />}
+      {confirmModal && <ConfirmModal {...confirmModal} onCancel={() => setConfirmModal(null)} />}
     </div>
   );
 }

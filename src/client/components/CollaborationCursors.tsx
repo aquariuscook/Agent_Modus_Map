@@ -37,7 +37,7 @@ export function CollaborationCursors({ cursors, users, connected }: Props) {
               {u.userName.charAt(0).toUpperCase()}
             </div>
           ))}
-          <span style={{ color: '#64748b', fontSize: 11, lineHeight: '24px', marginLeft: 4 }}>
+          <span style={{ color: 'var(--text-tertiary)', fontSize: 11, lineHeight: '24px', marginLeft: 4 }}>
             {users.length} online
           </span>
         </div>

@@ -113,7 +113,7 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
   }
 
   const layer = layers.find(l => l.id === layerId);
-  const borderColor = layer?.colorTheme || '#00d9ff';
+  const borderColor = layer?.colorTheme || 'var(--accent-primary)';
 
   // Relationships for this agent
   const rels = {
@@ -196,7 +196,7 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
                   fontSize: 10, padding: '3px 8px', borderRadius: 8, cursor: 'pointer',
                   border: `1px solid ${badges.includes(b) ? borderColor : 'rgba(255,255,255,0.15)'}`,
                   background: badges.includes(b) ? `${borderColor}25` : 'transparent',
-                  color: badges.includes(b) ? '#fff' : '#64748b',
+                  color: badges.includes(b) ? '#fff' : 'var(--text-tertiary)',
                 }}>{b.replace('_', ' ')}</button>
               ))}
             </div>
@@ -213,7 +213,7 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
           {sections.map(s => (
             <button key={s.id} onClick={() => setSection(s.id)} style={{
               padding: '10px 16px', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer',
-              background: 'transparent', color: section === s.id ? '#00d9ff' : '#64748b',
+              background: 'transparent', color: section === s.id ? 'var(--accent-primary)' : 'var(--text-tertiary)',
               borderBottom: section === s.id ? '2px solid #00d9ff' : '2px solid transparent',
               whiteSpace: 'nowrap',
             }}>{s.label}</button>
@@ -311,7 +311,7 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
           {section === 'relationships' && (
             <>
               <SectionHeader title="Relationships" />
-              <RelSection title="Depends On" color="#00d9ff" agents={rels.dependsOn} agentConfig={config} type="dependsOn" onUpdateNote={(id, note) => updateConfig({ relationshipNotes: { ...config.relationshipNotes, [id]: note } })} />
+              <RelSection title="Depends On" color="var(--accent-primary)" agents={rels.dependsOn} agentConfig={config} type="dependsOn" onUpdateNote={(id, note) => updateConfig({ relationshipNotes: { ...config.relationshipNotes, [id]: note } })} />
               <RelSection title="Feeds Into" color="#a855f7" agents={rels.feedsInto} agentConfig={config} type="feedsInto" onUpdateNote={(id, note) => updateConfig({ relationshipNotes: { ...config.relationshipNotes, [id]: note } })} />
               <RelSection title="Collaborates With" color="#fbbf24" agents={rels.collaboratesWith} agentConfig={config} type="collaboratesWith" onUpdateNote={(id, note) => updateConfig({ relationshipNotes: { ...config.relationshipNotes, [id]: note } })} />
               <RelSection title="Can Override" color="#ef4444" agents={rels.canOverride} agentConfig={config} type="canOverride" onUpdateNote={(id, note) => updateConfig({ relationshipNotes: { ...config.relationshipNotes, [id]: note } })} />

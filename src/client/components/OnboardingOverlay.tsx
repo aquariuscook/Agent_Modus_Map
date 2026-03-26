@@ -49,7 +49,7 @@ export function OnboardingOverlay({ onDismiss }: Props) {
           {STEPS.map((_, i) => (
             <div key={i} style={{
               width: 8, height: 8, borderRadius: '50%',
-              background: i === step ? '#00d9ff' : 'var(--bg-overlay)',
+              background: i === step ? 'var(--accent-primary)' : 'var(--bg-overlay)',
               transition: 'background 0.2s',
             }} />
           ))}

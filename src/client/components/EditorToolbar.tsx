@@ -43,10 +43,10 @@ interface EditorToolbarProps {
 }
 
 const modeColors: Record<EditorMode, string> = {
-  build: '#00d9ff',
+  build: 'var(--accent-primary)',
   watch: '#22c55e',
   test: '#fbbf24',
-  ship: '#a855f7',
+  ship: 'var(--accent-secondary)',
 };
 
 const modeLabels: Record<EditorMode, string> = {
@@ -59,9 +59,9 @@ const modeLabels: Record<EditorMode, string> = {
 const btnStyle = (active?: boolean, color?: string): React.CSSProperties => ({
   padding: '5px 12px',
   borderRadius: 6,
-  border: `1px solid ${active ? (color || '#00d9ff') : 'rgba(255,255,255,0.12)'}`,
-  background: active ? `${color || '#00d9ff'}20` : 'rgba(255,255,255,0.04)',
-  color: active ? (color || '#00d9ff') : 'var(--text-secondary)',
+  border: `1px solid ${active ? (color || 'var(--accent-primary)') : 'rgba(255,255,255,0.12)'}`,
+  background: active ? `${color || 'var(--accent-primary)'}20` : 'rgba(255,255,255,0.04)',
+  color: active ? (color || 'var(--accent-primary)') : 'var(--text-secondary)',
   cursor: 'pointer',
   fontSize: 12,
   fontWeight: 600,
@@ -139,7 +139,7 @@ export function EditorToolbar(props: EditorToolbarProps) {
           <button onClick={props.onToggleValidation} style={btnStyle(false, mColor)}>Validate</button>
           <button onClick={props.onToggleChat} style={btnStyle(false, mColor)}>Chat</button>
           <button onClick={props.onToggleBlastRadius} style={btnStyle(props.showBlastRadius, '#ef4444')}>
-            {props.showBlastRadius ? 'Blast: ON' : 'Blast'}
+            {props.showBlastRadius ? 'Impact: ON' : 'Impact'}
           </button>
         </div>
       )}

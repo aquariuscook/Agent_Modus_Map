@@ -19,8 +19,8 @@ const nodeTypes = { agent: AgentNode };
 import { getAgentEmoji } from '../utils/agent-emojis.js';
 
 const edgeStyles: Record<string, { stroke: string; strokeDasharray?: string; strokeWidth: number }> = {
-  dependsOn: { stroke: '#00d9ff', strokeWidth: 2 },
-  feedsInto: { stroke: '#7c3aed', strokeDasharray: '8,4', strokeWidth: 2 },
+  dependsOn: { stroke: 'var(--accent-primary)', strokeWidth: 2 },
+  feedsInto: { stroke: 'var(--accent-secondary)', strokeDasharray: '8,4', strokeWidth: 2 },
   collaboratesWith: { stroke: '#fbbf24', strokeDasharray: '3,3', strokeWidth: 1.5 },
   canOverride: { stroke: '#ef4444', strokeWidth: 3 },
 };
@@ -41,14 +41,14 @@ interface SwarmCanvasProps {
 
 function getLayerColor(layerId: string, layers: Swarm['layers']): string {
   const layer = layers.find(l => l.id === layerId);
-  return layer?.colorTheme || '#8b9dc3';
+  return layer?.colorTheme || 'var(--text-secondary)';
 }
 
 const REL_LEGEND = [
-  { label: 'Depends On', color: '#00d9ff', dash: '' },
-  { label: 'Feeds Into', color: '#7c3aed', dash: '8,4' },
-  { label: 'Collaborates', color: '#fbbf24', dash: '3,3' },
-  { label: 'Can Override', color: '#ef4444', dash: '' },
+  { label: 'Needs (depends on)', color: 'var(--accent-primary)', dash: '' },
+  { label: 'Sends data to', color: 'var(--accent-secondary)', dash: '8,4' },
+  { label: 'Works with', color: '#fbbf24', dash: '3,3' },
+  { label: 'Can overrule', color: '#ef4444', dash: '' },
 ];
 
 function LegendPanel({ layers }: { layers: Swarm['layers'] }) {
@@ -271,7 +271,7 @@ export function SwarmCanvas({
         snapGrid={[20, 20]}
         proOptions={{ hideAttribution: true }}
         style={{ background: 'transparent' }}
-        connectionLineStyle={{ stroke: '#00d9ff', strokeWidth: 2 }}
+        connectionLineStyle={{ stroke: 'var(--accent-primary)', strokeWidth: 2 }}
       >
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--border-subtle)" />
         <Controls

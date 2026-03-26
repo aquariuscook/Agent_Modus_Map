@@ -197,7 +197,7 @@ function StatusCard({ name, connected, prefix, testResult }: {
 }) {
   const dotColor = testResult
     ? (testResult.working ? '#22c55e' : '#ef4444')
-    : (connected ? '#fbbf24' : '#64748b');
+    : (connected ? '#fbbf24' : 'var(--text-tertiary)');
 
   const statusText = testResult
     ? (testResult.working ? 'Working' : testResult.error || 'Failed')

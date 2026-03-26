@@ -111,7 +111,7 @@ export function CollaborationPanel({ swarmId, swarm, isOpen, onClose }: Props) {
                     </div>
                   </div>
                   <p style={{ color: 'var(--text-primary)', fontSize: 13, margin: '6px 0 0', lineHeight: 1.5 }}>{c.content}</p>
-                  {c.resolved && <span style={{ color: '#16a34a', fontSize: 11 }}>Resolved</span>}
+                  {c.resolved && <span style={{ color: 'var(--status-ok-strong, #16a34a)', fontSize: 11 }}>Resolved</span>}
                 </div>
               ))}
             </div>
