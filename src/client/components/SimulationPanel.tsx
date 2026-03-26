@@ -640,6 +640,7 @@ function DeployTab({ swarmId }: { swarmId: string }) {
     try {
       const status = await getDeployStatus(swarmId);
       setDeployStatus(status);
+      if (status?.query && !query) setQuery(status.query); // pre-fill from last deploy
       const history = await getDeployResults(swarmId);
       setResults(history || []);
     } catch { /* no deployment yet */ }
@@ -668,7 +669,7 @@ function DeployTab({ swarmId }: { swarmId: string }) {
 
   const isRunning = deployStatus?.status === 'running';
   const isPaused = deployStatus?.status === 'paused';
-  const isStopped = !deployStatus || deployStatus.status === 'stopped' || deployStatus.status === 'completed' || deployStatus.status === 'budget_reached';
+  const isStopped = !deployStatus || ['stopped', 'completed', 'budget_reached', 'error'].includes(deployStatus.status);
 
   const statusColors: Record<string, string> = {
     running: '#22c55e', paused: '#fbbf24', stopped: 'var(--text-tertiary)',
@@ -782,7 +783,12 @@ function DeployTab({ swarmId }: { swarmId: string }) {
                   {run.agentsProcessed} agents, ${run.cost?.toFixed(4) || '0'}
                 </span>
               </summary>
-              <div style={{ padding: '0 14px 14px', maxHeight: 300, overflowY: 'auto' }}>
+              <div style={{ padding: '0 14px 14px', maxHeight: 400, overflowY: 'auto' }}>
+                <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+                  <button onClick={() => { const r = { steps: run.steps, totalDurationMs: run.durationMs, totalCost: run.cost, totalInputTokens: run.totalTokens, totalOutputTokens: 0, status: run.status }; downloadReport(r); }} style={{ ...ctrlBtn, flex: 1 }}>Download</button>
+                  <button onClick={() => { const r = { steps: run.steps }; copyLeadSheet(r); }} style={{ ...ctrlBtn, flex: 1, color: 'var(--accent-secondary, #a855f7)', borderColor: 'var(--accent-secondary, #a855f7)' }}>Copy Leads</button>
+                  <button onClick={() => { const r = { steps: run.steps, totalDurationMs: run.durationMs, totalCost: run.cost, totalInputTokens: run.totalTokens, totalOutputTokens: 0, agentsProcessed: run.agentsProcessed, status: run.status }; copyResults(r, 'live'); }} style={{ ...ctrlBtn, flex: 1 }}>Copy All</button>
+                </div>
                 {run.error && <div style={{ color: '#ef4444', fontSize: 12, marginBottom: 8 }}>{run.error}</div>}
                 {(run.steps || []).map((step: any, j: number) => (
                   <div key={j} style={{ marginBottom: 8 }}>
