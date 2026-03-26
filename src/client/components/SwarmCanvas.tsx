@@ -114,6 +114,36 @@ function LegendPanel({ layers }: { layers: Swarm['layers'] }) {
   );
 }
 
+const CONNECT_HINT_KEY = 'agent-modus-connect-hint-dismissed';
+
+function ConnectHint({ agentCount, relationshipCount }: { agentCount: number; relationshipCount: number }) {
+  const [dismissed, setDismissed] = React.useState(() => localStorage.getItem(CONNECT_HINT_KEY) === 'true');
+
+  if (dismissed || agentCount < 2 || relationshipCount > 0) return null;
+
+  return (
+    <div style={{
+      position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
+      zIndex: 10, display: 'flex', alignItems: 'center', gap: 10,
+      padding: '8px 16px', borderRadius: 'var(--radius-md)',
+      background: 'var(--bg-surface)', border: '1px solid var(--border-accent)',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+      fontSize: 'var(--text-sm)', color: 'var(--text-secondary)',
+      fontFamily: 'var(--font-primary)',
+    }}>
+      <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>Tip:</span>
+      <span>Drag from one agent's dot to another to connect them</span>
+      <button
+        onClick={() => { setDismissed(true); localStorage.setItem(CONNECT_HINT_KEY, 'true'); }}
+        style={{
+          background: 'none', border: 'none', color: 'var(--text-tertiary)',
+          cursor: 'pointer', fontSize: 14, padding: '0 2px', fontFamily: 'var(--font-primary)',
+        }}
+      >X</button>
+    </div>
+  );
+}
+
 export function SwarmCanvas({
   swarm, selectedAgent, onSelectAgent, blastRadius, showBlastRadius,
   onNodeDragStop, onConnect, onDropAgent, onDeleteEdge, agentHealthMap, onOpenAgentDetail,
@@ -251,7 +281,8 @@ export function SwarmCanvas({
   }, [onDropAgent, screenToFlowPosition]);
 
   return (
-    <div ref={reactFlowWrapper} style={{ width: '100%', height: '100%' }}>
+    <div ref={reactFlowWrapper} style={{ width: '100%', height: '100%', position: 'relative' }}>
+      <ConnectHint agentCount={swarm.agents.length} relationshipCount={swarm.relationships.length} />
       <ReactFlow
         nodes={nodes}
         edges={edges}

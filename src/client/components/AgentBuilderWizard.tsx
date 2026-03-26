@@ -26,8 +26,8 @@ const STEPS: Array<{ num: Step; title: string; subtitle: string }> = [
   { num: 1, title: 'Identity', subtitle: 'Who is this agent?' },
   { num: 2, title: 'Primary Function', subtitle: 'What does it do?' },
   { num: 3, title: 'Inputs & Outputs', subtitle: 'Data in, data out' },
-  { num: 4, title: 'Model & Memory', subtitle: 'How does it think?' },
-  { num: 5, title: 'Integrations', subtitle: 'What tools does it use?' },
+  { num: 4, title: 'AI & Memory', subtitle: 'How does it think?' },
+  { num: 5, title: 'Tools & Data', subtitle: 'What tools does it use?' },
   { num: 6, title: 'Behavior & Safety', subtitle: 'Rules and guardrails' },
   { num: 7, title: 'Performance & Notes', subtitle: 'Metrics and documentation' },
   { num: 8, title: 'Review & Create', subtitle: 'Confirm and build' },
@@ -292,8 +292,11 @@ function analyzeCoreTask(coreTask: string): TaskSuggestions | null {
   return bestScore > 0 ? bestMatch : null;
 }
 
+const QUICK_STEPS: number[] = [1, 2, 8];
+
 export function AgentBuilderWizard({ layers, existingNicknames, onCreate, onCancel }: Props) {
   const [step, setStep] = useState<Step>(1);
+  const [quickMode, setQuickMode] = useState(true);
 
   // Step 1: Identity
   const [nickname, setNickname] = useState('');
@@ -409,6 +412,40 @@ export function AgentBuilderWizard({ layers, existingNicknames, onCreate, onCanc
 
   const nicknameError = existingNicknames.includes(nickname.trim()) ? 'This nickname already exists in the swarm' : '';
 
+  // Quick mode navigation helpers
+  const activeSteps = quickMode ? QUICK_STEPS : STEPS.map(s => s.num);
+  const currentStepIndex = activeSteps.indexOf(step);
+  const displayStepNum = currentStepIndex + 1;
+  const displayStepTotal = activeSteps.length;
+  const isLastStep = currentStepIndex === activeSteps.length - 1;
+  const isFirstStep = currentStepIndex === 0;
+
+  function goNext() {
+    if (quickMode) {
+      const nextIdx = currentStepIndex + 1;
+      if (nextIdx < QUICK_STEPS.length) setStep(QUICK_STEPS[nextIdx] as Step);
+    } else {
+      if (step < 8) setStep((step + 1) as Step);
+    }
+  }
+
+  function goBack() {
+    if (quickMode) {
+      const prevIdx = currentStepIndex - 1;
+      if (prevIdx >= 0) setStep(QUICK_STEPS[prevIdx] as Step);
+    } else {
+      if (step > 1) setStep((step - 1) as Step);
+    }
+  }
+
+  function handleModeToggle(toQuick: boolean) {
+    setQuickMode(toQuick);
+    // Reset to step 1 when switching modes to avoid landing on an invisible step
+    if (toQuick && !QUICK_STEPS.includes(step)) {
+      setStep(1);
+    }
+  }
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{
@@ -419,10 +456,27 @@ export function AgentBuilderWizard({ layers, existingNicknames, onCreate, onCanc
       }}>
         {/* Progress Header */}
         <div style={{ padding: 'var(--space-5) var(--space-6)', borderBottom: '1px solid var(--border-default)', flexShrink: 0 }}>
+          {/* Mode toggle */}
+          <div style={{ display: 'flex', gap: 2, marginBottom: 'var(--space-3)', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', padding: 2, width: 'fit-content' }}>
+            <button onClick={() => handleModeToggle(true)} style={{
+              padding: '5px 14px', borderRadius: 'var(--radius-sm)', border: 'none', fontSize: 'var(--text-xs)', fontWeight: 600,
+              fontFamily: 'var(--font-primary)', cursor: 'pointer',
+              background: quickMode ? 'var(--accent-primary)' : 'transparent',
+              color: quickMode ? 'var(--text-inverse)' : 'var(--text-tertiary)',
+              transition: 'background 0.15s, color 0.15s',
+            }}>Quick Create (3 steps)</button>
+            <button onClick={() => handleModeToggle(false)} style={{
+              padding: '5px 14px', borderRadius: 'var(--radius-sm)', border: 'none', fontSize: 'var(--text-xs)', fontWeight: 600,
+              fontFamily: 'var(--font-primary)', cursor: 'pointer',
+              background: !quickMode ? 'var(--accent-primary)' : 'transparent',
+              color: !quickMode ? 'var(--text-inverse)' : 'var(--text-tertiary)',
+              transition: 'background 0.15s, color 0.15s',
+            }}>Advanced (8 steps)</button>
+          </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
             <div>
               <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--accent-primary)', marginBottom: 2 }}>
-                Step {step} of 8
+                Step {displayStepNum} of {displayStepTotal}
               </div>
               <div style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-primary)' }}>
                 {STEPS[step - 1].title}
@@ -435,8 +489,8 @@ export function AgentBuilderWizard({ layers, existingNicknames, onCreate, onCanc
           </div>
           {/* Progress bar */}
           <div style={{ display: 'flex', gap: 3 }}>
-            {STEPS.map(s => (
-              <div key={s.num} style={{ flex: 1, height: 3, borderRadius: 2, background: s.num <= step ? 'var(--accent-primary)' : 'var(--border-default)', transition: 'background 0.2s' }} />
+            {activeSteps.map((s, i) => (
+              <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= currentStepIndex ? 'var(--accent-primary)' : 'var(--border-default)', transition: 'background 0.2s' }} />
             ))}
           </div>
         </div>
@@ -487,7 +541,9 @@ export function AgentBuilderWizard({ layers, existingNicknames, onCreate, onCanc
 
           {step === 2 && <>
             <Callout type="primary">
-              Start here. Describe what this agent does in plain language. The more detail you provide, the better suggestions you will get for inputs, outputs, model settings, guardrails, and more in the following steps.
+              {quickMode
+                ? 'Describe what this agent does. Smart suggestions will fill in the details for you.'
+                : 'Start here. Describe what this agent does in plain language. The more detail you provide, the better suggestions you will get for inputs, outputs, model settings, guardrails, and more in the following steps.'}
             </Callout>
             <Field label="Core Task *" hint="The primary thing this agent does. Be specific about what, when, and how.">
               <textarea value={coreTask} onChange={e => setCoreTask(e.target.value)} placeholder="Reviews all user-generated content against community guidelines and brand standards before it goes live. Flags problematic content, auto-approves clean content, and queues borderline cases for human review." style={{ ...inp, minHeight: 100 }} autoFocus />
@@ -498,13 +554,12 @@ export function AgentBuilderWizard({ layers, existingNicknames, onCreate, onCanc
                   Detected: {suggestions.category}
                 </div>
                 <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                  Smart suggestions are now active for the remaining steps. Look for the green suggestion banners.
+                  {quickMode
+                    ? 'Smart suggestions will auto-fill skipped steps when you create this agent.'
+                    : 'Smart suggestions are now active for the remaining steps. Look for the green suggestion banners.'}
                 </div>
               </div>
             )}
-            <Field label="Trigger Conditions" hint="What activates this agent? (e.g. new data arrives, user action, schedule, another agent's output)">
-              <textarea value={triggerConditions} onChange={e => setTriggerConditions(e.target.value)} placeholder="Activates whenever new content is submitted (posts, comments, uploads, profile updates)" style={{ ...inp, minHeight: 50 }} />
-            </Field>
             <Field label="Autonomy Level" hint="How independently should it operate? Higher autonomy = less human oversight needed">
               <select value={autonomyLevel} onChange={e => setAutonomyLevel(e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
                 <option value="">Select...</option>
@@ -518,20 +573,25 @@ export function AgentBuilderWizard({ layers, existingNicknames, onCreate, onCanc
                 <SuggestionChip label={suggestions.autonomy} onApply={() => setAutonomyLevel(suggestions.autonomy)} />
               )}
             </Field>
-            <Divider />
-            <SH title="System Prompt" />
-            <Field label="Persona" hint="The identity and voice of this agent. Sets the foundation for all responses.">
-              <textarea value={persona} onChange={e => setPersona(e.target.value)} placeholder="You are a content moderation agent that reviews user-generated content..." style={{ ...inp, minHeight: 60 }} />
-            </Field>
-            <Field label="Instructions" hint="Step-by-step guidance for how the agent should process its task">
-              <textarea value={instructions} onChange={e => setInstructions(e.target.value)} placeholder="When reviewing content, check against the current moderation ruleset. For images, run through the visual content classifier first..." style={{ ...inp, minHeight: 80 }} />
-            </Field>
-            <Field label="Constraints" hint="Hard boundaries. What must it NEVER do? Think about safety, compliance, and trust.">
-              <textarea value={constraints} onChange={e => setConstraints(e.target.value)} placeholder="Never auto-approve content involving minors. Always escalate credible threats immediately..." style={{ ...inp, minHeight: 60 }} />
-            </Field>
-            <Field label="Output Format" hint="The expected structure of responses. JSON schema, markdown template, or plain text.">
-              <textarea value={outputFormat} onChange={e => setOutputFormat(e.target.value)} placeholder='{ "decision": "approve|reject|flag", "confidence": 0.92, "reason": "..." }' style={{ ...inp, minHeight: 40, fontFamily: "'SF Mono', monospace", fontSize: 'var(--text-xs)' }} />
-            </Field>
+            {!quickMode && <>
+              <Field label="Trigger Conditions" hint="What activates this agent? (e.g. new data arrives, user action, schedule, another agent's output)">
+                <textarea value={triggerConditions} onChange={e => setTriggerConditions(e.target.value)} placeholder="Activates whenever new content is submitted (posts, comments, uploads, profile updates)" style={{ ...inp, minHeight: 50 }} />
+              </Field>
+              <Divider />
+              <SH title="System Prompt" />
+              <Field label="Persona" hint="The identity and voice of this agent. Sets the foundation for all responses.">
+                <textarea value={persona} onChange={e => setPersona(e.target.value)} placeholder="You are a content moderation agent that reviews user-generated content..." style={{ ...inp, minHeight: 60 }} />
+              </Field>
+              <Field label="Instructions" hint="Step-by-step guidance for how the agent should process its task">
+                <textarea value={instructions} onChange={e => setInstructions(e.target.value)} placeholder="When reviewing content, check against the current moderation ruleset. For images, run through the visual content classifier first..." style={{ ...inp, minHeight: 80 }} />
+              </Field>
+              <Field label="Constraints" hint="Hard boundaries. What must it NEVER do? Think about safety, compliance, and trust.">
+                <textarea value={constraints} onChange={e => setConstraints(e.target.value)} placeholder="Never auto-approve content involving minors. Always escalate credible threats immediately..." style={{ ...inp, minHeight: 60 }} />
+              </Field>
+              <Field label="Output Format" hint="The expected structure of responses. JSON schema, markdown template, or plain text.">
+                <textarea value={outputFormat} onChange={e => setOutputFormat(e.target.value)} placeholder='{ "decision": "approve|reject|flag", "confidence": 0.92, "reason": "..." }' style={{ ...inp, minHeight: 40, fontFamily: "'SF Mono', monospace", fontSize: 'var(--text-xs)' }} />
+              </Field>
+            </>}
           </>}
 
           {step === 3 && <>
@@ -572,9 +632,9 @@ export function AgentBuilderWizard({ layers, existingNicknames, onCreate, onCanc
                 ]}
               />
             )}
-            <SH title="LLM Configuration" />
+            <SH title="AI Model" />
             <Row>
-              <Field label="Provider" hint="Which AI provider to use">
+              <Field label="AI Provider" hint="Which AI provider to use">
                 <select value={provider} onChange={e => setProvider(e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
                   {['anthropic','openai','google','mistral','meta','local','custom'].map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
@@ -584,10 +644,10 @@ export function AgentBuilderWizard({ layers, existingNicknames, onCreate, onCanc
               </Field>
             </Row>
             <Row>
-              <Field label="Temperature" hint="0 = deterministic and precise, 1+ = creative and varied. Lower for classification, higher for writing.">
+              <Field label="Temperature" hint="Lower = more predictable, Higher = more creative">
                 <input type="number" value={temperature} onChange={e => setTemperature(Number(e.target.value))} min={0} max={2} step={0.1} style={inp} />
               </Field>
-              <Field label="Max Tokens" hint="Maximum output length. Longer outputs cost more. Set based on expected response size.">
+              <Field label="Max Tokens" hint="How long the response can be">
                 <input type="number" value={maxTokens} onChange={e => setMaxTokens(Number(e.target.value))} step={256} style={inp} />
               </Field>
             </Row>
@@ -602,10 +662,10 @@ export function AgentBuilderWizard({ layers, existingNicknames, onCreate, onCanc
               </Tooltip>
             </div>
             <Row>
-              <Field label="Context Window (tokens)" hint="How much text the model can see at once. Larger = more context but higher cost.">
+              <Field label="Memory size" hint="How much the agent can remember at once">
                 <input type="number" value={contextWindow} onChange={e => setContextWindow(Number(e.target.value))} step={1000} style={inp} />
               </Field>
-              <Field label="Memory Backend" hint="Where to store agent memory. In-memory is fastest but ephemeral. SQLite/Redis for persistence.">
+              <Field label="Where to store memory" hint="In-memory is fastest but temporary. SQLite/Redis for persistence.">
                 <select value={memoryBackend} onChange={e => setMemoryBackend(e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
                   {['in-memory','sqlite','redis','postgres','pinecone','chromadb','qdrant'].map(b => <option key={b} value={b}>{b}</option>)}
                 </select>
@@ -640,7 +700,7 @@ export function AgentBuilderWizard({ layers, existingNicknames, onCreate, onCanc
               onAdd={name => setSkills([...skills, { id: uid(), name, description: '', enabled: true }])} />
 
             <Divider />
-            <SH title="RAG Knowledge Sources" />
+            <SH title="Knowledge Sources" />
             <ListBuilder items={ragSources} onAdd={() => setRagSources([...ragSources, { id: uid(), name: '', type: 'document', uri: '' }])} onRemove={id => setRagSources(ragSources.filter(s => s.id !== id))}
               renderItem={(s, i) => (
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -651,7 +711,7 @@ export function AgentBuilderWizard({ layers, existingNicknames, onCreate, onCanc
             />
 
             <Divider />
-            <SH title="MCP Servers" />
+            <SH title="Tool Connections" />
             <ListBuilder items={mcpServers} onAdd={() => setMcpServers([...mcpServers, { id: uid(), name: '', url: '', transport: 'stdio' }])} onRemove={id => setMcpServers(mcpServers.filter(s => s.id !== id))}
               renderItem={(s, i) => (
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -664,7 +724,7 @@ export function AgentBuilderWizard({ layers, existingNicknames, onCreate, onCanc
               onAdd={name => setMcpServers([...mcpServers, { id: uid(), name, url: `npx -y @modelcontextprotocol/server-${name}`, transport: 'stdio' }])} />
 
             <Divider />
-            <SH title="API Integrations" />
+            <SH title="External Services" />
             <ListBuilder items={apiCalls} onAdd={() => setApiCalls([...apiCalls, { id: uid(), name: '', method: 'GET', url: '', authType: 'none' }])} onRemove={id => setApiCalls(apiCalls.filter(a => a.id !== id))}
               renderItem={(a, i) => (
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -677,7 +737,7 @@ export function AgentBuilderWizard({ layers, existingNicknames, onCreate, onCanc
             />
 
             <Divider />
-            <SH title="Database Connections" />
+            <SH title="Data Sources" />
             <ListBuilder items={dbConnections} onAdd={() => setDbConnections([...dbConnections, { id: uid(), name: '', type: 'postgresql', connectionString: '', readOnly: true }])} onRemove={id => setDbConnections(dbConnections.filter(c => c.id !== id))}
               renderItem={(c, i) => (
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -877,15 +937,15 @@ export function AgentBuilderWizard({ layers, existingNicknames, onCreate, onCanc
 
         {/* Footer */}
         <div style={{ padding: 'var(--space-4) var(--space-6)', borderTop: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
-          <button onClick={step > 1 ? () => setStep((step - 1) as Step) : onCancel} style={btnSecondary}>
-            {step > 1 ? 'Back' : 'Cancel'}
+          <button onClick={!isFirstStep ? goBack : onCancel} style={btnSecondary}>
+            {!isFirstStep ? 'Back' : 'Cancel'}
           </button>
           <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-            {step < 8 && step > 1 && (
+            {!quickMode && step < 8 && step > 1 && (
               <button onClick={() => setStep(8 as Step)} style={{ ...btnSecondary, color: 'var(--text-tertiary)' }}>Skip to Review</button>
             )}
-            {step < 8 ? (
-              <button onClick={() => setStep((step + 1) as Step)} disabled={!canProceed()} style={{ ...btnPrimary, opacity: canProceed() ? 1 : 0.4 }}>
+            {!isLastStep ? (
+              <button onClick={goNext} disabled={!canProceed()} style={{ ...btnPrimary, opacity: canProceed() ? 1 : 0.4 }}>
                 Continue
               </button>
             ) : (

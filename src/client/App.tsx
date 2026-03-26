@@ -30,7 +30,7 @@ import {
 import type { SwarmHealthSummary } from './api.js';
 import type { Swarm, Agent, BlastRadiusResult, RelationshipType, Badge } from '../shared/types/index.js';
 
-const ONBOARDING_KEY = 'agentModusMap_onboardingDismissed';
+const ONBOARDING_KEY = 'agent-modus-onboarding-v2';
 
 type AppView = 'dashboard' | 'editor';
 

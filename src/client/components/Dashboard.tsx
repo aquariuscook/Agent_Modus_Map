@@ -56,6 +56,44 @@ function ConfirmModal({ title, message, confirmLabel, onConfirm, onCancel }: {
   );
 }
 
+function SwarmExplainer() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ marginBottom: 'var(--space-6)' }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          background: 'none', border: 'none', padding: 0,
+          color: 'var(--accent-primary)', fontSize: 'var(--text-sm)',
+          fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-primary)',
+          display: 'flex', alignItems: 'center', gap: 6,
+        }}
+      >
+        <span style={{ fontSize: 10, transition: 'transform 0.2s', transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}>&#9654;</span>
+        What is a swarm?
+      </button>
+      {open && (
+        <div style={{
+          marginTop: 'var(--space-3)', padding: 'var(--space-4) var(--space-5)',
+          background: 'var(--bg-surface)', border: '1px solid var(--border-default)',
+          borderRadius: 'var(--radius-lg)', fontSize: 'var(--text-sm)',
+          color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 560,
+        }}>
+          <p style={{ margin: '0 0 8px' }}>
+            A swarm is a team of AI agents that work together on a task.
+          </p>
+          <p style={{ margin: '0 0 8px' }}>
+            Each agent has a specific job (like finding leads, writing emails, or qualifying prospects).
+          </p>
+          <p style={{ margin: 0 }}>
+            You design the team, connect them, test them, then deploy.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Dashboard({ onOpenSwarm }: DashboardProps) {
   const { theme, toggleTheme } = useTheme();
   const [swarms, setSwarms] = useState<Swarm[]>([]);
@@ -148,6 +186,9 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
                 Build, connect, and monitor multi-agent AI systems. Start from scratch, use a template, or import your existing agents.
               </p>
             </div>
+
+            {/* What is a swarm? explainer */}
+            <SwarmExplainer />
 
             {/* Action Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)', marginBottom: 'var(--space-12)' }}>
