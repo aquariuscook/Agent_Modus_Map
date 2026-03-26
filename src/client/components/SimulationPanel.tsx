@@ -126,7 +126,12 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
   const [liveInput, setLiveInput] = useState('');
   const [liveProgress, setLiveProgress] = useState<{ agent: string; step: number; total: number } | null>(null);
   const [callsPerDay, setCallsPerDay] = useState('');
-  const [deployQuery, setDeployQuery] = useState('');
+  const [deployQuery, setDeployQuery] = useState(() => localStorage.getItem('agent-modus-deploy-query') || '');
+
+  const handleDeployQueryChange = useCallback((q: string) => {
+    setDeployQuery(q);
+    localStorage.setItem('agent-modus-deploy-query', q);
+  }, []);
 
   async function handleRunSimulation() {
     setLoading(true);
@@ -217,15 +222,15 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
   if (!isOpen) return null;
 
   return (
-    <>{/* Invisible backdrop to block canvas interactions while panel is open */}
-    <div onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()} style={{
-      position: 'fixed', top: 50, right: 0, width: 520, bottom: 0, zIndex: 999,
-    }} />
-    <div onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()} onWheel={e => e.stopPropagation()} style={{
-      position: 'fixed', top: 60, right: 20, width: 480, maxHeight: 'calc(100vh - 80px)',
-      background: 'var(--bg-base)', border: '1px solid var(--border-default)', borderRadius: 12,
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999,
+    }} onClick={onToggle} />
+    <div style={{
+      position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+      width: 560, maxHeight: '85vh',
+      background: 'var(--bg-base)', border: '1px solid var(--border-default)', borderRadius: 16,
       display: 'flex', flexDirection: 'column', zIndex: 1000,
-      boxShadow: '0 10px 40px rgba(0,0,0,0.6)',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
     }}>
       {/* Header */}
       <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -544,7 +549,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
           </div>
         )}
 
-        {tab === 'deploy' && <DeployTab swarmId={swarmId} query={deployQuery} onQueryChange={setDeployQuery} />}
+        {tab === 'deploy' && <DeployTab swarmId={swarmId} query={deployQuery} onQueryChange={handleDeployQueryChange} />}
       </div>
     </div>
     </>
