@@ -78,5 +78,22 @@ function initSchema(database: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_relationships_source ON relationships(source_agent_id);
     CREATE INDEX IF NOT EXISTS idx_relationships_target ON relationships(target_agent_id);
     CREATE INDEX IF NOT EXISTS idx_relationships_type ON relationships(type);
+
+    CREATE TABLE IF NOT EXISTS deploy_results (
+      id TEXT PRIMARY KEY,
+      swarm_id TEXT NOT NULL,
+      query TEXT NOT NULL,
+      timestamp TEXT NOT NULL,
+      duration_ms INTEGER,
+      agents_processed INTEGER,
+      total_tokens INTEGER,
+      cost REAL,
+      status TEXT,
+      steps TEXT,
+      error TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_deploy_results_swarm ON deploy_results(swarm_id);
+    CREATE INDEX IF NOT EXISTS idx_deploy_results_timestamp ON deploy_results(timestamp);
   `);
 }

@@ -32,10 +32,91 @@ export interface RunResult {
   error?: string;
 }
 
-// In-memory store for active deployments and results
+// In-memory store for active deployments (fine for runtime state)
 const deployments = new Map<string, DeployConfig>();
-const runHistory = new Map<string, RunResult[]>(); // swarmId -> results
 const timers = new Map<string, NodeJS.Timeout>();
+
+// Database reference for persisting results
+let _db: Database.Database | null = null;
+
+export function setRuntimeDb(db: Database.Database): void {
+  _db = db;
+}
+
+function saveResultToDb(result: RunResult): void {
+  if (!_db) return;
+  try {
+    const stmt = _db.prepare(`
+      INSERT OR REPLACE INTO deploy_results (id, swarm_id, query, timestamp, duration_ms, agents_processed, total_tokens, cost, status, steps, error)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run(
+      result.id,
+      result.swarmId,
+      result.query,
+      result.timestamp,
+      result.durationMs,
+      result.agentsProcessed,
+      result.totalTokens,
+      result.cost,
+      result.status,
+      JSON.stringify(result.steps),
+      result.error || null,
+    );
+  } catch (err) {
+    console.error('[RUNTIME] Failed to save result to database:', err);
+  }
+}
+
+function loadResultsFromDb(swarmId: string): RunResult[] {
+  if (!_db) return [];
+  try {
+    const rows = _db.prepare(
+      'SELECT * FROM deploy_results WHERE swarm_id = ? ORDER BY timestamp DESC LIMIT 50'
+    ).all(swarmId) as any[];
+    return rows.map((row: any) => ({
+      id: row.id,
+      swarmId: row.swarm_id,
+      query: row.query,
+      timestamp: row.timestamp,
+      durationMs: row.duration_ms,
+      agentsProcessed: row.agents_processed,
+      totalTokens: row.total_tokens,
+      cost: row.cost,
+      status: row.status,
+      steps: JSON.parse(row.steps || '[]'),
+      error: row.error || undefined,
+    }));
+  } catch (err) {
+    console.error('[RUNTIME] Failed to load results from database:', err);
+    return [];
+  }
+}
+
+function loadAllResultsFromDb(): RunResult[] {
+  if (!_db) return [];
+  try {
+    const rows = _db.prepare(
+      'SELECT * FROM deploy_results ORDER BY timestamp DESC LIMIT 50'
+    ).all() as any[];
+    return rows.map((row: any) => ({
+      id: row.id,
+      swarmId: row.swarm_id,
+      query: row.query,
+      timestamp: row.timestamp,
+      durationMs: row.duration_ms,
+      agentsProcessed: row.agents_processed,
+      totalTokens: row.total_tokens,
+      cost: row.cost,
+      status: row.status,
+      steps: JSON.parse(row.steps || '[]'),
+      error: row.error || undefined,
+    }));
+  } catch (err) {
+    console.error('[RUNTIME] Failed to load all results from database:', err);
+    return [];
+  }
+}
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 
@@ -87,10 +168,7 @@ async function executeRun(swarmId: string, swarmService: SwarmService): Promise<
       steps: result.steps,
     };
 
-    if (!runHistory.has(swarmId)) runHistory.set(swarmId, []);
-    runHistory.get(swarmId)!.unshift(runResult); // newest first
-    // Keep last 50 runs
-    if (runHistory.get(swarmId)!.length > 50) runHistory.get(swarmId)!.pop();
+    saveResultToDb(runResult);
 
     config.runCount++;
     config.totalCost += runResult.cost;
@@ -128,8 +206,7 @@ async function executeRun(swarmId: string, swarmService: SwarmService): Promise<
       steps: [],
       error: err.message,
     };
-    if (!runHistory.has(swarmId)) runHistory.set(swarmId, []);
-    runHistory.get(swarmId)!.unshift(errorResult);
+    saveResultToDb(errorResult);
   }
 }
 
@@ -222,9 +299,13 @@ export function getDeployStatus(swarmId: string): DeployConfig | null {
 }
 
 export function getRunHistory(swarmId: string): RunResult[] {
-  return runHistory.get(swarmId) || [];
+  return loadResultsFromDb(swarmId);
 }
 
 export function getAllDeployments(): DeployConfig[] {
   return Array.from(deployments.values());
+}
+
+export function getAllResults(): RunResult[] {
+  return loadAllResultsFromDb();
 }

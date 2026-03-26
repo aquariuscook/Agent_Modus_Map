@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { listSwarms, createBlankSwarm, importFromCSV, getCSVTemplateUrl, getTemplates, instantiateTemplate, deleteSwarm } from '../api.js';
+import { listSwarms, createBlankSwarm, importFromCSV, getCSVTemplateUrl, getTemplates, instantiateTemplate, deleteSwarm, getAllResults } from '../api.js';
 import { SettingsPanel } from './SettingsPanel.js';
 import { ThemeToggle } from './ThemeToggle.js';
 import { LogoWithText } from './Logo.js';
@@ -67,10 +67,12 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
   const [csvData, setCsvData] = useState('');
   const [csvName, setCsvName] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [recentResults, setRecentResults] = useState<any[]>([]);
 
   useEffect(() => {
     listSwarms().then(setSwarms).catch(console.error);
     getTemplates().then(setTemplates).catch(console.error);
+    getAllResults().then(r => setRecentResults((r || []).slice(0, 5))).catch(() => {});
   }, []);
 
   const handleCreateBlank = async () => {
@@ -240,6 +242,48 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
                 border: '1px dashed var(--border-default)', borderRadius: 'var(--radius-lg)',
               }}>
                 No swarms yet. Create one above to get started.
+              </div>
+            )}
+
+            {/* Recent Results */}
+            {recentResults.length > 0 && (
+              <div style={{ marginTop: 'var(--space-10)' }}>
+                <div style={{
+                  fontSize: 'var(--text-xs)', fontWeight: 600, letterSpacing: '0.12em',
+                  textTransform: 'uppercase', color: 'var(--accent-primary)', marginBottom: 'var(--space-4)',
+                }}>Recent Results</div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                  {recentResults.map((r: any) => {
+                    const swarm = swarms.find(s => s.id === r.swarmId);
+                    const swarmName = swarm?.name || 'Unknown Swarm';
+                    const date = new Date(r.timestamp);
+                    const isSuccess = r.status === 'success';
+                    return (
+                      <button key={r.id} onClick={() => onOpenSwarm(r.swarmId)} style={{
+                        ...cardBase, cursor: 'pointer', textAlign: 'left',
+                        display: 'flex', alignItems: 'center', gap: 'var(--space-4)',
+                        padding: 'var(--space-3) var(--space-5)',
+                      }}>
+                        <div style={{
+                          width: 10, height: 10, borderRadius: 'var(--radius-full)', flexShrink: 0,
+                          background: isSuccess ? '#22c55e' : '#ef4444',
+                          boxShadow: isSuccess ? '0 0 6px rgba(34,197,94,0.5)' : '0 0 6px rgba(239,68,68,0.5)',
+                        }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>{swarmName}</div>
+                          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
+                            {date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 'var(--space-3)', flexShrink: 0 }}>
+                          <span style={{ ...badgeStyle }}>{r.agentsProcessed} agents</span>
+                          <span style={{ ...badgeStyle }}>${(r.cost || 0).toFixed(4)}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </>

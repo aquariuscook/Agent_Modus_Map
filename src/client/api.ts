@@ -521,3 +521,11 @@ export async function getDeployStatus(swarmId: string): Promise<any> {
 export async function getDeployResults(swarmId: string): Promise<any[]> {
   return fetchJson(`/simulate/${swarmId}/deploy/results`);
 }
+
+export async function getAllDeployments(): Promise<any[]> {
+  return fetchJson('/simulate/deployments/all');
+}
+
+export async function getAllResults(): Promise<any[]> {
+  return fetchJson('/simulate/results/all');
+}

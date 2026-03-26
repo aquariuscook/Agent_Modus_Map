@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { runSimulation, getSwarmCostEstimate, runLiveTestStreaming, getSwarmPackage, deploySwarm as apiDeploySwarm, pauseDeployment, resumeDeployment, stopDeployment, getDeployStatus, getDeployResults } from '../api.js';
 
 function linkifyText(text: string): string {
@@ -9,6 +9,91 @@ function linkifyText(text: string): string {
     /(https?:\/\/[^\s)<>,]+)/g,
     '<a href="$1" target="_blank" rel="noopener" style="color: var(--accent-primary); text-decoration: underline;">$1</a>'
   );
+}
+
+// Shared helper functions for copy/download (used by both SimulationPanel and DeployTab)
+function doCopyResults(result: any, type: 'mock' | 'live'): void {
+  if (!result) return;
+  const lines: string[] = [];
+  lines.push(`${type === 'live' ? 'Live Test' : 'Mock Run'} Results`);
+  lines.push(`Status: ${result.status}`);
+  lines.push(`Agents: ${result.agentsProcessed || result.steps?.length || 0}`);
+  lines.push(`Duration: ${(result.totalDurationMs / 1000).toFixed(1)}s`);
+  if (result.totalCost !== undefined) lines.push(`Cost: $${result.totalCost}`);
+  lines.push(`Tokens: ${((result.totalInputTokens || 0) + (result.totalOutputTokens || 0) + (result.totalTokens || 0)).toLocaleString()}`);
+  lines.push('');
+  for (const step of result.steps || []) {
+    lines.push(`--- ${step.nickname} (${step.status}) ---`);
+    lines.push(step.output || step.error || '');
+    if (step.downstreamAgents?.length) lines.push(`> Passes to: ${step.downstreamAgents.join(', ')}`);
+    lines.push('');
+  }
+  navigator.clipboard.writeText(lines.join('\n'));
+}
+
+function doCopyLeadSheet(result: any): void {
+  if (!result) return;
+  const scoutStep = result.steps?.find((s: any) => s.nickname === 'Scout');
+  const profileStep = result.steps?.find((s: any) => s.nickname === 'Profile');
+  const qualifyStep = result.steps?.find((s: any) => s.nickname === 'Qualify');
+  const combined = [scoutStep?.output, profileStep?.output, qualifyStep?.output].filter(Boolean).join('\n');
+
+  const urls = combined.match(/https?:\/\/[^\s)>\]|,]+/g) || [];
+  const emails = combined.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
+  const phones = combined.match(/\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g) || [];
+
+  const lines: string[] = [];
+  lines.push('Company\tWebsite\tContact\tPhone\tEmail\tScore\tNotes');
+  lines.push('---\t---\t---\t---\t---\t---\t---');
+
+  const scoutText = scoutStep?.output || '';
+  const companyMatches = scoutText.match(/\*\*\d+\.\s+([^|*]+)/g) || [];
+  for (const match of companyMatches) {
+    const name = match.replace(/\*\*\d+\.\s+/, '').replace(/\*\*/g, '').trim();
+    const urlForCompany = urls.find((u: string) => u.toLowerCase().includes(name.split(/\s/)[0].toLowerCase())) || '';
+    lines.push(`${name}\t${urlForCompany}\t\t${phones[0] || ''}\t${emails[0] || ''}\t\t`);
+  }
+
+  if (companyMatches.length === 0) {
+    lines.push('(Could not auto-extract companies. See full report for details.)');
+  }
+
+  lines.push('');
+  lines.push('All URLs found:');
+  for (const url of [...new Set(urls)]) lines.push(url);
+  if (emails.length) { lines.push(''); lines.push('Emails found:'); for (const e of [...new Set(emails)]) lines.push(e); }
+  if (phones.length) { lines.push(''); lines.push('Phones found:'); for (const p of [...new Set(phones)]) lines.push(p); }
+
+  navigator.clipboard.writeText(lines.join('\n'));
+}
+
+function doDownloadReport(result: any): void {
+  if (!result) return;
+  const lines: string[] = [];
+  lines.push('# Swarm Test Report');
+  lines.push(`**Date:** ${new Date().toLocaleDateString()}`);
+  lines.push(`**Duration:** ${(result.totalDurationMs / 1000).toFixed(1)}s | **Cost:** $${result.totalCost || '0'} | **Tokens:** ${((result.totalInputTokens || 0) + (result.totalOutputTokens || 0)).toLocaleString()}`);
+  lines.push('');
+  lines.push('---');
+  lines.push('');
+  for (const step of result.steps || []) {
+    lines.push(`## ${step.nickname}`);
+    lines.push(`**Status:** ${step.status} | **Duration:** ${step.durationMs}ms | **Cost:** $${step.cost || '0'}`);
+    lines.push('');
+    lines.push(step.output || step.error || '(no output)');
+    lines.push('');
+    if (step.downstreamAgents?.length) lines.push(`*Passes to: ${step.downstreamAgents.join(', ')}*`);
+    lines.push('');
+    lines.push('---');
+    lines.push('');
+  }
+  const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `swarm-report-${new Date().toISOString().split('T')[0]}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 interface Props {
@@ -41,6 +126,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
   const [liveInput, setLiveInput] = useState('');
   const [liveProgress, setLiveProgress] = useState<{ agent: string; step: number; total: number } | null>(null);
   const [callsPerDay, setCallsPerDay] = useState('');
+  const [deployQuery, setDeployQuery] = useState('');
 
   async function handleRunSimulation() {
     setLoading(true);
@@ -103,94 +189,17 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
   const [copied, setCopied] = useState(false);
 
   function copyResults(result: any, type: 'mock' | 'live') {
-    if (!result) return;
-    const lines: string[] = [];
-    lines.push(`${type === 'live' ? 'Live Test' : 'Mock Run'} Results`);
-    lines.push(`Status: ${result.status}`);
-    lines.push(`Agents: ${result.agentsProcessed || result.steps?.length || 0}`);
-    lines.push(`Duration: ${(result.totalDurationMs / 1000).toFixed(1)}s`);
-    if (result.totalCost !== undefined) lines.push(`Cost: $${result.totalCost}`);
-    lines.push(`Tokens: ${((result.totalInputTokens || 0) + (result.totalOutputTokens || 0) + (result.totalTokens || 0)).toLocaleString()}`);
-    lines.push('');
-    for (const step of result.steps || []) {
-      lines.push(`--- ${step.nickname} (${step.status}) ---`);
-      lines.push(step.output || step.error || '');
-      if (step.downstreamAgents?.length) lines.push(`> Passes to: ${step.downstreamAgents.join(', ')}`);
-      lines.push('');
-    }
-    navigator.clipboard.writeText(lines.join('\n'));
+    doCopyResults(result, type);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
 
   function downloadReport(result: any) {
-    if (!result) return;
-    const lines: string[] = [];
-    lines.push('# Swarm Test Report');
-    lines.push(`**Date:** ${new Date().toLocaleDateString()}`);
-    lines.push(`**Duration:** ${(result.totalDurationMs / 1000).toFixed(1)}s | **Cost:** $${result.totalCost || '0'} | **Tokens:** ${((result.totalInputTokens || 0) + (result.totalOutputTokens || 0)).toLocaleString()}`);
-    lines.push('');
-    lines.push('---');
-    lines.push('');
-    for (const step of result.steps || []) {
-      lines.push(`## ${step.nickname}`);
-      lines.push(`**Status:** ${step.status} | **Duration:** ${step.durationMs}ms | **Cost:** $${step.cost || '0'}`);
-      lines.push('');
-      lines.push(step.output || step.error || '(no output)');
-      lines.push('');
-      if (step.downstreamAgents?.length) lines.push(`*Passes to: ${step.downstreamAgents.join(', ')}*`);
-      lines.push('');
-      lines.push('---');
-      lines.push('');
-    }
-    const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `swarm-report-${new Date().toISOString().split('T')[0]}.md`;
-    a.click();
-    URL.revokeObjectURL(url);
+    doDownloadReport(result);
   }
 
   function copyLeadSheet(result: any) {
-    if (!result) return;
-    // Extract company names, URLs, contacts from Scout and Profile outputs
-    const scoutStep = result.steps?.find((s: any) => s.nickname === 'Scout');
-    const profileStep = result.steps?.find((s: any) => s.nickname === 'Profile');
-    const qualifyStep = result.steps?.find((s: any) => s.nickname === 'Qualify');
-    const combined = [scoutStep?.output, profileStep?.output, qualifyStep?.output].filter(Boolean).join('\n');
-
-    // Extract URLs
-    const urls = combined.match(/https?:\/\/[^\s)>\]|,]+/g) || [];
-    // Extract emails
-    const emails = combined.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
-    // Extract phone numbers
-    const phones = combined.match(/\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g) || [];
-
-    const lines: string[] = [];
-    lines.push('Company\tWebsite\tContact\tPhone\tEmail\tScore\tNotes');
-    lines.push('---\t---\t---\t---\t---\t---\t---');
-
-    // Try to extract structured data from Scout's output (look for table rows or numbered items)
-    const scoutText = scoutStep?.output || '';
-    const companyMatches = scoutText.match(/\*\*\d+\.\s+([^|*]+)/g) || [];
-    for (const match of companyMatches) {
-      const name = match.replace(/\*\*\d+\.\s+/, '').replace(/\*\*/g, '').trim();
-      const urlForCompany = urls.find(u => u.toLowerCase().includes(name.split(/\s/)[0].toLowerCase())) || '';
-      lines.push(`${name}\t${urlForCompany}\t\t${phones[0] || ''}\t${emails[0] || ''}\t\t`);
-    }
-
-    if (companyMatches.length === 0) {
-      lines.push('(Could not auto-extract companies. See full report for details.)');
-    }
-
-    lines.push('');
-    lines.push('All URLs found:');
-    for (const url of [...new Set(urls)]) lines.push(url);
-    if (emails.length) { lines.push(''); lines.push('Emails found:'); for (const e of [...new Set(emails)]) lines.push(e); }
-    if (phones.length) { lines.push(''); lines.push('Phones found:'); for (const p of [...new Set(phones)]) lines.push(p); }
-
-    navigator.clipboard.writeText(lines.join('\n'));
+    doCopyLeadSheet(result);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -531,7 +540,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
           </div>
         )}
 
-        {tab === 'deploy' && <DeployTab swarmId={swarmId} />}
+        {tab === 'deploy' && <DeployTab swarmId={swarmId} query={deployQuery} onQueryChange={setDeployQuery} />}
       </div>
     </div>
   );
@@ -638,23 +647,45 @@ function analyzeLiveResults(steps: any[]): Diagnostic[] {
   return diagnostics;
 }
 
-function DeployTab({ swarmId }: { swarmId: string }) {
-  const [query, setQuery] = useState('');
+const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange }: { swarmId: string; query: string; onQueryChange: (q: string) => void }) {
   const [schedule, setSchedule] = useState<string>('once');
   const [budget, setBudget] = useState('1.00');
   const [deployStatus, setDeployStatus] = useState<any>(null);
   const [results, setResults] = useState<any[]>([]);
   const [deploying, setDeploying] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const queryPrefilledRef = useRef(false);
+
+  function copyResults(result: any, type: 'mock' | 'live') {
+    doCopyResults(result, type);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  function copyLeadSheet(result: any) {
+    doCopyLeadSheet(result);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  function downloadReport(result: any) {
+    doDownloadReport(result);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   const refreshStatus = useCallback(async () => {
     try {
       const status = await getDeployStatus(swarmId);
       setDeployStatus(status);
-      if (status?.query && !query) setQuery(status.query); // pre-fill from last deploy
+      if (status?.query && !queryPrefilledRef.current) {
+        onQueryChange(status.query);
+        queryPrefilledRef.current = true;
+      }
       const history = await getDeployResults(swarmId);
       setResults(history || []);
     } catch { /* no deployment yet */ }
-  }, [swarmId]);
+  }, [swarmId, onQueryChange]);
 
   useEffect(() => { refreshStatus(); }, [refreshStatus]);
 
@@ -723,7 +754,7 @@ function DeployTab({ swarmId }: { swarmId: string }) {
         <div>
           <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>What should this swarm do?</div>
           <textarea
-            value={query} onChange={e => setQuery(e.target.value)}
+            value={query} onChange={e => onQueryChange(e.target.value)}
             placeholder="e.g. Find medium-sized companies on Long Island that need AI training..."
             style={{
               width: '100%', minHeight: 80, padding: '10px 12px', borderRadius: 8,
@@ -795,9 +826,9 @@ function DeployTab({ swarmId }: { swarmId: string }) {
               </summary>
               <div style={{ padding: '0 14px 14px', maxHeight: 400, overflowY: 'auto' }}>
                 <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-                  <button onClick={() => { const r = { steps: run.steps, totalDurationMs: run.durationMs, totalCost: run.cost, totalInputTokens: run.totalTokens, totalOutputTokens: 0, status: run.status }; downloadReport(r); }} style={{ ...ctrlBtn, flex: 1 }}>Download</button>
-                  <button onClick={() => { const r = { steps: run.steps }; copyLeadSheet(r); }} style={{ ...ctrlBtn, flex: 1, color: 'var(--accent-secondary, #a855f7)', borderColor: 'var(--accent-secondary, #a855f7)' }}>Copy Leads</button>
-                  <button onClick={() => { const r = { steps: run.steps, totalDurationMs: run.durationMs, totalCost: run.cost, totalInputTokens: run.totalTokens, totalOutputTokens: 0, agentsProcessed: run.agentsProcessed, status: run.status }; copyResults(r, 'live'); }} style={{ ...ctrlBtn, flex: 1 }}>Copy All</button>
+                  <button onClick={() => { const r = { steps: run.steps, totalDurationMs: run.durationMs, totalCost: run.cost, totalInputTokens: run.totalTokens, totalOutputTokens: 0, status: run.status }; downloadReport(r); }} style={{ ...ctrlBtn, flex: 1 }}>{copied ? 'Downloaded!' : 'Download'}</button>
+                  <button onClick={() => { const r = { steps: run.steps }; copyLeadSheet(r); }} style={{ ...ctrlBtn, flex: 1, color: 'var(--accent-secondary, #a855f7)', borderColor: 'var(--accent-secondary, #a855f7)' }}>{copied ? 'Copied!' : 'Copy Leads'}</button>
+                  <button onClick={() => { const r = { steps: run.steps, totalDurationMs: run.durationMs, totalCost: run.cost, totalInputTokens: run.totalTokens, totalOutputTokens: 0, agentsProcessed: run.agentsProcessed, status: run.status }; copyResults(r, 'live'); }} style={{ ...ctrlBtn, flex: 1 }}>{copied ? 'Copied!' : 'Copy All'}</button>
                 </div>
                 {run.error && <div style={{ color: '#ef4444', fontSize: 12, marginBottom: 8 }}>{run.error}</div>}
                 {(run.steps || []).map((step: any, j: number) => (
@@ -817,7 +848,7 @@ function DeployTab({ swarmId }: { swarmId: string }) {
       )}
     </div>
   );
-}
+});
 
 const ctrlBtn: React.CSSProperties = {
   padding: '4px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600,

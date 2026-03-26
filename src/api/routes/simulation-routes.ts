@@ -3,13 +3,14 @@ import type Database from 'better-sqlite3';
 import { SwarmService } from '../services/swarm-service.js';
 import { runMockSimulation } from '../services/simulation-service.js';
 import { estimateSwarmCost } from '../services/cost-estimation-service.js';
-import { deploySwarm, pauseSwarm, resumeSwarm, stopSwarm, getDeployStatus, getRunHistory, getAllDeployments } from '../services/swarm-runtime-service.js';
+import { deploySwarm, pauseSwarm, resumeSwarm, stopSwarm, getDeployStatus, getRunHistory, getAllDeployments, getAllResults, setRuntimeDb } from '../services/swarm-runtime-service.js';
 import { runLiveExecution, runLiveExecutionStreaming } from '../services/live-execution-service.js';
 import { generateSwarmPackage } from '../services/swarm-export-service.js';
 
 export function createSimulationRoutes(db: Database.Database): Router {
   const router = Router();
   const swarmService = new SwarmService(db);
+  setRuntimeDb(db);
 
   // POST /api/simulate/:swarmId - run mock simulation
   router.post('/:swarmId', (req, res) => {
@@ -134,6 +135,11 @@ export function createSimulationRoutes(db: Database.Database): Router {
   // GET /api/simulate/deployments - all active deployments
   router.get('/deployments/all', (_req, res) => {
     res.json({ data: getAllDeployments() });
+  });
+
+  // GET /api/simulate/results/all - all results across all swarms
+  router.get('/results/all', (_req, res) => {
+    res.json({ data: getAllResults() });
   });
 
   return router;
