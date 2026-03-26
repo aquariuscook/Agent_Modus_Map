@@ -222,7 +222,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
   if (!isOpen) return null;
 
   return (
-    <div style={{
+    <><div style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999,
     }} onClick={onToggle} />
     <div style={{
