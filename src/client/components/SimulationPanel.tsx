@@ -217,7 +217,11 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
   if (!isOpen) return null;
 
   return (
-    <div onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()} onWheel={e => e.stopPropagation()} onMouseOver={e => e.stopPropagation()} style={{
+    <>{/* Invisible backdrop to block canvas interactions while panel is open */}
+    <div onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()} style={{
+      position: 'fixed', top: 50, right: 0, width: 520, bottom: 0, zIndex: 999,
+    }} />
+    <div onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()} onWheel={e => e.stopPropagation()} style={{
       position: 'fixed', top: 60, right: 20, width: 480, maxHeight: 'calc(100vh - 80px)',
       background: 'var(--bg-base)', border: '1px solid var(--border-default)', borderRadius: 12,
       display: 'flex', flexDirection: 'column', zIndex: 1000,
@@ -543,6 +547,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
         {tab === 'deploy' && <DeployTab swarmId={swarmId} query={deployQuery} onQueryChange={setDeployQuery} />}
       </div>
     </div>
+    </>
   );
 }
 
