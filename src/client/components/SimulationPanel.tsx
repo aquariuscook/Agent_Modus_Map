@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { runSimulation, getSwarmCostEstimate, runLiveTestStreaming, getSwarmPackage } from '../api.js';
+import React, { useState, useEffect, useCallback } from 'react';
+import { runSimulation, getSwarmCostEstimate, runLiveTestStreaming, getSwarmPackage, deploySwarm as apiDeploySwarm, pauseDeployment, resumeDeployment, stopDeployment, getDeployStatus, getDeployResults } from '../api.js';
 
 function linkifyText(text: string): string {
   // Escape HTML first to prevent XSS
@@ -521,69 +521,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent }: Prop
           </div>
         )}
 
-        {tab === 'deploy' && (
-          <div>
-            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.6 }}>
-              Export your swarm as a standalone deployable package with agent prompts, configuration, and a runner script.
-            </div>
-
-            <button onClick={handleExportPackage} disabled={loading} style={{
-              padding: '10px 24px', borderRadius: 8, border: 'none',
-              background: '#22c55e', color: 'var(--text-primary)',
-              fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontSize: 13,
-              fontFamily: 'var(--font-primary)', opacity: loading ? 0.5 : 1,
-              width: '100%',
-            }}>{loading ? 'Generating...' : 'Generate Deploy Package'}</button>
-
-            {swarmPackage && (
-              <div style={{ marginTop: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                    Package: {swarmPackage.name}
-                  </div>
-                  <button onClick={downloadPackage} style={{
-                    padding: '4px 12px', borderRadius: 6, border: '1px solid var(--border-default)',
-                    background: 'transparent', color: 'var(--accent-primary)',
-                    fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-primary)',
-                  }}>Download All</button>
-                </div>
-
-                <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Files ({swarmPackage.files.length})</div>
-                {swarmPackage.files.map((file: any, i: number) => (
-                  <div key={i} style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '8px 12px', marginBottom: 4, borderRadius: 6,
-                    background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)',
-                  }}>
-                    <div>
-                      <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>{file.path}</div>
-                      <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{file.content.length} chars</div>
-                    </div>
-                    <button onClick={() => downloadFile(file)} style={{
-                      padding: '2px 8px', borderRadius: 4, border: '1px solid var(--border-default)',
-                      background: 'transparent', color: 'var(--text-secondary)',
-                      fontSize: 10, cursor: 'pointer', fontFamily: 'var(--font-primary)',
-                    }}>Save</button>
-                  </div>
-                ))}
-
-                <div style={{
-                  marginTop: 16, padding: '12px 14px', borderRadius: 8,
-                  background: 'var(--bg-surface)', border: '1px solid var(--border-default)',
-                  fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.6,
-                }}>
-                  <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>Quick Start</div>
-                  <code style={{ display: 'block', padding: '8px', borderRadius: 4, background: 'var(--bg-elevated)', fontSize: 11, color: 'var(--accent-primary)' }}>
-                    npm install{'\n'}
-                    cp .env.example .env{'\n'}
-                    # Add your ANTHROPIC_API_KEY to .env{'\n'}
-                    npm start -- "Your input here"
-                  </code>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        {tab === 'deploy' && <DeployTab swarmId={swarmId} />}
       </div>
     </div>
   );
@@ -689,6 +627,187 @@ function analyzeLiveResults(steps: any[]): Diagnostic[] {
 
   return diagnostics;
 }
+
+function DeployTab({ swarmId }: { swarmId: string }) {
+  const [query, setQuery] = useState('');
+  const [schedule, setSchedule] = useState<string>('once');
+  const [budget, setBudget] = useState('1.00');
+  const [deployStatus, setDeployStatus] = useState<any>(null);
+  const [results, setResults] = useState<any[]>([]);
+  const [deploying, setDeploying] = useState(false);
+
+  const refreshStatus = useCallback(async () => {
+    try {
+      const status = await getDeployStatus(swarmId);
+      setDeployStatus(status);
+      const history = await getDeployResults(swarmId);
+      setResults(history || []);
+    } catch { /* no deployment yet */ }
+  }, [swarmId]);
+
+  useEffect(() => { refreshStatus(); }, [refreshStatus]);
+
+  // Poll for status when running
+  useEffect(() => {
+    if (!deployStatus || deployStatus.status !== 'running') return;
+    const interval = setInterval(refreshStatus, 5000);
+    return () => clearInterval(interval);
+  }, [deployStatus?.status, refreshStatus]);
+
+  async function handleDeploy() {
+    if (!query.trim()) return;
+    setDeploying(true);
+    try {
+      const result = await apiDeploySwarm(swarmId, query.trim(), schedule, budget ? Number(budget) : undefined);
+      setDeployStatus(result);
+      setTimeout(refreshStatus, 3000); // refresh after first run likely completes
+    } catch (err: any) {
+      alert('Deploy failed: ' + err.message);
+    } finally { setDeploying(false); }
+  }
+
+  const isRunning = deployStatus?.status === 'running';
+  const isPaused = deployStatus?.status === 'paused';
+  const isStopped = !deployStatus || deployStatus.status === 'stopped' || deployStatus.status === 'completed' || deployStatus.status === 'budget_reached';
+
+  const statusColors: Record<string, string> = {
+    running: '#22c55e', paused: '#fbbf24', stopped: 'var(--text-tertiary)',
+    completed: 'var(--accent-primary)', error: '#ef4444', budget_reached: '#fbbf24',
+  };
+  const statusLabels: Record<string, string> = {
+    running: 'Running', paused: 'Paused', stopped: 'Stopped',
+    completed: 'Completed', error: 'Error', budget_reached: 'Budget Reached',
+  };
+
+  return (
+    <div>
+      <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.6 }}>
+        Deploy this swarm to run inside the app. Set a query, schedule, and budget limit. Results accumulate here.
+      </div>
+
+      {/* Status bar */}
+      {deployStatus && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16,
+          padding: '10px 14px', borderRadius: 8, background: 'var(--bg-surface)', border: '1px solid var(--border-default)',
+        }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: statusColors[deployStatus.status] || 'var(--text-tertiary)', animation: isRunning ? 'healthPulse 2s ease-in-out infinite' : 'none' }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{statusLabels[deployStatus.status] || deployStatus.status}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+              {deployStatus.runCount} runs, ${deployStatus.totalCost?.toFixed(4) || '0'} spent
+              {deployStatus.budgetLimit ? ` / $${deployStatus.budgetLimit} limit` : ''}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {isRunning && <button onClick={async () => { await pauseDeployment(swarmId); refreshStatus(); }} style={ctrlBtn}>Pause</button>}
+            {isPaused && <button onClick={async () => { await resumeDeployment(swarmId); refreshStatus(); }} style={{ ...ctrlBtn, color: '#22c55e', borderColor: '#22c55e' }}>Resume</button>}
+            {(isRunning || isPaused) && <button onClick={async () => { await stopDeployment(swarmId); refreshStatus(); }} style={{ ...ctrlBtn, color: '#ef4444', borderColor: '#ef4444' }}>Stop</button>}
+          </div>
+        </div>
+      )}
+
+      {/* Deploy form */}
+      {isStopped && (
+        <div>
+          <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>What should this swarm do?</div>
+          <textarea
+            value={query} onChange={e => setQuery(e.target.value)}
+            placeholder="e.g. Find medium-sized companies on Long Island that need AI training..."
+            style={{
+              width: '100%', minHeight: 80, padding: '10px 12px', borderRadius: 8,
+              border: '1px solid var(--border-default)', background: 'var(--bg-elevated)',
+              color: 'var(--text-primary)', fontSize: 13, fontFamily: 'var(--font-primary)',
+              resize: 'vertical', outline: 'none', boxSizing: 'border-box',
+            }}
+          />
+
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>How often?</div>
+              <select value={schedule} onChange={e => setSchedule(e.target.value)} style={{
+                width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border-default)',
+                background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: 13,
+                fontFamily: 'var(--font-primary)', cursor: 'pointer',
+              }}>
+                <option value="once">Run once</option>
+                <option value="hourly">Every hour</option>
+                <option value="daily">Every day</option>
+                <option value="weekly">Every week</option>
+              </select>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Budget limit ($)</div>
+              <input type="number" value={budget} onChange={e => setBudget(e.target.value)} step="0.50" min="0.10"
+                style={{
+                  width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border-default)',
+                  background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: 13,
+                  fontFamily: 'var(--font-primary)', boxSizing: 'border-box',
+                }}
+              />
+            </div>
+          </div>
+
+          <button onClick={handleDeploy} disabled={deploying || !query.trim()} style={{
+            marginTop: 16, padding: '12px 24px', borderRadius: 8, border: 'none',
+            background: '#22c55e', color: '#fff', fontWeight: 700, fontSize: 14,
+            cursor: deploying || !query.trim() ? 'default' : 'pointer',
+            fontFamily: 'var(--font-primary)', opacity: deploying || !query.trim() ? 0.4 : 1,
+            width: '100%',
+          }}>{deploying ? 'Deploying...' : 'Deploy Swarm'}</button>
+        </div>
+      )}
+
+      {/* Results history */}
+      {results.length > 0 && (
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
+            Run History ({results.length})
+          </div>
+          {results.map((run: any, i: number) => (
+            <details key={run.id || i} style={{
+              marginBottom: 6, borderRadius: 8, border: '1px solid var(--border-subtle)',
+              background: 'var(--bg-surface)', overflow: 'hidden',
+            }}>
+              <summary style={{
+                padding: '10px 14px', cursor: 'pointer', fontSize: 12,
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                color: 'var(--text-primary)',
+              }}>
+                <span>
+                  <span style={{ color: run.status === 'success' ? '#22c55e' : '#ef4444', marginRight: 6 }}>{'●'}</span>
+                  Run #{results.length - i} - {new Date(run.timestamp).toLocaleString()}
+                </span>
+                <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                  {run.agentsProcessed} agents, ${run.cost?.toFixed(4) || '0'}
+                </span>
+              </summary>
+              <div style={{ padding: '0 14px 14px', maxHeight: 300, overflowY: 'auto' }}>
+                {run.error && <div style={{ color: '#ef4444', fontSize: 12, marginBottom: 8 }}>{run.error}</div>}
+                {(run.steps || []).map((step: any, j: number) => (
+                  <div key={j} style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }}>{step.nickname}</div>
+                    <div style={{
+                      fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.5,
+                      maxHeight: 100, overflowY: 'auto', whiteSpace: 'pre-wrap',
+                      padding: '6px 8px', borderRadius: 4, background: 'var(--bg-elevated)', marginTop: 4,
+                    }} dangerouslySetInnerHTML={{ __html: linkifyText((step.output || step.error || '').slice(0, 500)) }} />
+                  </div>
+                ))}
+              </div>
+            </details>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const ctrlBtn: React.CSSProperties = {
+  padding: '4px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+  border: '1px solid var(--border-default)', background: 'transparent',
+  color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'var(--font-primary)',
+};
 
 function DiagnosticsSection({ steps, onOpenAgent }: { steps: any[]; onOpenAgent?: (agentId: string) => void }) {
   const diagnostics = analyzeLiveResults(steps);

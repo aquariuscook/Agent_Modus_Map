@@ -496,3 +496,28 @@ export async function runLiveTestStreaming(
 export async function getApiHealth(): Promise<{ status: string; llmAvailable: boolean }> {
   return fetchJson('/health');
 }
+
+// Deploy / Runtime
+export async function deploySwarm(swarmId: string, query: string, schedule: string, budgetLimit?: number): Promise<any> {
+  return postJson(`/simulate/${swarmId}/deploy`, { query, schedule, budgetLimit });
+}
+
+export async function pauseDeployment(swarmId: string): Promise<any> {
+  return postJson(`/simulate/${swarmId}/deploy/pause`, {});
+}
+
+export async function resumeDeployment(swarmId: string): Promise<any> {
+  return postJson(`/simulate/${swarmId}/deploy/resume`, {});
+}
+
+export async function stopDeployment(swarmId: string): Promise<any> {
+  return postJson(`/simulate/${swarmId}/deploy/stop`, {});
+}
+
+export async function getDeployStatus(swarmId: string): Promise<any> {
+  return fetchJson(`/simulate/${swarmId}/deploy/status`);
+}
+
+export async function getDeployResults(swarmId: string): Promise<any[]> {
+  return fetchJson(`/simulate/${swarmId}/deploy/results`);
+}

@@ -3,6 +3,7 @@ import type Database from 'better-sqlite3';
 import { SwarmService } from '../services/swarm-service.js';
 import { runMockSimulation } from '../services/simulation-service.js';
 import { estimateSwarmCost } from '../services/cost-estimation-service.js';
+import { deploySwarm, pauseSwarm, resumeSwarm, stopSwarm, getDeployStatus, getRunHistory, getAllDeployments } from '../services/swarm-runtime-service.js';
 import { runLiveExecution, runLiveExecutionStreaming } from '../services/live-execution-service.js';
 import { generateSwarmPackage } from '../services/swarm-export-service.js';
 
@@ -79,6 +80,60 @@ export function createSimulationRoutes(db: Database.Database): Router {
   // GET /api/simulate/status - check if LLM is available
   router.get('/status/llm', (_req, res) => {
     res.json({ available: !!process.env.ANTHROPIC_API_KEY });
+  });
+
+  // === DEPLOY / RUNTIME ROUTES ===
+
+  // POST /api/simulate/:swarmId/deploy - start a deployed swarm
+  router.post('/:swarmId/deploy', (req, res) => {
+    const swarm = swarmService.findById(req.params.swarmId);
+    if (!swarm) return res.status(404).json({ error: 'Swarm not found' });
+
+    const { query, schedule, budgetLimit } = req.body;
+    if (!query?.trim()) return res.status(400).json({ error: 'Query is required' });
+    const validSchedules = ['once', 'hourly', 'daily', 'weekly'];
+    if (!validSchedules.includes(schedule)) return res.status(400).json({ error: 'Schedule must be: once, hourly, daily, or weekly' });
+
+    const config = deploySwarm(req.params.swarmId, query.trim(), schedule, swarmService, budgetLimit ? Number(budgetLimit) : undefined);
+    res.json({ data: config });
+  });
+
+  // POST /api/simulate/:swarmId/deploy/pause
+  router.post('/:swarmId/deploy/pause', (req, res) => {
+    const config = pauseSwarm(req.params.swarmId);
+    if (!config) return res.status(404).json({ error: 'No active deployment' });
+    res.json({ data: config });
+  });
+
+  // POST /api/simulate/:swarmId/deploy/resume
+  router.post('/:swarmId/deploy/resume', (req, res) => {
+    const config = resumeSwarm(req.params.swarmId, swarmService);
+    if (!config) return res.status(404).json({ error: 'No deployment to resume' });
+    res.json({ data: config });
+  });
+
+  // POST /api/simulate/:swarmId/deploy/stop
+  router.post('/:swarmId/deploy/stop', (req, res) => {
+    const config = stopSwarm(req.params.swarmId);
+    if (!config) return res.status(404).json({ error: 'No deployment to stop' });
+    res.json({ data: config });
+  });
+
+  // GET /api/simulate/:swarmId/deploy/status
+  router.get('/:swarmId/deploy/status', (req, res) => {
+    const config = getDeployStatus(req.params.swarmId);
+    res.json({ data: config });
+  });
+
+  // GET /api/simulate/:swarmId/deploy/results
+  router.get('/:swarmId/deploy/results', (req, res) => {
+    const results = getRunHistory(req.params.swarmId);
+    res.json({ data: results });
+  });
+
+  // GET /api/simulate/deployments - all active deployments
+  router.get('/deployments/all', (_req, res) => {
+    res.json({ data: getAllDeployments() });
   });
 
   return router;

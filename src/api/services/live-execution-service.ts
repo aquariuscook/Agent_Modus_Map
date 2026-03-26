@@ -96,8 +96,7 @@ async function runLiveExecutionInternal(swarm: Swarm, userInput: string, onProgr
       sharedSearchContext = '\n\n=== REAL WEB SEARCH RESULTS (shared across all agents) ===\nThese are actual search results. Extract real company names, URLs, and details from them. Do NOT ignore these and use training data instead.\n\n' + formatSearchResults(allResults) + '\n\n=== END SEARCH RESULTS ===';
       console.log(`[LIVE] Found ${allResults.length} search results to share with all agents`);
     }
-    totalInputTokens += queryResponse.usage?.input_tokens || 0;
-    totalOutputTokens += queryResponse.usage?.output_tokens || 0;
+    // Token tracking for search query generation happens after main variables are declared
   } catch (err) {
     console.log('[LIVE] Search query generation failed, continuing without search:', (err as Error).message);
   }
