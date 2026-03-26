@@ -15,7 +15,7 @@ export function createSimulationRoutes(db: Database.Database): Router {
     const swarm = swarmService.findById(req.params.swarmId);
     if (!swarm) return res.status(404).json({ error: 'Swarm not found' });
 
-    const sampleInput = req.body.input || 'Sample customer request: I need help with my recent order #12345. The item arrived damaged and I would like a replacement or refund.';
+    const sampleInput = req.body.input || 'Process a sample request through this swarm to test the agent flow and connections.';
     const result = runMockSimulation(swarm, sampleInput);
     res.json({ data: result });
   });
@@ -35,7 +35,7 @@ export function createSimulationRoutes(db: Database.Database): Router {
     const swarm = swarmService.findById(req.params.swarmId);
     if (!swarm) return res.status(404).json({ error: 'Swarm not found' });
 
-    const userInput = req.body.input || 'I need help with a customer issue regarding a damaged product delivery.';
+    const userInput = req.body.input || 'Process a sample request through this swarm.';
 
     try {
       const result = await runLiveExecution(swarm, userInput);
@@ -50,7 +50,7 @@ export function createSimulationRoutes(db: Database.Database): Router {
     const swarm = swarmService.findById(req.params.swarmId);
     if (!swarm) return res.status(404).json({ error: 'Swarm not found' });
 
-    const userInput = req.body.input || 'I need help with a customer issue.';
+    const userInput = req.body.input || 'Process a sample request through this swarm.';
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
