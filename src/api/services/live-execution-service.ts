@@ -119,17 +119,17 @@ async function runLiveExecutionInternal(swarm: Swarm, userInput: string, onProgr
         console.log(`[LIVE] Searching web for ${agent.nickname}...`);
         const queries = generateSearchQueries(input, coreTask);
         const allResults = [];
-        for (const q of queries.slice(0, 3)) {
-          const results = await searchWeb(q, 5);
+        for (const q of queries.slice(0, 4)) {
+          const results = await searchWeb(q, 8);
           allResults.push(...results);
         }
         if (allResults.length > 0) {
-          searchContext = '\n\nWEB SEARCH RESULTS:\n' + formatSearchResults(allResults);
+          searchContext = '\n\n=== MANDATORY: USE THESE REAL SEARCH RESULTS ===\nYou MUST base your response on the actual companies and data below. Do NOT ignore these results and use your training data instead. Extract the real company names, URLs, and details from these search results. If a result mentions a specific company name, website, phone number, or email, you MUST include it in your output.\n\n' + formatSearchResults(allResults) + '\n\n=== END SEARCH RESULTS ===\n\nFor each company found above, provide: Company Name, Website URL, Phone (if found), Email (if found), What They Do, Why They Might Need Our Services.';
         }
       }
 
       // Limit input length to prevent token overflow
-      const truncatedInput = (input + searchContext).slice(0, 3000);
+      const truncatedInput = (input + searchContext).slice(0, 6000);
 
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 30000);
@@ -260,31 +260,37 @@ function buildSystemPrompt(agent: Agent, config: Record<string, any>): string {
 }
 
 function generateSearchQueries(input: string, coreTask: string): string[] {
-  const queries: string[] = [];
   const lower = (input + ' ' + coreTask).toLowerCase();
 
-  // Specific, actionable queries that find real companies
-  if (lower.includes('training') || lower.includes('ai')) {
-    queries.push('"looking for" OR "seeking" AI training consulting small business 2025');
-    queries.push('site:linkedin.com "we need help with" AI automation training company');
-    queries.push('"request for proposal" OR RFP AI training consulting services');
-  }
-  if (lower.includes('automat') || lower.includes('process') || lower.includes('efficien')) {
-    queries.push('"struggling with" OR "need help" process automation small business');
-    queries.push('"hiring" "automation consultant" OR "process improvement" -enterprise');
-  }
-  if (lower.includes('customer service') || lower.includes('cx') || lower.includes('chatbot')) {
-    queries.push('"modernizing customer service" OR "replacing IVR" small business');
-    queries.push('"customer experience" consulting needed small medium business');
-  }
-  if (lower.includes('consulting')) {
-    queries.push('"looking for consultant" OR "need a consultant" AI automation training 2025');
+  // Extract location phrases (greedy, handles multi-word like "Long Island New York")
+  const locPatterns = [
+    /on (long island[^,.]*)/, /in (long island[^,.]*)/, /in (nassau[^,.]*)/, /in (suffolk[^,.]*)/,
+    /on ([a-z]+ island[^,.]*)/, /in ([a-z ]{3,30}(?:new york|ny|california|ca|texas|tx|florida|fl)[^,.]*)/,
+    /in ([a-z ]{3,20}(?:county|city|area|region)[^,.]*)/, /(?:near|around|from) ([a-z ]{3,25})/,
+  ];
+  let location = '';
+  for (const pat of locPatterns) {
+    const m = lower.match(pat);
+    if (m) { location = m[1].trim(); break; }
   }
 
-  // Always include a direct query
-  queries.push(`${input.slice(0, 60)} small business companies opportunities 2025`);
+  const queries: string[] = [];
 
-  return queries.slice(0, 3);
+  // If we have a location, make EVERY query location-specific
+  if (location) {
+    queries.push(`"${location}" small business directory companies`);
+    queries.push(`"${location}" companies hiring technology consulting 2025`);
+    if (lower.includes('women')) {
+      queries.push(`women-owned business "${location}" directory`);
+    }
+    queries.push(`"${location}" business needs AI training automation consulting`);
+  } else {
+    // No location: use the raw input as search
+    queries.push(`${input.slice(0, 100)} company directory`);
+    queries.push(`${input.slice(0, 80)} businesses hiring 2025`);
+  }
+
+  return queries.slice(0, 4);
 }
 
 function findEntryPoints(swarm: Swarm): Agent[] {
