@@ -685,16 +685,23 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
       const history = await getDeployResults(swarmId);
       setResults(history || []);
     } catch { /* no deployment yet */ }
-  }, [swarmId, onQueryChange]);
+  }, [swarmId]); // eslint-disable-line -- onQueryChange intentionally excluded to prevent re-render loop
 
-  useEffect(() => { refreshStatus(); }, [refreshStatus]);
+  // Load status once on mount
+  const hasLoadedRef = useRef(false);
+  useEffect(() => {
+    if (!hasLoadedRef.current) {
+      hasLoadedRef.current = true;
+      refreshStatus();
+    }
+  }, []);
 
-  // Poll for status when running
+  // Poll for status only when actively running
   useEffect(() => {
     if (!deployStatus || deployStatus.status !== 'running') return;
     const interval = setInterval(refreshStatus, 5000);
     return () => clearInterval(interval);
-  }, [deployStatus?.status, refreshStatus]);
+  }, [deployStatus?.status]);
 
   const [showConfirm, setShowConfirm] = useState(false);
 
