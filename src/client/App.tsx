@@ -51,6 +51,7 @@ export function App() {
   const [openPanel, setOpenPanel] = useState<Panel>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [deployOpen, setDeployOpen] = useState(false);
 
   // Panel helpers
   const togglePanel = (p: Panel) => setOpenPanel(prev => prev === p ? null : p);
@@ -312,7 +313,7 @@ export function App() {
           onExportJSON={handleExportJSON}
           onExportHTML={handleExportHTML}
           onExportHandoff={handleExportHandoff}
-          onToggleSimulation={() => togglePanel('simulation')}
+          onToggleSimulation={() => editorMode === 'ship' ? setDeployOpen(!deployOpen) : togglePanel('simulation')}
           onImport={handleImport}
           showBlastRadius={showBlastRadius}
           onToggleBlastRadius={handleToggleBlastRadius}
@@ -374,7 +375,13 @@ export function App() {
       <GovernancePanel swarmId={swarmId} isOpen={governanceOpen} onClose={() => setOpenPanel(null)} />
       <CollaborationPanel swarmId={swarmId} swarm={swarm} isOpen={collaborationOpen} onClose={() => setOpenPanel(null)} />
       <OptimizationPanel swarmId={swarmId} isOpen={optimizationOpen} onClose={() => setOpenPanel(null)} />
-          <SimulationPanel swarmId={swarmId} isOpen={simulationOpen} onToggle={() => togglePanel('simulation')} defaultTab={editorMode === 'ship' ? 'deploy' : 'simulate'}
+          <SimulationPanel swarmId={swarmId} isOpen={simulationOpen} onToggle={() => togglePanel('simulation')} defaultTab="simulate"
+            onOpenAgent={(agentId) => {
+              const agent = swarm.agents.find(a => a.id === agentId);
+              if (agent) { setSelectedAgent(agent); setEditorOpen(true); }
+            }}
+          />
+          <SimulationPanel swarmId={swarmId} isOpen={deployOpen} onToggle={() => setDeployOpen(false)} defaultTab="deploy"
             onOpenAgent={(agentId) => {
               const agent = swarm.agents.find(a => a.id === agentId);
               if (agent) { setSelectedAgent(agent); setEditorOpen(true); }
