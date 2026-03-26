@@ -219,15 +219,25 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
     setLoading(false);
   }
 
+  const openTimeRef = React.useRef(0);
+  React.useEffect(() => {
+    if (isOpen) openTimeRef.current = Date.now();
+  }, [isOpen]);
+
   if (!isOpen) return null;
+
+  const handleBackdropClick = () => {
+    // Ignore clicks within 300ms of opening (prevents the button click from immediately closing)
+    if (Date.now() - openTimeRef.current < 300) return;
+    onToggle();
+  };
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-      onClick={(e) => { if (e.target === e.currentTarget) onToggle(); }}
       onMouseDown={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)' }} />
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)' }} onClick={handleBackdropClick} />
     <div style={{
       position: 'relative',
       width: 560, maxHeight: '85vh',
