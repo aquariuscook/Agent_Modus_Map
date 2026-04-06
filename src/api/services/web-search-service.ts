@@ -6,6 +6,7 @@ interface SearchResult {
   title: string;
   url: string;
   description: string;
+  rawContent?: string; // Full page text for directory scraping
 }
 
 export async function searchWeb(query: string, count = 10): Promise<SearchResult[]> {
@@ -18,6 +19,53 @@ export async function searchWeb(query: string, count = 10): Promise<SearchResult
 
   console.log('[WebSearch] No search API key set (TAVILY_API_KEY or BRAVE_SEARCH_API_KEY)');
   return fallbackResults(query);
+}
+
+// Check if a URL looks like a directory/list page worth scraping
+function isDirectoryUrl(url: string, title: string): boolean {
+  const lower = (url + ' ' + title).toLowerCase();
+  return /directory|member|list|certified|chamber|wbenc|bbb\.org|yelp\.com|yellowpages|manta\.com/.test(lower);
+}
+
+// Fetch full content of directory pages via Tavily extract
+export async function scrapeDirectoryPages(results: SearchResult[], apiKey: string): Promise<SearchResult[]> {
+  const directoryResults = results.filter(r => isDirectoryUrl(r.url, r.title) && r.url);
+  if (directoryResults.length === 0) return results;
+
+  const urlsToScrape = directoryResults.slice(0, 3).map(r => r.url); // Max 3 pages
+  console.log(`[WebSearch] Scraping ${urlsToScrape.length} directory pages for company names...`);
+
+  try {
+    const res = await fetch('https://api.tavily.com/extract', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        api_key: apiKey,
+        urls: urlsToScrape,
+      }),
+    });
+
+    if (!res.ok) {
+      console.log(`[WebSearch] Tavily extract error: ${res.status}`);
+      return results;
+    }
+
+    const data = await res.json() as any;
+    const extracted = data.results || [];
+
+    // Merge raw content back into matching results
+    for (const ext of extracted) {
+      const match = results.find(r => r.url === ext.url);
+      if (match && ext.raw_content) {
+        match.rawContent = ext.raw_content.slice(0, 5000); // Cap at 5k chars
+        console.log(`[WebSearch] Extracted ${ext.raw_content.length} chars from ${ext.url}`);
+      }
+    }
+  } catch (err) {
+    console.log('[WebSearch] Directory scraping failed:', (err as Error).message);
+  }
+
+  return results;
 }
 
 async function tavilySearch(query: string, count: number, apiKey: string): Promise<SearchResult[]> {
@@ -85,7 +133,11 @@ function fallbackResults(query: string): SearchResult[] {
 
 export function formatSearchResults(results: SearchResult[]): string {
   if (results.length === 0) return 'No search results found.';
-  return results.map((r, i) =>
-    `${i + 1}. ${r.title}\n   ${r.url}\n   ${r.description}`
-  ).join('\n\n');
+  return results.map((r, i) => {
+    let entry = `${i + 1}. ${r.title}\n   ${r.url}\n   ${r.description}`;
+    if (r.rawContent) {
+      entry += `\n   [DIRECTORY PAGE CONTENT - Extract company names from this]:\n   ${r.rawContent.slice(0, 2000)}`;
+    }
+    return entry;
+  }).join('\n\n');
 }

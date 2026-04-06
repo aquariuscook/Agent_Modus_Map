@@ -497,6 +497,15 @@ export async function getApiHealth(): Promise<{ status: string; llmAvailable: bo
   return fetchJson('/health');
 }
 
+// Search Preview
+export async function previewSearch(query: string): Promise<{
+  queries: string[];
+  results: Array<{ title: string; url: string; description: string; isDirectory: boolean; hasRawContent: boolean }>;
+  totalResults: number;
+}> {
+  return postJson('/simulate/search-preview', { query });
+}
+
 // Deploy / Runtime
 export async function deploySwarm(swarmId: string, query: string, schedule: string, budgetLimit?: number): Promise<any> {
   return postJson(`/simulate/${swarmId}/deploy`, { query, schedule, budgetLimit });
@@ -528,4 +537,48 @@ export async function getAllDeployments(): Promise<any[]> {
 
 export async function getAllResults(): Promise<any[]> {
   return fetchJson('/simulate/results/all');
+}
+
+// Prospect Management API
+export async function fetchProspects(filters?: {
+  status?: string; minScore?: number; maxScore?: number; industry?: string; search?: string; limit?: number; offset?: number;
+}): Promise<any[]> {
+  const params = new URLSearchParams();
+  if (filters?.status) params.set('status', filters.status);
+  if (filters?.minScore) params.set('minScore', String(filters.minScore));
+  if (filters?.maxScore) params.set('maxScore', String(filters.maxScore));
+  if (filters?.industry) params.set('industry', filters.industry);
+  if (filters?.search) params.set('search', filters.search);
+  if (filters?.limit) params.set('limit', String(filters.limit));
+  if (filters?.offset) params.set('offset', String(filters.offset));
+  const qs = params.toString();
+  return fetchJson(`/prospects${qs ? '?' + qs : ''}`);
+}
+
+export async function fetchProspectStats(): Promise<any> {
+  return fetchJson('/prospects/stats');
+}
+
+export async function updateProspectStatus(id: string, status: string): Promise<any> {
+  return putJson(`/prospects/${id}/status`, { status });
+}
+
+export async function updateProspectNotes(id: string, notes: string): Promise<any> {
+  return putJson(`/prospects/${id}/notes`, { notes });
+}
+
+export async function bulkUpdateProspectStatus(ids: string[], status: string): Promise<any> {
+  return postJson('/prospects/bulk-status', { ids, status });
+}
+
+export async function deleteProspectById(id: string): Promise<any> {
+  const res = await fetch(BASE + `/prospects/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json().then(j => j.data ?? j);
+}
+
+export async function exportProspectsCSV(): Promise<string> {
+  const res = await fetch(BASE + '/prospects/export');
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.text();
 }

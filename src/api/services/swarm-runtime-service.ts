@@ -170,6 +170,18 @@ async function executeRun(swarmId: string, swarmService: SwarmService): Promise<
 
     saveResultToDb(runResult);
 
+    // Auto-save prospects to ruvector database
+    const commandStep = result.steps.find(s => s.nickname === 'Command' && s.status === 'success');
+    if (commandStep?.output) {
+      try {
+        const { saveProspectsFromRun } = await import('./prospect-service.js');
+        const saved = await saveProspectsFromRun(runResult.id, commandStep.output);
+        console.log(`[RUNTIME] Saved ${saved.newCount} new, ${saved.updatedCount} updated prospects to database`);
+      } catch (err) {
+        console.log('[RUNTIME] Failed to save prospects:', (err as Error).message);
+      }
+    }
+
     config.runCount++;
     config.totalCost += runResult.cost;
     config.lastRunAt = runResult.timestamp;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { runSimulation, getSwarmCostEstimate, runLiveTestStreaming, getSwarmPackage, deploySwarm as apiDeploySwarm, pauseDeployment, resumeDeployment, stopDeployment, getDeployStatus, getDeployResults } from '../api.js';
+import { runSimulation, getSwarmCostEstimate, runLiveTestStreaming, getSwarmPackage, deploySwarm as apiDeploySwarm, pauseDeployment, resumeDeployment, stopDeployment, getDeployStatus, getDeployResults, previewSearch } from '../api.js';
+import { ProspectDashboard } from './ProspectDashboard.js';
 
 function linkifyText(text: string): string {
   // Escape HTML first to prevent XSS
@@ -233,17 +234,17 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-      onMouseDown={(e) => e.stopPropagation()}
-      onPointerDown={(e) => e.stopPropagation()}
-    >
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)' }} onClick={handleBackdropClick} />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)' }} />
     <div style={{
       position: 'relative',
-      width: 560, maxHeight: '85vh',
+      width: tab === 'deploy' ? '90vw' : 560,
+      maxWidth: tab === 'deploy' ? 1100 : 560,
+      maxHeight: tab === 'deploy' ? '90vh' : '85vh',
       background: 'var(--bg-base)', border: '1px solid var(--border-default)', borderRadius: 16,
       display: 'flex', flexDirection: 'column', zIndex: 1001,
       boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+      transition: 'width 0.2s ease, max-width 0.2s ease',
     }}>
       {/* Header */}
       <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -691,6 +692,10 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
   const [copiedBtn, setCopiedBtn] = useState<string | null>(null);
   const queryPrefilledRef = useRef(false);
   const [savedQueries] = useState(() => getSavedQueries());
+  const [searchPreview, setSearchPreview] = useState<any>(null);
+  const [previewing, setPreviewing] = useState(false);
+  const [showTuning, setShowTuning] = useState(false);
+  const [minScore, setMinScore] = useState(() => Number(localStorage.getItem('prospect-dash-min-score') || '5'));
 
   function copyResults(result: any, type: 'mock' | 'live') {
     doCopyResults(result, type);
@@ -751,6 +756,26 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
   }, [deployStatus?.status]);
 
   const [showConfirm, setShowConfirm] = useState(false);
+  const [dashboardRun, setDashboardRun] = useState<any>(null);
+  const [showAllProspects, setShowAllProspects] = useState(false);
+
+  async function handlePreviewSearch() {
+    if (!query.trim()) return;
+    setPreviewing(true);
+    setSearchPreview(null);
+    try {
+      const result = await previewSearch(query.trim());
+      setSearchPreview(result);
+    } catch (err: any) {
+      setSearchPreview({ error: err.message, queries: [], results: [], totalResults: 0 });
+    }
+    setPreviewing(false);
+  }
+
+  function handleMinScoreChange(val: number) {
+    setMinScore(val);
+    localStorage.setItem('prospect-dash-min-score', String(val));
+  }
 
   async function handleDeploy() {
     if (!query.trim()) return;
@@ -768,7 +793,7 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
 
   const isRunning = deployStatus?.status === 'running';
   const isPaused = deployStatus?.status === 'paused';
-  const isStopped = !deployStatus || ['stopped', 'completed', 'budget_reached', 'error'].includes(deployStatus.status);
+  const isStopped = !deployStatus || !deployStatus.status || ['stopped', 'completed', 'budget_reached', 'error'].includes(deployStatus.status);
 
   const statusColors: Record<string, string> = {
     running: '#22c55e', paused: '#fbbf24', stopped: 'var(--text-tertiary)',
@@ -786,7 +811,7 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
       </div>
 
       {/* Status bar */}
-      {deployStatus && (
+      {deployStatus && deployStatus.status && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16,
           padding: '10px 14px', borderRadius: 8, background: 'var(--bg-surface)', border: '1px solid var(--border-default)',
@@ -839,6 +864,98 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
               resize: 'vertical', outline: 'none', boxSizing: 'border-box',
             }}
           />
+
+          {/* Search preview + tuning */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <button onClick={handlePreviewSearch} disabled={previewing || !query.trim()} style={{
+              flex: 1, padding: '8px 14px', borderRadius: 8, border: '1px solid var(--accent-primary)',
+              background: 'transparent', color: 'var(--accent-primary)', fontWeight: 600, fontSize: 12,
+              cursor: previewing || !query.trim() ? 'default' : 'pointer', fontFamily: 'var(--font-primary)',
+              opacity: previewing || !query.trim() ? 0.4 : 1,
+            }}>{previewing ? 'Searching...' : 'Preview Search'}</button>
+            <button onClick={() => setShowTuning(!showTuning)} style={{
+              padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border-default)',
+              background: showTuning ? 'var(--bg-surface)' : 'transparent', color: 'var(--text-secondary)',
+              fontWeight: 600, fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-primary)',
+            }}>Tuning</button>
+          </div>
+
+          {/* Tuning panel */}
+          {showTuning && (
+            <div style={{
+              marginTop: 8, padding: '12px 14px', borderRadius: 8,
+              background: 'var(--bg-surface)', border: '1px solid var(--border-default)',
+            }}>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', marginBottom: 4 }}>Min Score for Dashboard</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input type="range" min={1} max={9} value={minScore} onChange={e => handleMinScoreChange(Number(e.target.value))}
+                      style={{ flex: 1, accentColor: 'var(--accent-primary)' }} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', minWidth: 30 }}>{minScore}/10</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Search preview results */}
+          {searchPreview && (
+            <div style={{
+              marginTop: 8, padding: '12px 14px', borderRadius: 8,
+              background: 'var(--bg-surface)', border: '1px solid var(--border-default)',
+              maxHeight: 250, overflowY: 'auto',
+            }}>
+              {searchPreview.error && (
+                <div style={{ fontSize: 12, color: '#f87171' }}>Error: {searchPreview.error}</div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                  Search Preview ({searchPreview.totalResults} results)
+                </div>
+                <button onClick={() => setSearchPreview(null)} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: 12 }}>Dismiss</button>
+              </div>
+
+              {/* Queries used */}
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-tertiary)', marginBottom: 4 }}>QUERIES GENERATED</div>
+                {searchPreview.queries?.map((q: string, i: number) => (
+                  <div key={i} style={{ fontSize: 11, color: 'var(--text-secondary)', padding: '2px 0', fontFamily: 'monospace' }}>{q}</div>
+                ))}
+              </div>
+
+              {/* Results */}
+              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-tertiary)', marginBottom: 4 }}>RESULTS FOUND</div>
+              {searchPreview.results?.map((r: any, i: number) => (
+                <div key={i} style={{
+                  padding: '6px 8px', marginBottom: 4, borderRadius: 6,
+                  background: r.isDirectory ? 'rgba(34,197,94,0.06)' : 'var(--bg-elevated)',
+                  borderLeft: `2px solid ${r.isDirectory ? '#22c55e' : r.hasRawContent ? '#a855f7' : 'var(--border-subtle)'}`,
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {r.title?.slice(0, 70)}{r.title?.length > 70 ? '...' : ''}
+                    {r.isDirectory && <span style={{ marginLeft: 6, fontSize: 9, padding: '1px 5px', borderRadius: 4, background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>DIRECTORY</span>}
+                    {r.hasRawContent && <span style={{ marginLeft: 4, fontSize: 9, padding: '1px 5px', borderRadius: 4, background: 'rgba(168,85,247,0.15)', color: '#a855f7' }}>SCRAPED</span>}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.url}</div>
+                </div>
+              ))}
+
+              {searchPreview.totalResults > 0 && (
+                <div style={{
+                  marginTop: 8, padding: '8px 10px', borderRadius: 6,
+                  background: searchPreview.results?.some((r: any) => r.isDirectory || r.hasRawContent) ? 'rgba(34,197,94,0.06)' : 'rgba(251,191,36,0.06)',
+                  fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.5,
+                }}>
+                  {searchPreview.results?.filter((r: any) => r.hasRawContent).length > 0
+                    ? `Found ${searchPreview.results.filter((r: any) => r.hasRawContent).length} directory pages with scraped content. Good data quality likely.`
+                    : searchPreview.results?.some((r: any) => r.isDirectory)
+                      ? 'Found directory pages but could not scrape them. Results may be limited.'
+                      : 'No directory pages found. The swarm will work with basic search results.'}
+                </div>
+              )}
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
             <div style={{ flex: 1 }}>
@@ -899,8 +1016,15 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
       {/* Results history */}
       {results.length > 0 && (
         <div style={{ marginTop: 20 }}>
-          <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
-            Results ({results.length})
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              Results ({results.length})
+            </div>
+            <button onClick={() => setShowAllProspects(true)} style={{
+              padding: '4px 12px', borderRadius: 6, fontSize: 11, fontWeight: 700,
+              border: '1px solid #22c55e', background: 'rgba(34,197,94,0.08)',
+              color: '#22c55e', cursor: 'pointer', fontFamily: 'var(--font-primary)',
+            }}>Prospect Database</button>
           </div>
           {results.map((run: any, i: number) => (
             <details key={run.id || i} style={{
@@ -922,6 +1046,7 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
               </summary>
               <div style={{ padding: '0 14px 14px', maxHeight: 400, overflowY: 'auto' }}>
                 <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+                  <button onClick={() => setDashboardRun(run)} style={{ ...ctrlBtn, flex: 1, color: '#22c55e', borderColor: '#22c55e', fontWeight: 700 }}>View Dashboard</button>
                   <button onClick={() => { const r = { steps: run.steps, totalDurationMs: run.durationMs, totalCost: run.cost, totalInputTokens: run.totalTokens, totalOutputTokens: 0, status: run.status }; downloadReport(r); }} style={{ ...ctrlBtn, flex: 1 }}>{copiedBtn === 'download' ? 'Downloaded!' : 'Download'}</button>
                   <button onClick={() => { const r = { steps: run.steps }; copyLeadSheet(r); }} style={{ ...ctrlBtn, flex: 1, color: 'var(--accent-secondary, #a855f7)', borderColor: 'var(--accent-secondary, #a855f7)' }}>{copiedBtn === 'leads' ? 'Copied!' : 'Copy Leads'}</button>
                   <button onClick={() => { const r = { steps: run.steps, totalDurationMs: run.durationMs, totalCost: run.cost, totalInputTokens: run.totalTokens, totalOutputTokens: 0, agentsProcessed: run.agentsProcessed, status: run.status }; copyResults(r, 'live'); }} style={{ ...ctrlBtn, flex: 1 }}>{copiedBtn === 'all' ? 'Copied!' : 'Copy All'}</button>
@@ -941,6 +1066,13 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
             </details>
           ))}
         </div>
+      )}
+
+      {dashboardRun && (
+        <ProspectDashboard runData={dashboardRun} onClose={() => setDashboardRun(null)} minScore={minScore} />
+      )}
+      {showAllProspects && (
+        <ProspectDashboard onClose={() => setShowAllProspects(false)} showAll minScore={minScore} />
       )}
     </div>
   );

@@ -147,7 +147,7 @@ export function EditorToolbar(props: EditorToolbarProps) {
       {mode === 'watch' && (
         <div style={{ display: 'flex', gap: 6 }}>
           <button onClick={props.onOpenHealth} style={btnStyle(false, mColor)}>Health</button>
-          <button onClick={props.onOpenTraces} style={btnStyle(false, mColor)}>Decisions</button>
+          <button onClick={props.onOpenTraces} style={btnStyle(false, mColor)}>Trace</button>
           <button onClick={props.onOpenGovernance} style={btnStyle(false, mColor)}>Audit</button>
           <button onClick={props.onOpenCollaboration} style={btnStyle(false, mColor)}>History</button>
         </div>
@@ -166,7 +166,6 @@ export function EditorToolbar(props: EditorToolbarProps) {
           <button onClick={props.onToggleSimulation} style={btnStyle(false, '#22c55e')}>Deploy</button>
           <button onClick={props.onExportHandoff} style={btnStyle(false, mColor)}>Handoff Doc</button>
           <button onClick={props.onExportJSON} style={btnStyle(false, mColor)}>Export JSON</button>
-          <button onClick={props.onExportHTML} style={btnStyle(false, mColor)}>Export HTML</button>
           <button onClick={props.onImport} style={btnStyle(false, mColor)}>Import</button>
         </div>
       )}

@@ -4,13 +4,25 @@ import { SwarmService } from '../services/swarm-service.js';
 import { runMockSimulation } from '../services/simulation-service.js';
 import { estimateSwarmCost } from '../services/cost-estimation-service.js';
 import { deploySwarm, pauseSwarm, resumeSwarm, stopSwarm, getDeployStatus, getRunHistory, getAllDeployments, getAllResults, setRuntimeDb } from '../services/swarm-runtime-service.js';
-import { runLiveExecution, runLiveExecutionStreaming } from '../services/live-execution-service.js';
+import { runLiveExecution, runLiveExecutionStreaming, previewSearch } from '../services/live-execution-service.js';
 import { generateSwarmPackage } from '../services/swarm-export-service.js';
 
 export function createSimulationRoutes(db: Database.Database): Router {
   const router = Router();
   const swarmService = new SwarmService(db);
   setRuntimeDb(db);
+
+  // POST /api/simulate/search-preview - preview search results without running agents
+  router.post('/search-preview', async (req, res) => {
+    try {
+      const { query } = req.body;
+      if (!query?.trim()) return res.status(400).json({ error: 'Query is required' });
+      const preview = await previewSearch(query.trim());
+      res.json({ data: preview });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
 
   // POST /api/simulate/:swarmId - run mock simulation
   router.post('/:swarmId', (req, res) => {

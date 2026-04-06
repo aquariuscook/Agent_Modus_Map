@@ -127,6 +127,29 @@ const DEFAULT_CORE_TASKS: Record<string, string> = {
   Welcome: 'Guide new employees through their first week: orientation schedule, key contacts, office setup, and FAQs.',
   Feedback: 'Collect feedback from new hires about the onboarding experience. Identify improvement opportunities.',
   HRDash: 'Generate HR analytics dashboards: time-to-productivity, onboarding completion rates, new hire satisfaction scores.',
+  // Personal Assistant
+  Inbox: 'Scan incoming emails and messages. Categorize each by urgency (urgent, important, routine, low-priority) and type (action required, FYI, meeting-related, follow-up needed). Flag anything that needs immediate attention. Extract key details: sender, subject, deadline if mentioned, and whether a reply is expected.',
+  Calendar: 'Review upcoming calendar events for the next 48 hours. Identify meetings that need preparation, scheduling conflicts, back-to-back meetings with no buffer, and open time blocks. Note attendees, meeting purpose, and any pre-work required.',
+  Pulse: 'Create a concise morning briefing summarizing: top priority emails, today\'s meetings with prep notes, pending to-do items and their deadlines, any social media mentions or engagement that needs attention. Keep it scannable, under 2 minutes to read.',
+  Prioritize: 'Take all inputs from Inbox, Calendar, and Listen. Prioritize using urgency and importance. Output a ranked action list: what to do first, what can wait, what to delegate, and what to ignore. Be decisive. If something can wait until tomorrow, say so.',
+  Draft: 'Write email replies based on the context provided. For each email that needs a response, generate three versions: quick (2-3 sentences, direct), thoughtful (acknowledges their point, adds value), and formal (professional tone for external contacts). Match the sender\'s communication style when possible.',
+  Prep: 'Prepare a one-page meeting brief for each upcoming meeting. Include: who\'s attending and their role, what was discussed last time, any open action items, topics to cover, and suggested talking points. If it\'s a first meeting, research the attendees.',
+  Planner: 'Build and maintain a prioritized to-do list. Organize tasks by deadline, estimated time, and energy required. Suggest the best order for tackling tasks based on available time blocks from Calendar. Flag anything at risk of missing its deadline.',
+  Listen: 'Monitor social media channels (LinkedIn, Twitter/X, Instagram) for: mentions of you or your brand, comments on your posts, DMs that need replies, trending topics in your industry, and competitor activity worth noting. Summarize engagement metrics.',
+  Post: 'Draft social media content based on priorities and topics. Create platform-appropriate posts: LinkedIn (professional thought leadership), Twitter/X (concise and engaging), Instagram (visual-first with captions). Match the user\'s voice and style. Suggest optimal posting times.',
+  Engage: 'Draft replies to social media comments and DMs. For routine engagement (thanks, acknowledgments), provide ready-to-send responses. For substantive conversations, draft thoughtful replies that build relationships. Flag anything sensitive that needs personal attention.',
+  Nudge: 'Track commitments and deadlines. Send reminders when: a promised deliverable is due soon, a follow-up email hasn\'t been sent, a task has been sitting untouched for too long, or someone else owes you something and hasn\'t delivered. Be specific about what\'s due and when.',
+  Recap: 'Generate an end-of-day summary: tasks completed, tasks carried over to tomorrow, emails sent and pending, meetings attended with key takeaways, social media engagement stats (new followers, post performance, notable interactions). Highlight anything that needs attention first thing tomorrow.',
+  // Social Media Management
+  Trends: 'Identify trending topics, hashtags, and conversations in the user\'s industry across LinkedIn, X/Twitter, and Instagram. Surface content opportunities: what people are talking about, questions being asked, debates happening. Flag trends early before they peak.',
+  Ideate: 'Generate content ideas based on trending topics, past top-performing posts, and industry news. For each idea, suggest: the angle, which platform it fits best, the format (text post, carousel, thread, video concept), and why it would resonate with the audience.',
+  Visual: 'Suggest visual concepts for social content. For each post draft, recommend: image style (photo, graphic, infographic, meme), color palette, text overlay suggestions, and hashtag sets. Describe the visual so a designer or AI image tool can produce it.',
+  Timing: 'Determine optimal posting times for each platform based on audience activity patterns. Build a weekly content calendar distributing posts across platforms. Avoid posting too frequently or too close together. Suggest the best day/time for each piece of content.',
+  Reply: 'Draft responses to comments and DMs across all social channels. For routine engagement (thanks, acknowledgments, simple questions), provide ready-to-send responses. For substantive conversations or complaints, draft thoughtful replies. Flag anything sensitive, controversial, or from high-profile accounts for human review.',
+  Grow: 'Identify accounts and communities to engage with for audience growth. Suggest: people to follow, posts to comment on, groups to join, collaborations to pursue. Focus on genuine relationship building, not spam. Track which engagement strategies are working.',
+  Analytics: 'Generate weekly social media analytics: engagement rate by platform, follower growth, top-performing posts (by likes, shares, comments), best posting times, content type performance (text vs image vs video vs carousel), audience demographics shifts, and month-over-month trends. Highlight what\'s working and what to change.',
+  // Lead Gen Dashboard
+  Command: 'Take ALL upstream agent outputs and compile them into a single structured JSON response. For each prospect company found, extract: company name, website URL, LinkedIn company URL (construct as linkedin.com/company/name-slug), industry, location, employee count, revenue estimate, lead score (1-10), buying signals, contact name, contact title, contact LinkedIn URL, and contact email if found. Generate 3 outreach email variants per prospect: "professional" (formal business tone), "conversational" (warm and personal), and "valueLead" (lead with a specific insight about their business). Output ONLY valid JSON with this structure: {"prospects":[...],"summary":{"totalProspects":N,"avgScore":N,"topIndustry":"...","topSignal":"..."}}. No markdown, no explanation, just JSON.',
 };
 
 const templates: SwarmTemplate[] = [
@@ -217,128 +240,6 @@ const templates: SwarmTemplate[] = [
       ['Broadcast', 'Tracker', 'feedsInto'], ['Tracker', 'Insight', 'feedsInto'],
       ['Insight', 'Suggest', 'feedsInto'], ['Suggest', 'Brief', 'feedsInto'],
       ['Editor', 'Quill', 'canOverride'], ['Report', 'Brief', 'collaboratesWith'],
-    ].map(([s, t, type]) => ({ sourceNickname: s as string, targetNickname: t as string, type: type as any })),
-  },
-  {
-    id: 'devops-pipeline-v1',
-    name: 'DevOps CI/CD Pipeline',
-    domain: 'Engineering',
-    description: '14-agent swarm for automated build, test, deploy, and monitoring pipelines with rollback capabilities.',
-    agentCount: 14,
-    layerCount: 4,
-    tags: ['devops', 'cicd', 'deployment', 'monitoring', 'automation'],
-    layers: [
-      { name: 'Source & Build', colorTheme: '#3b82f6', order: 1 },
-      { name: 'Test & Quality', colorTheme: '#a855f7', order: 2 },
-      { name: 'Deploy & Release', colorTheme: '#22c55e', order: 3 },
-      { name: 'Monitor & Respond', colorTheme: '#ef4444', order: 4 },
-    ],
-    agents: [
-      { nickname: 'Watcher', formalName: 'Source-Git-WebhookListener', descriptor: 'The Trigger', layerIndex: 0, badges: ['ENTRY', 'ALWAYS_ON'], positionIndex: 0 },
-      { nickname: 'Builder', formalName: 'Build-Compile-Artifacts', descriptor: 'The Constructor', layerIndex: 0, badges: ['AUTO', 'HIGH_PRIORITY'], positionIndex: 1 },
-      { nickname: 'Deps', formalName: 'Build-Dependency-Scanner', descriptor: 'The Auditor', layerIndex: 0, badges: ['AUTO', 'CRITICAL'], positionIndex: 2 },
-      { nickname: 'Lint', formalName: 'Quality-Static-Analysis', descriptor: 'The Nitpicker', layerIndex: 1, badges: ['AUTO'], positionIndex: 0 },
-      { nickname: 'Unit', formalName: 'Test-Unit-Runner', descriptor: 'The Validator', layerIndex: 1, badges: ['AUTO', 'HIGH_PRIORITY'], positionIndex: 1 },
-      { nickname: 'Integration', formalName: 'Test-Integration-E2E', descriptor: 'The Connector', layerIndex: 1, badges: ['AUTO', 'CRITICAL'], positionIndex: 2 },
-      { nickname: 'Security', formalName: 'Scan-SAST-DAST', descriptor: 'The Shield', layerIndex: 1, badges: ['CRITICAL', 'ALWAYS_ON'], positionIndex: 3 },
-      { nickname: 'Gate', formalName: 'Quality-Gate-Decision', descriptor: 'The Bouncer', layerIndex: 2, badges: ['CRITICAL', 'APPROVAL', 'HUB'], positionIndex: 0 },
-      { nickname: 'Canary', formalName: 'Deploy-Canary-Progressive', descriptor: 'The Scout', layerIndex: 2, badges: ['AUTO', 'CRITICAL'], positionIndex: 1 },
-      { nickname: 'Release', formalName: 'Deploy-Production-Promote', descriptor: 'The Launcher', layerIndex: 2, badges: ['CRITICAL', 'HUMAN'], positionIndex: 2 },
-      { nickname: 'Rollback', formalName: 'Deploy-Rollback-Emergency', descriptor: 'The Safety Net', layerIndex: 2, badges: ['CRITICAL', 'CAN_OVERRIDE'], positionIndex: 3 },
-      { nickname: 'Metrics', formalName: 'Monitor-APM-Collector', descriptor: 'The Pulse', layerIndex: 3, badges: ['ALWAYS_ON', 'AUTO'], positionIndex: 0 },
-      { nickname: 'Alert', formalName: 'Monitor-Incident-Trigger', descriptor: 'The Alarm', layerIndex: 3, badges: ['ALWAYS_ON', 'HIGH_PRIORITY'], positionIndex: 1 },
-      { nickname: 'PostMortem', formalName: 'Intelligence-IncidentReview', descriptor: 'The Analyst', layerIndex: 3, badges: ['AUTO', 'LOGS_ALL'], positionIndex: 2 },
-    ],
-    relationships: [
-      ['Watcher', 'Builder', 'feedsInto'], ['Watcher', 'Deps', 'feedsInto'],
-      ['Builder', 'Lint', 'feedsInto'], ['Builder', 'Unit', 'feedsInto'],
-      ['Unit', 'Integration', 'feedsInto'], ['Deps', 'Security', 'feedsInto'],
-      ['Lint', 'Gate', 'feedsInto'], ['Unit', 'Gate', 'feedsInto'],
-      ['Integration', 'Gate', 'feedsInto'], ['Security', 'Gate', 'feedsInto'],
-      ['Gate', 'Canary', 'feedsInto'], ['Canary', 'Release', 'feedsInto'],
-      ['Release', 'Metrics', 'feedsInto'], ['Metrics', 'Alert', 'feedsInto'],
-      ['Alert', 'Rollback', 'feedsInto'], ['Rollback', 'Canary', 'canOverride'],
-      ['PostMortem', 'Watcher', 'collaboratesWith'],
-    ].map(([s, t, type]) => ({ sourceNickname: s as string, targetNickname: t as string, type: type as any })),
-  },
-  {
-    id: 'data-pipeline-v1',
-    name: 'Data Processing Pipeline',
-    domain: 'Data',
-    description: '16-agent swarm for ETL, data quality, transformation, and analytics with real-time and batch processing.',
-    agentCount: 16,
-    layerCount: 4,
-    tags: ['data', 'etl', 'analytics', 'pipeline', 'warehouse'],
-    layers: [
-      { name: 'Ingestion', colorTheme: '#06b6d4', order: 1 },
-      { name: 'Processing & Quality', colorTheme: '#8b5cf6', order: 2 },
-      { name: 'Storage & Serving', colorTheme: '#22c55e', order: 3 },
-      { name: 'Analytics & Intelligence', colorTheme: '#fbbf24', order: 4 },
-    ],
-    agents: [
-      { nickname: 'Collector', formalName: 'Ingest-Source-Connector', descriptor: 'The Gatherer', layerIndex: 0, badges: ['ENTRY', 'ALWAYS_ON'], positionIndex: 0 },
-      { nickname: 'Stream', formalName: 'Ingest-Realtime-Kafka', descriptor: 'The River', layerIndex: 0, badges: ['AUTO', 'HIGH_PRIORITY'], positionIndex: 1 },
-      { nickname: 'Batch', formalName: 'Ingest-Scheduled-Bulk', descriptor: 'The Hauler', layerIndex: 0, badges: ['AUTO'], positionIndex: 2 },
-      { nickname: 'Schema', formalName: 'Ingest-Schema-Registry', descriptor: 'The Gatekeeper', layerIndex: 0, badges: ['CRITICAL', 'AUTO'], positionIndex: 3 },
-      { nickname: 'Cleaner', formalName: 'Process-DataQuality-Cleanse', descriptor: 'The Scrubber', layerIndex: 1, badges: ['AUTO', 'CRITICAL'], positionIndex: 0 },
-      { nickname: 'Validate', formalName: 'Process-DataQuality-Check', descriptor: 'The Inspector', layerIndex: 1, badges: ['AUTO', 'HIGH_PRIORITY'], positionIndex: 1 },
-      { nickname: 'Transform', formalName: 'Process-ETL-Transform', descriptor: 'The Alchemist', layerIndex: 1, badges: ['AUTO', 'HUB'], positionIndex: 2 },
-      { nickname: 'Enrich', formalName: 'Process-DataEnrich-External', descriptor: 'The Enhancer', layerIndex: 1, badges: ['AUTO', 'MEDIUM'], positionIndex: 3 },
-      { nickname: 'Warehouse', formalName: 'Store-DataWarehouse-Load', descriptor: 'The Vault', layerIndex: 2, badges: ['CRITICAL', 'AUTO'], positionIndex: 0 },
-      { nickname: 'Lake', formalName: 'Store-DataLake-Raw', descriptor: 'The Reservoir', layerIndex: 2, badges: ['AUTO'], positionIndex: 1 },
-      { nickname: 'Cache', formalName: 'Store-Cache-FastAccess', descriptor: 'The Speedster', layerIndex: 2, badges: ['AUTO', 'HIGH_PRIORITY'], positionIndex: 2 },
-      { nickname: 'Catalog', formalName: 'Store-Metadata-Catalog', descriptor: 'The Librarian', layerIndex: 2, badges: ['AUTO', 'LOGS_ALL'], positionIndex: 3 },
-      { nickname: 'Dash', formalName: 'Analytics-Dashboard-Builder', descriptor: 'The Visualizer', layerIndex: 3, badges: ['AUTO'], positionIndex: 0 },
-      { nickname: 'ML', formalName: 'Analytics-ML-FeatureStore', descriptor: 'The Learner', layerIndex: 3, badges: ['AUTO', 'HIGH_PRIORITY'], positionIndex: 1 },
-      { nickname: 'Anomaly', formalName: 'Analytics-AnomalyDetect', descriptor: 'The Watchdog', layerIndex: 3, badges: ['ALWAYS_ON', 'CRITICAL'], positionIndex: 2 },
-      { nickname: 'Lineage', formalName: 'Analytics-DataLineage-Track', descriptor: 'The Historian', layerIndex: 3, badges: ['AUTO', 'LOGS_ALL'], positionIndex: 3 },
-    ],
-    relationships: [
-      ['Collector', 'Stream', 'feedsInto'], ['Collector', 'Batch', 'feedsInto'],
-      ['Stream', 'Schema', 'dependsOn'], ['Batch', 'Schema', 'dependsOn'],
-      ['Schema', 'Cleaner', 'feedsInto'], ['Cleaner', 'Validate', 'feedsInto'],
-      ['Validate', 'Transform', 'feedsInto'], ['Transform', 'Enrich', 'collaboratesWith'],
-      ['Transform', 'Warehouse', 'feedsInto'], ['Transform', 'Lake', 'feedsInto'],
-      ['Warehouse', 'Cache', 'feedsInto'], ['Warehouse', 'Dash', 'feedsInto'],
-      ['Lake', 'ML', 'feedsInto'], ['Cache', 'Dash', 'feedsInto'],
-      ['Anomaly', 'Cleaner', 'feedsInto'], ['Lineage', 'Catalog', 'feedsInto'],
-      ['Catalog', 'Lineage', 'collaboratesWith'],
-    ].map(([s, t, type]) => ({ sourceNickname: s as string, targetNickname: t as string, type: type as any })),
-  },
-  {
-    id: 'security-ops-v1',
-    name: 'Security Operations Center',
-    domain: 'Security',
-    description: '12-agent swarm for threat detection, incident response, vulnerability management, and compliance monitoring.',
-    agentCount: 12,
-    layerCount: 3,
-    tags: ['security', 'soc', 'incident-response', 'compliance', 'threat-detection'],
-    layers: [
-      { name: 'Detection & Monitoring', colorTheme: '#ef4444', order: 1 },
-      { name: 'Analysis & Response', colorTheme: '#f59e0b', order: 2 },
-      { name: 'Governance & Compliance', colorTheme: '#22c55e', order: 3 },
-    ],
-    agents: [
-      { nickname: 'Sentinel', formalName: 'Detect-SIEM-Collector', descriptor: 'The Watcher', layerIndex: 0, badges: ['ENTRY', 'ALWAYS_ON', 'CRITICAL'], positionIndex: 0 },
-      { nickname: 'NetWatch', formalName: 'Detect-Network-IDS', descriptor: 'The Net Guard', layerIndex: 0, badges: ['ALWAYS_ON', 'AUTO'], positionIndex: 1 },
-      { nickname: 'Endpoint', formalName: 'Detect-EDR-Monitor', descriptor: 'The Device Guard', layerIndex: 0, badges: ['ALWAYS_ON', 'AUTO'], positionIndex: 2 },
-      { nickname: 'Scanner', formalName: 'Detect-Vulnerability-Scan', descriptor: 'The Prober', layerIndex: 0, badges: ['AUTO', 'HIGH_PRIORITY'], positionIndex: 3 },
-      { nickname: 'Analyst', formalName: 'Analyze-Threat-Intel', descriptor: 'The Investigator', layerIndex: 1, badges: ['HUB', 'CRITICAL', 'AUTO'], positionIndex: 0 },
-      { nickname: 'Responder', formalName: 'Response-Incident-Handler', descriptor: 'The First Responder', layerIndex: 1, badges: ['CRITICAL', 'CAN_OVERRIDE', 'HUMAN'], positionIndex: 1 },
-      { nickname: 'Quarantine', formalName: 'Response-Isolate-Contain', descriptor: 'The Enforcer', layerIndex: 1, badges: ['AUTO', 'CAN_OVERRIDE'], positionIndex: 2 },
-      { nickname: 'Forensic', formalName: 'Analyze-Digital-Forensics', descriptor: 'The Detective', layerIndex: 1, badges: ['HUMAN', 'LOGS_ALL'], positionIndex: 3 },
-      { nickname: 'Compliance', formalName: 'Govern-Policy-Enforce', descriptor: 'The Regulator', layerIndex: 2, badges: ['CRITICAL', 'ALWAYS_ON'], positionIndex: 0 },
-      { nickname: 'Auditor', formalName: 'Govern-Audit-Trail', descriptor: 'The Recorder', layerIndex: 2, badges: ['AUTO', 'LOGS_ALL'], positionIndex: 1 },
-      { nickname: 'Patch', formalName: 'Govern-Vuln-Remediate', descriptor: 'The Fixer', layerIndex: 2, badges: ['AUTO', 'APPROVAL'], positionIndex: 2 },
-      { nickname: 'Report', formalName: 'Govern-Executive-Brief', descriptor: 'The Briefer', layerIndex: 2, badges: ['AUTO'], positionIndex: 3 },
-    ],
-    relationships: [
-      ['Sentinel', 'Analyst', 'feedsInto'], ['NetWatch', 'Analyst', 'feedsInto'],
-      ['Endpoint', 'Analyst', 'feedsInto'], ['Scanner', 'Analyst', 'feedsInto'],
-      ['Analyst', 'Responder', 'feedsInto'], ['Responder', 'Quarantine', 'feedsInto'],
-      ['Responder', 'Forensic', 'collaboratesWith'], ['Quarantine', 'Endpoint', 'canOverride'],
-      ['Forensic', 'Report', 'feedsInto'], ['Compliance', 'Auditor', 'dependsOn'],
-      ['Scanner', 'Patch', 'feedsInto'], ['Patch', 'Compliance', 'feedsInto'],
     ].map(([s, t, type]) => ({ sourceNickname: s as string, targetNickname: t as string, type: type as any })),
   },
   {
@@ -450,8 +351,8 @@ const templates: SwarmTemplate[] = [
     id: 'lead-gen-consulting-v1',
     name: 'Consulting Lead Gen',
     domain: 'Sales',
-    description: '14-agent swarm for finding consulting clients: prospect identification, outreach, qualification, proposal generation, and pipeline management.',
-    agentCount: 14,
+    description: '15-agent swarm for finding consulting clients: prospect identification, outreach, qualification, proposal generation, pipeline management, and action dashboard.',
+    agentCount: 15,
     layerCount: 4,
     tags: ['lead-gen', 'consulting', 'sales', 'outreach', 'pipeline', 'prospecting'],
     layers: [
@@ -479,6 +380,7 @@ const templates: SwarmTemplate[] = [
       // Pipeline & Intelligence
       { nickname: 'Funnel', formalName: 'Analytics-Pipeline-Track', descriptor: 'The Pipeline Manager', layerIndex: 3, badges: ['HUB', 'ALWAYS_ON', 'LOGS_ALL'], positionIndex: 0 },
       { nickname: 'Insight', formalName: 'Intelligence-WinLoss-Analyze', descriptor: 'The Pattern Spotter', layerIndex: 3, badges: ['AUTO', 'ADVISORY'], positionIndex: 1 },
+      { nickname: 'Command', formalName: 'Pipeline-Action-Dashboard', descriptor: 'The Action Center', layerIndex: 3, badges: ['AUTO', 'HUB'], positionIndex: 2 },
     ],
     relationships: [
       // Discovery flow
@@ -495,6 +397,9 @@ const templates: SwarmTemplate[] = [
       // Pipeline
       ['Qualify', 'Funnel', 'feedsInto'], ['Propose', 'Funnel', 'feedsInto'],
       ['Funnel', 'Insight', 'feedsInto'], ['Insight', 'Scout', 'feedsInto'],
+      // Dashboard
+      ['Qualify', 'Command', 'feedsInto'], ['Craft', 'Command', 'feedsInto'],
+      ['Social', 'Command', 'feedsInto'], ['Profile', 'Command', 'feedsInto'],
       // Collaborations
       ['Scout', 'Compete', 'collaboratesWith'], ['Profile', 'Signal', 'collaboratesWith'],
       ['Craft', 'Warm', 'collaboratesWith'], ['Qualify', 'Funnel', 'collaboratesWith'],
@@ -502,6 +407,106 @@ const templates: SwarmTemplate[] = [
       // Dependencies
       ['Craft', 'Profile', 'dependsOn'], ['Qualify', 'Profile', 'dependsOn'],
       ['Propose', 'Discover', 'dependsOn'], ['Social', 'Profile', 'dependsOn'],
+    ].map(([s, t, type]) => ({ sourceNickname: s as string, targetNickname: t as string, type: type as any })),
+  },
+  {
+    id: 'personal-assistant-v1',
+    name: 'Personal Assistant',
+    domain: 'Productivity',
+    description: '12-agent swarm for managing email, calendar, to-do lists, and social media. Daily briefings, smart prioritization, drafted replies, and follow-up reminders.',
+    agentCount: 12,
+    layerCount: 4,
+    tags: ['personal', 'assistant', 'email', 'calendar', 'social', 'productivity', 'tasks'],
+    layers: [
+      { name: 'Intake & Awareness', colorTheme: '#00d9ff', order: 1 },
+      { name: 'Thinking & Prioritizing', colorTheme: '#a855f7', order: 2 },
+      { name: 'Social & Content', colorTheme: '#22c55e', order: 3 },
+      { name: 'Follow-up & Reporting', colorTheme: '#fbbf24', order: 4 },
+    ],
+    agents: [
+      // Intake & Awareness
+      { nickname: 'Inbox', formalName: 'Intake-Email-Scanner', descriptor: 'The Sorter', layerIndex: 0, badges: ['ENTRY', 'ALWAYS_ON', 'AUTO'], positionIndex: 0 },
+      { nickname: 'Calendar', formalName: 'Intake-Calendar-Review', descriptor: 'The Scheduler', layerIndex: 0, badges: ['ENTRY', 'ALWAYS_ON', 'AUTO'], positionIndex: 1 },
+      { nickname: 'Pulse', formalName: 'Intake-Daily-Briefing', descriptor: 'The Briefer', layerIndex: 0, badges: ['AUTO', 'HIGH_PRIORITY'], positionIndex: 2 },
+      // Thinking & Prioritizing
+      { nickname: 'Prioritize', formalName: 'Priority-Urgency-Ranker', descriptor: 'The Decider', layerIndex: 1, badges: ['HUB', 'CRITICAL', 'AUTO'], positionIndex: 0 },
+      { nickname: 'Draft', formalName: 'Content-Email-Writer', descriptor: 'The Ghost Writer', layerIndex: 1, badges: ['AUTO', 'APPROVAL'], positionIndex: 1 },
+      { nickname: 'Prep', formalName: 'Context-Meeting-Briefer', descriptor: 'The Researcher', layerIndex: 1, badges: ['AUTO'], positionIndex: 2 },
+      { nickname: 'Planner', formalName: 'Task-Priority-Organizer', descriptor: 'The Strategist', layerIndex: 1, badges: ['AUTO', 'HIGH_PRIORITY'], positionIndex: 3 },
+      // Social & Content
+      { nickname: 'Listen', formalName: 'Social-Monitor-Tracker', descriptor: 'The Listener', layerIndex: 2, badges: ['ENTRY', 'ALWAYS_ON', 'AUTO'], positionIndex: 0 },
+      { nickname: 'Post', formalName: 'Social-Content-Creator', descriptor: 'The Voice', layerIndex: 2, badges: ['AUTO', 'APPROVAL'], positionIndex: 1 },
+      { nickname: 'Engage', formalName: 'Social-Reply-Manager', descriptor: 'The Connector', layerIndex: 2, badges: ['AUTO', 'HUMAN'], positionIndex: 2 },
+      // Follow-up & Reporting
+      { nickname: 'Nudge', formalName: 'Followup-Reminder-Tracker', descriptor: 'The Nagger', layerIndex: 3, badges: ['ALWAYS_ON', 'AUTO'], positionIndex: 0 },
+      { nickname: 'Recap', formalName: 'Report-DailySummary-Generator', descriptor: 'The Closer', layerIndex: 3, badges: ['AUTO'], positionIndex: 1 },
+    ],
+    relationships: [
+      // Intake feeds into prioritization
+      ['Inbox', 'Prioritize', 'feedsInto'], ['Calendar', 'Prioritize', 'feedsInto'],
+      ['Inbox', 'Pulse', 'feedsInto'], ['Calendar', 'Pulse', 'feedsInto'],
+      ['Listen', 'Pulse', 'feedsInto'], ['Listen', 'Prioritize', 'feedsInto'],
+      // Prioritize drives action
+      ['Prioritize', 'Draft', 'feedsInto'], ['Prioritize', 'Prep', 'feedsInto'],
+      ['Prioritize', 'Planner', 'feedsInto'], ['Prioritize', 'Post', 'feedsInto'],
+      // Social flow
+      ['Listen', 'Engage', 'feedsInto'], ['Post', 'Engage', 'collaboratesWith'],
+      // Follow-up
+      ['Planner', 'Nudge', 'feedsInto'], ['Draft', 'Inbox', 'feedsInto'],
+      // Recap pulls from everything
+      ['Planner', 'Recap', 'feedsInto'], ['Nudge', 'Recap', 'feedsInto'],
+      ['Engage', 'Recap', 'feedsInto'],
+      // Collaborations
+      ['Calendar', 'Prep', 'collaboratesWith'], ['Inbox', 'Draft', 'collaboratesWith'],
+      // Dependencies
+      ['Prep', 'Calendar', 'dependsOn'], ['Draft', 'Prioritize', 'dependsOn'],
+    ].map(([s, t, type]) => ({ sourceNickname: s as string, targetNickname: t as string, type: type as any })),
+  },
+  {
+    id: 'social-media-manager-v1',
+    name: 'Social Media Manager',
+    domain: 'Marketing',
+    description: '10-agent swarm for social media management: trend monitoring, content creation, scheduling, engagement, audience growth, and performance analytics.',
+    agentCount: 10,
+    layerCount: 3,
+    tags: ['social', 'marketing', 'content', 'engagement', 'analytics', 'growth'],
+    layers: [
+      { name: 'Listening & Research', colorTheme: '#00d9ff', order: 1 },
+      { name: 'Content & Publishing', colorTheme: '#a855f7', order: 2 },
+      { name: 'Engagement & Analytics', colorTheme: '#22c55e', order: 3 },
+    ],
+    agents: [
+      // Listening & Research
+      { nickname: 'Listen', formalName: 'Social-Monitor-Tracker', descriptor: 'The Listener', layerIndex: 0, badges: ['ENTRY', 'ALWAYS_ON', 'AUTO'], positionIndex: 0 },
+      { nickname: 'Trends', formalName: 'Social-Trend-Spotter', descriptor: 'The Radar', layerIndex: 0, badges: ['AUTO', 'HIGH_PRIORITY'], positionIndex: 1 },
+      { nickname: 'Compete', formalName: 'Social-Competitor-Watch', descriptor: 'The Rival Watcher', layerIndex: 0, badges: ['AUTO'], positionIndex: 2 },
+      // Content & Publishing
+      { nickname: 'Ideate', formalName: 'Content-Idea-Generator', descriptor: 'The Spark', layerIndex: 1, badges: ['AUTO'], positionIndex: 0 },
+      { nickname: 'Write', formalName: 'Content-Post-Drafter', descriptor: 'The Voice', layerIndex: 1, badges: ['AUTO', 'APPROVAL'], positionIndex: 1 },
+      { nickname: 'Visual', formalName: 'Content-Visual-Director', descriptor: 'The Eye', layerIndex: 1, badges: ['AUTO'], positionIndex: 2 },
+      { nickname: 'Timing', formalName: 'Content-Calendar-Optimizer', descriptor: 'The Clock', layerIndex: 1, badges: ['AUTO', 'ALWAYS_ON'], positionIndex: 3 },
+      // Engagement & Analytics
+      { nickname: 'Reply', formalName: 'Engage-Response-Manager', descriptor: 'The Responder', layerIndex: 2, badges: ['AUTO', 'HUMAN'], positionIndex: 0 },
+      { nickname: 'Grow', formalName: 'Engage-Audience-Builder', descriptor: 'The Networker', layerIndex: 2, badges: ['AUTO'], positionIndex: 1 },
+      { nickname: 'Analytics', formalName: 'Report-Performance-Tracker', descriptor: 'The Scorekeeper', layerIndex: 2, badges: ['AUTO', 'LOGS_ALL'], positionIndex: 2 },
+    ],
+    relationships: [
+      // Research feeds content
+      ['Listen', 'Ideate', 'feedsInto'], ['Trends', 'Ideate', 'feedsInto'],
+      ['Compete', 'Ideate', 'feedsInto'],
+      // Content flow
+      ['Ideate', 'Write', 'feedsInto'], ['Write', 'Visual', 'collaboratesWith'],
+      ['Write', 'Timing', 'feedsInto'], ['Visual', 'Timing', 'feedsInto'],
+      // Engagement
+      ['Listen', 'Reply', 'feedsInto'], ['Timing', 'Analytics', 'feedsInto'],
+      ['Reply', 'Grow', 'collaboratesWith'],
+      // Analytics feedback loop
+      ['Analytics', 'Ideate', 'feedsInto'], ['Analytics', 'Timing', 'feedsInto'],
+      ['Grow', 'Analytics', 'feedsInto'],
+      // Collaborations
+      ['Listen', 'Compete', 'collaboratesWith'], ['Trends', 'Compete', 'collaboratesWith'],
+      // Dependencies
+      ['Write', 'Ideate', 'dependsOn'], ['Timing', 'Write', 'dependsOn'],
     ].map(([s, t, type]) => ({ sourceNickname: s as string, targetNickname: t as string, type: type as any })),
   },
 ];
