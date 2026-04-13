@@ -155,51 +155,115 @@ async function runLiveExecutionInternal(swarm: Swarm, userInput: string, onProgr
   const entryAgents = findEntryPoints(swarm);
   const downstream = buildDownstreamMap(swarm);
 
-  // Pre-search: use Haiku to generate smart search queries, search once, share with all agents
+  // Pre-search: Extract industries + location, then search for actual business websites
   let sharedSearchContext = '';
   try {
-    console.log('[LIVE] Generating search queries with Haiku...');
-    const queryResponse = await client.messages.create({
+    console.log('[LIVE] Extracting industries and location from query...');
+
+    // Step 1: Have Haiku extract the structured info from the user's plain English query
+    const extractResponse = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 300,
+      max_tokens: 200,
       temperature: 0,
-      system: `You generate web search queries to find SPECIFIC REAL COMPANIES by name. Not directories, not articles, not training providers. The goal is to find pages that LIST actual company names.
-
-Rules:
-- Every query MUST find pages with real company names on them
-- Use site:linkedin.com/company to find company pages directly
-- Use "list of" or "top" to find listicles with company names
-- If location is mentioned, include it in EVERY query
-- If "women-owned" mentioned, search for certified women-owned business LISTS, not the certification body itself
-- Include specific industries from the request
-- Target 6 queries, one per line, no numbering
-
-CRITICAL: NEVER ask for more information. NEVER output anything except search queries. If the input is vague, make your best guess and output queries anyway. Output ONLY the queries, one per line.
-
-Example good queries for "women-owned businesses on Long Island in healthcare":
-site:linkedin.com/company "Long Island" healthcare owner
-"women-owned" "Long Island" healthcare company list
-"Nassau County" OR "Suffolk County" woman-owned business healthcare
-"Long Island" top healthcare companies employees
-site:inc.com OR site:bloomberg.com "Long Island" women business owner
-"WBENC certified" "New York" healthcare company list`,
+      system: `Extract the location and industries from the user's query. Output JSON only, no explanation.
+Format: {"location": "city/county, state", "industries": ["industry1", "industry2", ...]}
+If no industries specified, infer common ones: healthcare, dental, legal, accounting, real estate, insurance, construction, veterinary.
+If no location specified, use "United States".
+CRITICAL: Output ONLY the JSON. Nothing else.`,
       messages: [{ role: 'user', content: userInput }],
     });
-    const queryText = queryResponse.content.filter(b => b.type === 'text').map(b => (b as any).text).join('\n');
-    const queries = queryText.split('\n').map(q => q.trim()).filter(q => q.length > 5 && !q.startsWith('*') && !q.startsWith('-') && !q.includes('provide me') && !q.includes('Please') && !q.includes('I\'m ready')).slice(0, 12);
-    console.log(`[LIVE] Search queries: ${queries.join(' | ')}`);
+    const extractText = extractResponse.content.filter(b => b.type === 'text').map(b => (b as any).text).join('');
+    let location = 'Long Island NY';
+    let industries = ['healthcare', 'dental', 'accounting', 'legal', 'real estate', 'insurance'];
+    try {
+      const cleaned = extractText.replace(/```json\s*/g, '').replace(/```/g, '').trim();
+      const extracted = JSON.parse(cleaned);
+      if (extracted.location) location = extracted.location;
+      if (extracted.industries?.length) industries = extracted.industries;
+    } catch { /* use defaults */ }
 
+    console.log(`[LIVE] Location: ${location}, Industries: ${industries.join(', ')}`);
+
+    // Step 2: Build search queries programmatically - search for ACTUAL BUSINESS WEBSITES
+    const queries: string[] = [];
+    for (const industry of industries.slice(0, 8)) {
+      queries.push(`${industry} office ${location}`);
+      queries.push(`${industry} practice ${location} contact`);
+    }
+    console.log(`[LIVE] Generated ${queries.length} targeted queries for ${industries.length} industries`);
+
+    // Step 3: Search and collect results
     let allResults: Awaited<ReturnType<typeof searchWeb>> = [];
-    for (const q of queries) {
-      const results = await searchWeb(q, 8);
+    for (const q of queries.slice(0, 16)) {
+      const results = await searchWeb(q, 6);
       allResults.push(...results);
     }
 
-    // Scrape directory pages for actual company names
+    // Step 4: Filter to actual business websites only
+    const nonBusinessDomains = [
+      // Social & directories
+      'linkedin.com', 'yelp.com', 'bbb.org', 'google.com', 'facebook.com', 'twitter.com', 'instagram.com', 'tiktok.com', 'pinterest.com',
+      // Legal directories
+      'findlaw.com', 'justia.com', 'avvo.com', 'lawyers.com', 'superlawyers.com', 'martindale.com', 'lawinfo.com', 'nolo.com',
+      // Job boards
+      'glassdoor.com', 'indeed.com', 'lensa.com', 'ziprecruiter.com', 'monster.com', 'cityjobs.nyc.gov', 'statejobs.ny.gov', 'protouchstaffing.com', 'usajobs.gov',
+      // Health directories
+      'healthgrades.com', 'zocdoc.com', 'webmd.com', 'vitals.com',
+      // Business directories
+      'contactout.com', 'zoominfo.com', 'manta.com', 'yellowpages.com', 'topworkplaces.com', 'mapquest.com',
+      // News & media
+      'yahoo.com', 'chron.com', 'nytimes.com', 'wsj.com', 'cnn.com', 'foxnews.com', 'nbcnews.com', 'abcnews.com', 'cbsnews.com', 'newsday.com', 'patch.com', 'bizjournals.com', 'inc.com', 'forbes.com', 'bloomberg.com',
+      // Reference
+      'wikipedia.org', 'reddit.com',
+      // Legal/court
+      'trellis.law', 'courtlistener.com', 'casetext.com',
+      // Government
+      'ny.gov', 'nyc.gov', 'nassaucountyny.gov', 'suffolkcountyny.gov', 'numc.edu',
+      // Finance
+      'finance.yahoo.com', 'statista.com',
+    ];
+    const businessResults = allResults.filter(r => {
+      if (!r.url) return false;
+      try {
+        const hostname = new URL(r.url).hostname.toLowerCase();
+        return !nonBusinessDomains.some(d => hostname.includes(d));
+      } catch { return false; }
+    });
+    console.log(`[LIVE] Filtered to ${businessResults.length} actual business websites (from ${allResults.length} total)`);
+
+    // Step 5: Scrape the business websites for emails and contact info
     const tavilyKey = process.env.TAVILY_API_KEY;
-    if (tavilyKey && allResults.length > 0) {
-      allResults = await scrapeDirectoryPages(allResults, tavilyKey);
+    if (tavilyKey && businessResults.length > 0) {
+      const urlsToScrape = businessResults.slice(0, 15).map(r => r.url);
+      console.log(`[LIVE] Scraping ${urlsToScrape.length} business websites for contact info...`);
+      try {
+        const extractRes = await fetch('https://api.tavily.com/extract', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ api_key: tavilyKey, urls: urlsToScrape }),
+        });
+        if (extractRes.ok) {
+          const extractData = await extractRes.json() as any;
+          const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+          for (const page of (extractData.results || [])) {
+            if (!page.raw_content) continue;
+            const match = businessResults.find(r => r.url === page.url);
+            if (match) {
+              (match as any).rawContent = page.raw_content.slice(0, 3000);
+            }
+            const emails: string[] = (page.raw_content.match(emailRegex) || [])
+              .filter((e: string) => !e.includes('example.com') && !e.includes('sentry') && !e.includes('webpack') && !e.startsWith('email@') && !e.startsWith('not@'));
+            if (emails.length > 0) {
+              console.log(`[LIVE] Found emails on ${page.url}: ${[...new Set(emails)].join(', ')}`);
+            }
+          }
+        }
+      } catch (err) {
+        console.log('[LIVE] Website scraping failed:', (err as Error).message);
+      }
     }
+
+    allResults = businessResults;
 
     // Dedupe by URL
     const seen = new Set<string>();
@@ -268,7 +332,7 @@ site:inc.com OR site:bloomberg.com "Long Island" women business owner
     }
 
     if (allResults.length > 0) {
-      sharedSearchContext = '\n\n=== REAL WEB SEARCH RESULTS (shared across all agents) ===\nThese are actual search results. Extract ONLY real company names that would BUY consulting/training services. Do NOT return training providers, consultants, vendors, nonprofits, or educational institutions. If a result is a directory page, extract the individual companies listed on it. For each company include: name, website URL, industry, and any contact info found. IMPORTANT: When you find directory pages with [DIRECTORY PAGE CONTENT], extract EVERY company name listed there.\n\n' + formatSearchResults(allResults) + '\n\n=== END SEARCH RESULTS ===' + contactData;
+      sharedSearchContext = '\n\n=== REAL WEB SEARCH RESULTS ===\nBELOW ARE ACTUAL BUSINESS WEBSITES found by searching. For EVERY result below that is an actual business (not a directory or news site), include it as a prospect.\n\nCRITICAL RULES:\n1. ONLY list companies whose website URL appears in these results. Do NOT make up companies from your training data.\n2. The website URL from the search result IS the company website. Include it.\n3. If the search result has a scraped page with emails, include those emails.\n4. If you cannot find at least 3 companies in the results, say so honestly. Do NOT fabricate companies.\n5. Every prospect MUST have a website URL from these results.\n\n' + formatSearchResults(allResults) + '\n\n=== END SEARCH RESULTS ===' + contactData;
       console.log(`[LIVE] Found ${allResults.length} search results (deduped) to share with all agents`);
     }
     // Token tracking for search query generation happens after main variables are declared
