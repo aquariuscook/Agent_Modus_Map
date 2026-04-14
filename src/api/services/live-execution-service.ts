@@ -185,18 +185,42 @@ CRITICAL: Output ONLY the JSON. Nothing else.`,
     console.log(`[LIVE] Location: ${location}, Industries: ${industries.join(', ')}`);
 
     // Step 2: Build search queries programmatically - search for ACTUAL BUSINESS WEBSITES
+    // Map industries to better search terms that find actual business websites
+    const industrySearchTerms: Record<string, string[]> = {
+      'dental': ['dental practice', 'dentist office', 'family dentistry'],
+      'healthcare': ['medical practice', 'physician office', 'healthcare clinic'],
+      'legal': ['law firm', 'attorney office', 'legal practice'],
+      'accounting': ['CPA firm', 'accounting firm', 'tax preparation office'],
+      'real estate': ['real estate agency', 'real estate brokerage', 'realty office'],
+      'insurance': ['insurance agency', 'insurance broker', 'insurance office'],
+      'construction': ['construction company', 'general contractor', 'building contractor'],
+      'veterinary': ['veterinary clinic', 'animal hospital', 'vet office'],
+      'finance': ['financial advisor', 'wealth management firm', 'financial planning office'],
+      'manufacturing': ['manufacturing company', 'fabrication shop', 'manufacturing plant'],
+      'professional services': ['consulting firm', 'business services company', 'professional services firm'],
+      'physical therapy': ['physical therapy clinic', 'PT office', 'rehabilitation center'],
+      'chiropractic': ['chiropractor office', 'chiropractic clinic'],
+    };
+
     const queries: string[] = [];
     for (const industry of industries.slice(0, 8)) {
-      queries.push(`${industry} office ${location}`);
-      queries.push(`${industry} practice ${location} contact`);
+      const terms = industrySearchTerms[industry.toLowerCase()] || [`${industry} company`, `${industry} firm`];
+      for (const term of terms.slice(0, 2)) {
+        queries.push(`${term} ${location}`);
+      }
     }
     console.log(`[LIVE] Generated ${queries.length} targeted queries for ${industries.length} industries`);
 
-    // Step 3: Search and collect results
+    // Step 3: Search and collect results (limit per query to ensure industry diversity)
     let allResults: Awaited<ReturnType<typeof searchWeb>> = [];
+    const seenUrls = new Set<string>();
     for (const q of queries.slice(0, 16)) {
-      const results = await searchWeb(q, 6);
-      allResults.push(...results);
+      const results = await searchWeb(q, 4); // Fewer per query = more industry diversity
+      for (const r of results) {
+        if (!r.url || seenUrls.has(r.url)) continue;
+        seenUrls.add(r.url);
+        allResults.push(r);
+      }
     }
 
     // Step 4: Filter to actual business websites only
@@ -263,7 +287,18 @@ CRITICAL: Output ONLY the JSON. Nothing else.`,
       }
     }
 
-    allResults = businessResults;
+    // Dedupe by domain (max 1 result per domain)
+    const seenDomains = new Set<string>();
+    const domainDeduped = businessResults.filter(r => {
+      try {
+        const domain = new URL(r.url).hostname.replace(/^www\./, '');
+        if (seenDomains.has(domain)) return false;
+        seenDomains.add(domain);
+        return true;
+      } catch { return false; }
+    });
+    console.log(`[LIVE] After domain dedup: ${domainDeduped.length} unique businesses`);
+    allResults = domainDeduped;
 
     // Dedupe by URL
     const seen = new Set<string>();
@@ -332,7 +367,7 @@ CRITICAL: Output ONLY the JSON. Nothing else.`,
     }
 
     if (allResults.length > 0) {
-      sharedSearchContext = '\n\n=== REAL WEB SEARCH RESULTS ===\nBELOW ARE ACTUAL BUSINESS WEBSITES found by searching. For EVERY result below that is an actual business (not a directory or news site), include it as a prospect.\n\nCRITICAL RULES:\n1. ONLY list companies whose website URL appears in these results. Do NOT make up companies from your training data.\n2. The website URL from the search result IS the company website. Include it.\n3. If the search result has a scraped page with emails, include those emails.\n4. If you cannot find at least 3 companies in the results, say so honestly. Do NOT fabricate companies.\n5. Every prospect MUST have a website URL from these results.\n\n' + formatSearchResults(allResults) + '\n\n=== END SEARCH RESULTS ===' + contactData;
+      sharedSearchContext = '\n\n=== REAL WEB SEARCH RESULTS ===\nBELOW ARE ACTUAL BUSINESS WEBSITES found by searching. List EVERY business you find.\n\nCRITICAL RULES:\n1. ONLY list companies whose website URL appears in these results. Do NOT make up companies.\n2. Include the website URL for every company.\n3. Include any emails found in scraped content.\n4. Be CONCISE. For each company: name, website, industry, location, phone, email. One line per company. Do NOT write paragraphs.\n5. List as many companies as possible. Quantity matters.\n6. Do NOT fabricate companies from your training data.\n\n' + formatSearchResults(allResults) + '\n\n=== END SEARCH RESULTS ===' + contactData;
       console.log(`[LIVE] Found ${allResults.length} search results (deduped) to share with all agents`);
     }
     // Token tracking for search query generation happens after main variables are declared
@@ -368,7 +403,7 @@ CRITICAL: Output ONLY the JSON. Nothing else.`,
     const temperature = modelConfig.temperature ?? 0.7;
     const isEntryAgent = entryAgents.some(e => e.id === agent.id);
     const isProfileAgent = agent.nickname.toLowerCase() === 'profile';
-    const maxTokens = (isEntryAgent || isProfileAgent) ? 2500 : 800;
+    const maxTokens = (isEntryAgent || isProfileAgent) ? 4000 : 800;
 
     const systemPrompt = buildSystemPrompt(agent, config);
     const downstreamIds = downstream.get(agent.id) || [];
