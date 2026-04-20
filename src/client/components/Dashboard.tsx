@@ -9,6 +9,7 @@ import type { TemplateInfo } from '../api.js';
 
 interface DashboardProps {
   onOpenSwarm: (swarmId: string) => void;
+  onStartInterview?: () => void;
 }
 
 type View = 'home' | 'templates' | 'csv';
@@ -94,7 +95,7 @@ function SwarmExplainer() {
   );
 }
 
-export function Dashboard({ onOpenSwarm }: DashboardProps) {
+export function Dashboard({ onOpenSwarm, onStartInterview }: DashboardProps) {
   const { theme, toggleTheme } = useTheme();
   const [swarms, setSwarms] = useState<Swarm[]>([]);
   const [templates, setTemplates] = useState<TemplateInfo[]>([]);
@@ -191,7 +192,17 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
             <SwarmExplainer />
 
             {/* Action Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)', marginBottom: 'var(--space-12)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-4)', marginBottom: 'var(--space-12)' }}>
+              <button onClick={onStartInterview} style={{
+                ...cardBase, cursor: 'pointer', textAlign: 'left',
+                borderColor: '#22c55e',
+                boxShadow: '0 0 0 1px #22c55e, 0 0 20px rgba(34,197,94,0.1), inset 0 1px 0 rgba(255,255,255,0.03)',
+              }}>
+                <div style={{ fontSize: 28, marginBottom: 'var(--space-3)' }}>&#10070;</div>
+                <div style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--space-1)' }}>Prompt to Agent</div>
+                <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Describe your goal, we build the swarm</div>
+              </button>
+
               <button onClick={handleCreateBlank} disabled={creating} style={{
                 ...cardBase, borderColor: 'var(--border-accent)',
                 cursor: 'pointer', textAlign: 'left',

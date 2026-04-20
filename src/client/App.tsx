@@ -18,6 +18,7 @@ import { SimulationPanel } from './components/SimulationPanel.js';
 import { DocViewer } from './components/DocViewer.js';
 import { OnboardingOverlay } from './components/OnboardingOverlay.js';
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp.js';
+import { InterviewPanel } from './components/InterviewPanel.js';
 import { CollaborationCursors } from './components/CollaborationCursors.js';
 import { useCollaboration } from './hooks/useCollaboration.js';
 import {
@@ -43,6 +44,7 @@ export function App() {
   const [showBlastRadius, setShowBlastRadius] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editorMode, setEditorMode] = useState<EditorMode>('build');
+  const [showInterview, setShowInterview] = useState(false);
 
   // Panel state: only one panel open at a time (except editor modal and chat which overlay)
   type Panel = null | 'palette' | 'validation' | 'orchestrator' | 'wizard'
@@ -273,7 +275,16 @@ export function App() {
   if (view === 'dashboard') {
     return (
       <>
-        <Dashboard onOpenSwarm={handleOpenSwarm} />
+        <Dashboard onOpenSwarm={handleOpenSwarm} onStartInterview={() => setShowInterview(true)} />
+        {showInterview && (
+          <InterviewPanel
+            onClose={() => setShowInterview(false)}
+            onSwarmCreated={(newSwarmId) => {
+              setShowInterview(false);
+              handleOpenSwarm(newSwarmId);
+            }}
+          />
+        )}
         {showOnboarding && <OnboardingOverlay onDismiss={dismissOnboarding} />}
       </>
     );

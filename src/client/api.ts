@@ -497,6 +497,29 @@ export async function askCopilot(messages: Array<{ role: string; content: string
   return postJson('/intelligence/copilot', { messages, swarmId });
 }
 
+// Interview Engine
+export async function startInterview(): Promise<{ interviewId: string; phase: number; welcomeMessage: string }> {
+  return postJson('/interview/start', {});
+}
+
+export async function sendInterviewMessage(interviewId: string, message: string): Promise<{
+  response: string;
+  phase: number;
+  phaseAdvanced: boolean;
+  extracted: Record<string, any>;
+  swarmConfig: any;
+}> {
+  return postJson(`/interview/${interviewId}/message`, { message });
+}
+
+export async function deployInterviewSwarm(interviewId: string, name?: string): Promise<{
+  swarmId: string;
+  swarm: any;
+  message: string;
+}> {
+  return postJson(`/interview/${interviewId}/deploy`, { name });
+}
+
 // Health check with LLM status
 export async function getApiHealth(): Promise<{ status: string; llmAvailable: boolean }> {
   return fetchJson('/health');
