@@ -234,7 +234,7 @@ export function Dashboard({ onOpenSwarm, onStartInterview, onResumeInterview, on
               }}>
                 <div style={{ fontSize: 28, marginBottom: 'var(--space-3)' }}>+</div>
                 <div style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--space-1)' }}>Start from Scratch</div>
-                <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Blank canvas with default layers</div>
+                <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Build your own agents and swarms</div>
               </button>
 
               <button onClick={() => setView('templates')} style={{ ...cardBase, cursor: 'pointer', textAlign: 'left' }}>
