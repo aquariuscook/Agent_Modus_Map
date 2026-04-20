@@ -23,13 +23,6 @@ interface TimeSlot {
   type: 'meeting' | 'task' | 'reminder' | null;
 }
 
-interface Doc {
-  id: string;
-  title: string;
-  type: 'doc' | 'deck' | 'email';
-  status: 'draft' | 'ready' | 'sent';
-  createdAt: string;
-}
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -106,7 +99,6 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
 
   // Persist state
   useEffect(() => { localStorage.setItem(storageKey(swarmId, 'tasks'), JSON.stringify(tasks)); }, [tasks, swarmId]);
-  useEffect(() => { localStorage.setItem(storageKey(swarmId, 'docs'), JSON.stringify(docs)); }, [docs, swarmId]);
   useEffect(() => { localStorage.setItem(storageKey(swarmId, 'schedule'), JSON.stringify(schedule)); }, [schedule, swarmId]);
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatMessages]);
 
