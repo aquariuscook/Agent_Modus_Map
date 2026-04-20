@@ -266,19 +266,37 @@ export function getInterview(id: string): InterviewState | null {
   return loadState(id);
 }
 
-export function listInterviews(): Array<{ id: string; phase: InterviewPhase; goal: string; updatedAt: string }> {
+export function listInterviews(): Array<{ id: string; phase: InterviewPhase; goal: string; name: string; updatedAt: string; hasConfig: boolean }> {
   getTable();
   const db = getDb();
-  const rows = db.prepare('SELECT id, phase, extracted, updated_at FROM interviews ORDER BY updated_at DESC LIMIT 10').all() as any[];
-  return rows.map(r => {
-    const extracted = JSON.parse(r.extracted);
-    return {
-      id: r.id,
-      phase: r.phase as InterviewPhase,
-      goal: extracted.goal || 'In progress...',
-      updatedAt: r.updated_at,
-    };
-  });
+  const rows = db.prepare('SELECT id, phase, messages, extracted, updated_at FROM interviews ORDER BY updated_at DESC LIMIT 10').all() as any[];
+  return rows
+    .filter(r => {
+      // Filter out empty interviews (no real messages exchanged)
+      const messages = JSON.parse(r.messages || '[]');
+      return messages.length >= 2; // At least one user message + one assistant response
+    })
+    .map(r => {
+      const extracted = JSON.parse(r.extracted);
+      const goal = extracted.goal || '';
+      // Generate a short, readable name from the goal
+      let name = 'New Interview';
+      if (extracted.swarmConfig?.name) {
+        name = extracted.swarmConfig.name;
+      } else if (goal) {
+        // Take the first meaningful phrase (up to 40 chars)
+        name = goal.split(/[.!,;]/)[ 0].trim().slice(0, 50);
+        if (name.length >= 50) name = name.slice(0, 47) + '...';
+      }
+      return {
+        id: r.id,
+        phase: r.phase as InterviewPhase,
+        goal,
+        name,
+        updatedAt: r.updated_at,
+        hasConfig: !!extracted.swarmConfig,
+      };
+    });
 }
 
 export async function processInterviewMessage(

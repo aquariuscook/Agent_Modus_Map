@@ -266,16 +266,17 @@ export function Dashboard({ onOpenSwarm, onStartInterview, onResumeInterview, on
                     }}>
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
-                          {interview.goal || 'New interview'}
+                          {(interview as any).name || interview.goal || 'New interview'}
                         </div>
                         <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>
-                          Phase {interview.phase + 1}/7, last updated {new Date(interview.updatedAt).toLocaleDateString()}
+                          {(interview as any).hasConfig ? 'Ready to deploy' : `Building, last updated ${new Date(interview.updatedAt).toLocaleDateString()}`}
                         </div>
                       </div>
                       <div style={{
                         padding: '4px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600,
-                        background: 'rgba(34,197,94,0.1)', color: '#22c55e',
-                      }}>Resume</div>
+                        background: (interview as any).hasConfig ? 'rgba(34,197,94,0.15)' : 'rgba(0,217,255,0.1)',
+                        color: (interview as any).hasConfig ? '#22c55e' : 'var(--accent-primary)',
+                      }}>{(interview as any).hasConfig ? 'Deploy' : 'Resume'}</div>
                     </button>
                   ))}
                 </div>
