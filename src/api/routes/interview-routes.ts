@@ -51,7 +51,16 @@ export function createInterviewRoutes(db: Database.Database): Router {
         },
       });
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      console.error('[INTERVIEW] Message error:', err.message);
+      const msg = err.message || 'Unknown error';
+      const isCredits = msg.includes('credit') || msg.includes('balance');
+      const isNotFound = msg.includes('not found');
+      res.status(isNotFound ? 404 : isCredits ? 402 : 500).json({
+        error: msg,
+        hint: isCredits ? 'Add API credits at console.anthropic.com'
+          : isNotFound ? 'This interview session was lost. Start a new one.'
+          : 'Try sending your message again. If it keeps failing, start a new interview.',
+      });
     }
   });
 

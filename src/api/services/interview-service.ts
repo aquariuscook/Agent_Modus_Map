@@ -310,9 +310,17 @@ RULES:
 
   // For Phase 6, generate the swarm config first
   if (state.phase === 6 && !state.extracted.swarmConfig) {
-    const config = await generateSwarmConfig(state, apiKey);
-    state.extracted.swarmConfig = config;
-    systemPrompt += `\n\nGenerated swarm configuration:\n${JSON.stringify(config, null, 2)}`;
+    try {
+      console.log('[INTERVIEW] Generating swarm config...');
+      const config = await generateSwarmConfig(state, apiKey);
+      state.extracted.swarmConfig = config;
+      console.log(`[INTERVIEW] Config generated: ${config.name}, ${config.agents.length} agents`);
+      systemPrompt += `\n\nGenerated swarm configuration:\n${JSON.stringify(config, null, 2)}`;
+    } catch (err) {
+      console.error('[INTERVIEW] Config generation failed:', (err as Error).message);
+      // Don't crash, let the LLM explain the error
+      systemPrompt += `\n\nNote: Swarm config generation failed with error: ${(err as Error).message}. Apologize to the user and ask them to try again.`;
+    }
   } else if (state.phase === 6 && state.extracted.swarmConfig) {
     systemPrompt += `\n\nCurrent swarm configuration:\n${JSON.stringify(state.extracted.swarmConfig, null, 2)}`;
   }
@@ -413,7 +421,7 @@ Output ONLY valid JSON matching this schema:
 }`;
 
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-5-20250514',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 4000,
     temperature: 0.3,
     messages: [{ role: 'user', content: prompt }],
