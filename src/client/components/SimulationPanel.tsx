@@ -7,7 +7,7 @@ function linkifyText(text: string): string {
   const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   // Make URLs clickable
   return escaped.replace(
-    /(https?:\/\/[^\s)<>,]+)/g,
+    /(https?:\/\/[^\s)<>,"']+)/g,
     '<a href="$1" target="_blank" rel="noopener" style="color: var(--accent-primary); text-decoration: underline;">$1</a>'
   );
 }

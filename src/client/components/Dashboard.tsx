@@ -112,12 +112,13 @@ export function Dashboard({ onOpenSwarm, onStartInterview, onResumeInterview, on
   const [recentResults, setRecentResults] = useState<any[]>([]);
   const [activeInterviews, setActiveInterviews] = useState<Array<{ id: string; phase: number; goal: string; updatedAt: string }>>([]);
 
+  const [loadError, setLoadError] = useState('');
+
   useEffect(() => {
-    listSwarms().then(setSwarms).catch(console.error);
-    getTemplates().then(setTemplates).catch(console.error);
+    listSwarms().then(setSwarms).catch(err => { setLoadError('Could not connect to server. Make sure it\'s running.'); console.error(err); });
+    getTemplates().then(setTemplates).catch(() => {});
     getAllResults().then(r => setRecentResults((r || []).slice(0, 5))).catch(() => {});
     listInterviews().then(interviews => {
-      // Show all interviews that haven't been deployed yet
       setActiveInterviews(interviews);
     }).catch(() => {});
   }, []);
@@ -199,6 +200,13 @@ export function Dashboard({ onOpenSwarm, onStartInterview, onResumeInterview, on
 
         {view === 'home' && (
           <>
+            {loadError && (
+              <div style={{ padding: '16px 20px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', marginBottom: 'var(--space-6)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ color: '#f87171', fontSize: 14 }}>{loadError}</div>
+                <button onClick={() => window.location.reload()} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #f87171', background: 'transparent', color: '#f87171', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Retry</button>
+              </div>
+            )}
+
             {/* Hero */}
             <div style={{ marginBottom: 'var(--space-10)' }}>
               <h1 style={{

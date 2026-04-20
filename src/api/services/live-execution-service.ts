@@ -7,6 +7,17 @@ import { getDb } from '../db/database.js';
 import { insertDecisionTrace } from '../db/decision-trace-store.js';
 import { getUserProfile } from '../routes/settings-routes.js';
 
+const NON_BUSINESS_DOMAINS = [
+  'linkedin.com', 'yelp.com', 'bbb.org', 'google.com', 'facebook.com', 'twitter.com', 'instagram.com', 'tiktok.com', 'pinterest.com',
+  'findlaw.com', 'justia.com', 'avvo.com', 'lawyers.com', 'superlawyers.com', 'martindale.com', 'lawinfo.com', 'nolo.com',
+  'glassdoor.com', 'indeed.com', 'lensa.com', 'ziprecruiter.com', 'monster.com', 'cityjobs.nyc.gov', 'statejobs.ny.gov', 'usajobs.gov',
+  'healthgrades.com', 'zocdoc.com', 'webmd.com', 'vitals.com',
+  'contactout.com', 'zoominfo.com', 'manta.com', 'yellowpages.com', 'topworkplaces.com', 'mapquest.com',
+  'yahoo.com', 'chron.com', 'nytimes.com', 'wsj.com', 'cnn.com', 'foxnews.com', 'nbcnews.com', 'abcnews.com', 'cbsnews.com', 'newsday.com', 'patch.com', 'bizjournals.com', 'inc.com', 'forbes.com', 'bloomberg.com',
+  'wikipedia.org', 'reddit.com', 'trellis.law', 'courtlistener.com', 'casetext.com',
+  'ny.gov', 'nyc.gov', 'numc.edu', 'finance.yahoo.com', 'statista.com',
+];
+
 export interface LiveExecutionStep {
   agentId: string;
   nickname: string;
@@ -173,7 +184,7 @@ CRITICAL: Output ONLY the JSON. Nothing else.`,
       messages: [{ role: 'user', content: userInput }],
     });
     const extractText = extractResponse.content.filter(b => b.type === 'text').map(b => (b as any).text).join('');
-    let location = 'Long Island NY';
+    let location = '';
     let industries = ['healthcare', 'dental', 'accounting', 'legal', 'real estate', 'insurance'];
     try {
       const cleaned = extractText.replace(/```json\s*/g, '').replace(/```/g, '').trim();
@@ -224,33 +235,11 @@ CRITICAL: Output ONLY the JSON. Nothing else.`,
     }
 
     // Step 4: Filter to actual business websites only
-    const nonBusinessDomains = [
-      // Social & directories
-      'linkedin.com', 'yelp.com', 'bbb.org', 'google.com', 'facebook.com', 'twitter.com', 'instagram.com', 'tiktok.com', 'pinterest.com',
-      // Legal directories
-      'findlaw.com', 'justia.com', 'avvo.com', 'lawyers.com', 'superlawyers.com', 'martindale.com', 'lawinfo.com', 'nolo.com',
-      // Job boards
-      'glassdoor.com', 'indeed.com', 'lensa.com', 'ziprecruiter.com', 'monster.com', 'cityjobs.nyc.gov', 'statejobs.ny.gov', 'protouchstaffing.com', 'usajobs.gov',
-      // Health directories
-      'healthgrades.com', 'zocdoc.com', 'webmd.com', 'vitals.com',
-      // Business directories
-      'contactout.com', 'zoominfo.com', 'manta.com', 'yellowpages.com', 'topworkplaces.com', 'mapquest.com',
-      // News & media
-      'yahoo.com', 'chron.com', 'nytimes.com', 'wsj.com', 'cnn.com', 'foxnews.com', 'nbcnews.com', 'abcnews.com', 'cbsnews.com', 'newsday.com', 'patch.com', 'bizjournals.com', 'inc.com', 'forbes.com', 'bloomberg.com',
-      // Reference
-      'wikipedia.org', 'reddit.com',
-      // Legal/court
-      'trellis.law', 'courtlistener.com', 'casetext.com',
-      // Government
-      'ny.gov', 'nyc.gov', 'nassaucountyny.gov', 'suffolkcountyny.gov', 'numc.edu',
-      // Finance
-      'finance.yahoo.com', 'statista.com',
-    ];
     const businessResults = allResults.filter(r => {
       if (!r.url) return false;
       try {
         const hostname = new URL(r.url).hostname.toLowerCase();
-        return !nonBusinessDomains.some(d => hostname.includes(d));
+        return !NON_BUSINESS_DOMAINS.some(d => hostname.includes(d));
       } catch { return false; }
     });
     console.log(`[LIVE] Filtered to ${businessResults.length} actual business websites (from ${allResults.length} total)`);
@@ -312,13 +301,11 @@ CRITICAL: Output ONLY the JSON. Nothing else.`,
     let contactData = '';
     const tavilyKeyForContacts = process.env.TAVILY_API_KEY;
     if (tavilyKeyForContacts && allResults.length > 0) {
-      // Filter to actual company websites (not directories, aggregators, or social media)
-      const nonCompanySites = ['linkedin.com', 'yelp.com', 'bbb.org', 'google.com', 'facebook.com', 'twitter.com', 'findlaw.com', 'justia.com', 'avvo.com', 'lawyers.com', 'superlawyers.com', 'martindale.com', 'bizjournals.com', 'glassdoor.com', 'indeed.com', 'contactout.com', 'zoominfo.com', 'manta.com', 'yellowpages.com', 'topworkplaces.com', 'inc.com', 'forbes.com', 'wikipedia.org', 'reddit.com', 'lensa.com', 'lawinfo.com', 'nolo.com'];
       const companyUrls = allResults
         .filter(r => {
           if (!r.url || !/^https?:\/\//.test(r.url)) return false;
           const hostname = new URL(r.url).hostname.toLowerCase();
-          return !nonCompanySites.some(s => hostname.includes(s));
+          return !NON_BUSINESS_DOMAINS.some(s => hostname.includes(s));
         })
         .map(r => r.url)
         .slice(0, 8);

@@ -86,15 +86,13 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
   const [tasks, setTasks] = useState<Task[]>(() =>
     loadJson(storageKey(swarmId, 'tasks'), [])
   );
-  const [docs, setDocs] = useState<Doc[]>(() =>
-    loadJson(storageKey(swarmId, 'docs'), [])
-  );
   const [schedule, setSchedule] = useState<TimeSlot[]>(() =>
     loadJson(storageKey(swarmId, 'schedule'), buildTimeSlots())
   );
   const [transcript, setTranscript] = useState('');
   const [extracting, setExtracting] = useState(false);
   const [extractedItems, setExtractedItems] = useState<Task[]>([]);
+  const [uncheckedItems, setUncheckedItems] = useState<Set<string>>(new Set());
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     { role: 'assistant', content: 'I\'m your personal assistant. Ask me anything: prioritize your day, create documents, set reminders, or analyze meeting notes.' },
   ]);
@@ -156,11 +154,13 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
   }, []);
 
   const addExtractedToTasks = useCallback(() => {
-    setTasks(prev => [...prev, ...extractedItems]);
+    const checked = extractedItems.filter(item => !uncheckedItems.has(item.id));
+    setTasks(prev => [...prev, ...checked]);
     setExtractedItems([]);
+    setUncheckedItems(new Set());
     setTranscript('');
     setOpenPanels(prev => new Set([...prev, 'tasks']));
-  }, [extractedItems]);
+  }, [extractedItems, uncheckedItems]);
 
   const handleChatSend = useCallback(async () => {
     const text = chatInput.trim();
@@ -212,15 +212,6 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
     setTasks(prev => prev.map(t => t.id === draggedTaskId ? { ...t, column } : t));
     setDraggedTaskId(null);
   }, [draggedTaskId]);
-
-  const addDoc = useCallback((type: Doc['type']) => {
-    const title = prompt(`New ${type} title:`);
-    if (!title) return;
-    setDocs(prev => [...prev, {
-      id: generateId(), title, type, status: 'draft',
-      createdAt: new Date().toISOString().slice(0, 10),
-    }]);
-  }, []);
 
   const deleteTask = useCallback((id: string) => {
     setTasks(prev => prev.filter(t => t.id !== id));
@@ -384,7 +375,7 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
             <div style={{ fontSize: 12, color: 'var(--text-secondary, #94a3b8)', marginBottom: 12 }}>Uncheck anything you don't want added to your tasks.</div>
             {extractedItems.map(item => (
               <div key={item.id} style={{ ...s.card, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                <input type="checkbox" defaultChecked style={{ marginTop: 3 }} />
+                <input type="checkbox" checked={!uncheckedItems.has(item.id)} onChange={() => setUncheckedItems(prev => { const next = new Set(prev); if (next.has(item.id)) next.delete(item.id); else next.add(item.id); return next; })} style={{ marginTop: 3 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 500 }}>{item.title}</div>
                   <div style={{ display: 'flex', gap: 8, marginTop: 4, alignItems: 'center' }}>
@@ -446,74 +437,6 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
             </div>
           </div>
         ))}
-      </div>
-    );
-  }
-
-  function renderDocuments() {
-    const [askInput, setAskInput] = useState('');
-    const [askResult, setAskResult] = useState('');
-    const [asking, setAsking] = useState(false);
-
-    const handleAsk = async () => {
-      if (!askInput.trim() || asking) return;
-      setAsking(true);
-      setAskResult('');
-      try {
-        const result = await askCopilot(
-          [{ role: 'user', content: askInput }],
-          swarmId
-        );
-        setAskResult(result.answer);
-      } catch {
-        setAskResult('Something went wrong. Try again.');
-      }
-      setAsking(false);
-    };
-
-    return (
-      <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4, color: 'var(--text-primary, #e2e8f0)' }}>Ask Your Assistant</div>
-        <div style={{ fontSize: 13, color: 'var(--text-secondary, #94a3b8)', marginBottom: 16, lineHeight: 1.5 }}>
-          Tell your assistant what you need. It can help you draft documents, write emails, create outlines, summarize information, or anything else.
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-          <div style={{ fontSize: 12, color: 'var(--text-tertiary, #64748b)' }}>Try things like:</div>
-          {[
-            'Draft an email to my team about the Q2 roadmap changes',
-            'Create an outline for a presentation on our AI strategy',
-            'Summarize the key decisions from this week',
-            'Write a proposal for the new vendor partnership',
-          ].map((suggestion, i) => (
-            <button key={i} onClick={() => setAskInput(suggestion)} style={{
-              padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border-default, #1e293b)',
-              background: 'var(--bg-surface, #1e293b)', color: 'var(--text-secondary, #94a3b8)',
-              fontSize: 12, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
-            }}>{suggestion}</button>
-          ))}
-        </div>
-        <textarea
-          value={askInput}
-          onChange={e => setAskInput(e.target.value)}
-          placeholder="What do you need?"
-          style={{ ...s.input, height: 100, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5 }}
-        />
-        <button
-          onClick={handleAsk}
-          disabled={asking || !askInput.trim()}
-          style={{ ...s.btn('#00d9ff'), marginTop: 10, opacity: asking || !askInput.trim() ? 0.5 : 1 }}
-        >
-          {asking ? 'Working on it...' : 'Go'}
-        </button>
-        {askResult && (
-          <div style={{
-            marginTop: 16, padding: 16, borderRadius: 10,
-            background: 'var(--bg-surface, #1e293b)', border: '1px solid var(--border-default, #1e293b)',
-            fontSize: 13, color: 'var(--text-primary, #e2e8f0)', lineHeight: 1.7, whiteSpace: 'pre-wrap',
-          }}>
-            {askResult}
-          </div>
-        )}
       </div>
     );
   }
