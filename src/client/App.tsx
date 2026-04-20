@@ -19,6 +19,8 @@ import { DocViewer } from './components/DocViewer.js';
 import { OnboardingOverlay } from './components/OnboardingOverlay.js';
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp.js';
 import { InterviewPanel } from './components/InterviewPanel.js';
+import { LoginPage } from './components/LoginPage.js';
+import { PricingPage } from './components/PricingPage.js';
 import { CollaborationCursors } from './components/CollaborationCursors.js';
 import { useCollaboration } from './hooks/useCollaboration.js';
 import {
@@ -35,7 +37,18 @@ const ONBOARDING_KEY = 'agent-modus-onboarding-v2';
 
 type AppView = 'dashboard' | 'editor';
 
+interface AppUser {
+  name: string;
+  email: string;
+}
+
 export function App() {
+  const [user, setUser] = useState<AppUser | null>(() => {
+    const saved = localStorage.getItem('agent-modus-user');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [showLogin, setShowLogin] = useState(false);
+  const [showPricing, setShowPricing] = useState(false);
   const [view, setView] = useState<AppView>('dashboard');
   const [swarmId, setSwarmId] = useState('');
   const [swarm, setSwarm] = useState<Swarm | null>(null);
@@ -271,11 +284,44 @@ export function App() {
     setShowOnboarding(false);
   }, []);
 
+  // Login page (shown when user clicks Sign In, not forced)
+  if (showLogin) {
+    return (
+      <LoginPage
+        onLogin={(u) => {
+          setUser(u);
+          localStorage.setItem('agent-modus-user', JSON.stringify(u));
+          setShowLogin(false);
+        }}
+        onSkip={() => setShowLogin(false)}
+      />
+    );
+  }
+
+  // Pricing page
+  if (showPricing) {
+    return (
+      <PricingPage
+        onSelectPlan={(plan) => {
+          console.log('Selected plan:', plan);
+          setShowPricing(false);
+          if (!user) setShowLogin(true);
+        }}
+        onClose={() => setShowPricing(false)}
+      />
+    );
+  }
+
   // Dashboard view
   if (view === 'dashboard') {
     return (
       <>
-        <Dashboard onOpenSwarm={handleOpenSwarm} onStartInterview={() => setShowInterview(true)} />
+        <Dashboard
+          onOpenSwarm={handleOpenSwarm}
+          onStartInterview={() => setShowInterview(true)}
+          onShowPricing={() => setShowPricing(true)}
+          onShowLogin={() => setShowLogin(true)}
+        />
         {showInterview && (
           <InterviewPanel
             onClose={() => setShowInterview(false)}

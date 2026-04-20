@@ -10,6 +10,8 @@ import type { TemplateInfo } from '../api.js';
 interface DashboardProps {
   onOpenSwarm: (swarmId: string) => void;
   onStartInterview?: () => void;
+  onShowPricing?: () => void;
+  onShowLogin?: () => void;
 }
 
 type View = 'home' | 'templates' | 'csv';
@@ -95,7 +97,7 @@ function SwarmExplainer() {
   );
 }
 
-export function Dashboard({ onOpenSwarm, onStartInterview }: DashboardProps) {
+export function Dashboard({ onOpenSwarm, onStartInterview, onShowPricing, onShowLogin }: DashboardProps) {
   const { theme, toggleTheme } = useTheme();
   const [swarms, setSwarms] = useState<Swarm[]>([]);
   const [templates, setTemplates] = useState<TemplateInfo[]>([]);
@@ -165,12 +167,28 @@ export function Dashboard({ onOpenSwarm, onStartInterview }: DashboardProps) {
           borderBottom: '1px solid var(--border-default)',
         }}>
           <LogoWithText size={36} />
-          <button onClick={() => setSettingsOpen(true)} style={{
-            padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border-default)',
-            background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer',
-            fontSize: 13, fontWeight: 500, fontFamily: 'var(--font-primary)',
-          }}>Settings</button>
-          <ThemeToggle theme={theme} onToggle={toggleTheme} />
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {onShowPricing && (
+              <button onClick={onShowPricing} style={{
+                padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border-default)',
+                background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer',
+                fontSize: 13, fontWeight: 500, fontFamily: 'var(--font-primary)',
+              }}>Pricing</button>
+            )}
+            <button onClick={() => setSettingsOpen(true)} style={{
+              padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border-default)',
+              background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer',
+              fontSize: 13, fontWeight: 500, fontFamily: 'var(--font-primary)',
+            }}>Settings</button>
+            {onShowLogin && (
+              <button onClick={onShowLogin} style={{
+                padding: '6px 14px', borderRadius: 8, border: 'none',
+                background: 'var(--accent-primary)', color: '#fff', cursor: 'pointer',
+                fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-primary)',
+              }}>Sign In</button>
+            )}
+            <ThemeToggle theme={theme} onToggle={toggleTheme} />
+          </div>
         </header>
 
         {view === 'home' && (
