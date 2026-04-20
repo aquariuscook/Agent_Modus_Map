@@ -414,6 +414,45 @@ export function InterviewPanel({ onClose, onSwarmCreated, resumeId }: InterviewP
           </svg>
         </button>
 
+        {/* Deploy Banner - shown when swarm config is ready */}
+        {swarmConfig && (
+          <div style={{
+            padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            background: 'rgba(34,197,94,0.1)', borderBottom: '1px solid rgba(34,197,94,0.3)',
+          }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#22c55e' }}>
+                {swarmConfig.name || 'Your swarm'} is ready ({swarmConfig.agents?.length || 0} agents)
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                Deploy to start using it, or keep chatting to make changes
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                if (!interviewId || deploying) return;
+                setDeploying(true);
+                try {
+                  const result = await deployInterviewSwarm(interviewId, swarmConfig.name);
+                  onSwarmCreated(result.swarmId);
+                } catch (err: any) {
+                  setMessages(prev => [...prev, { role: 'assistant', content: `Deploy failed: ${err.message}` }]);
+                } finally {
+                  setDeploying(false);
+                }
+              }}
+              disabled={deploying}
+              style={{
+                padding: '10px 24px', borderRadius: 8, border: 'none',
+                background: '#22c55e', color: '#fff', fontWeight: 700, fontSize: 14,
+                cursor: deploying ? 'default' : 'pointer', opacity: deploying ? 0.6 : 1,
+              }}
+            >
+              {deploying ? 'Deploying...' : 'Deploy Now'}
+            </button>
+          </div>
+        )}
+
         {/* Phase Progress */}
         <div style={{
           padding: '24px 24px 20px',
