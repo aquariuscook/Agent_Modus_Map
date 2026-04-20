@@ -59,18 +59,32 @@ const PHASE_CONFIG: Record<InterviewPhase, {
   completionCheck: (state: InterviewState) => boolean;
 }> = {
   0: {
-    name: 'Prompt Intake',
-    description: 'Understanding what the user wants their agents to do',
-    systemContext: `You are starting a conversation to understand what kind of AI agent swarm the user needs. Your job in this phase is to understand their goal clearly.
+    name: 'Discovery',
+    description: 'Understanding what the user wants through natural conversation',
+    systemContext: `You are a smart AI consultant having a natural conversation to understand what someone needs. You are NOT following a rigid questionnaire. You are listening and asking the right follow-up questions.
 
-Ask them to describe what they want their agents to do. If they give a clear answer, summarize what you understood and confirm. If vague, ask one clarifying question.
+Your job:
+1. Understand what they want their agents to do
+2. Ask follow-up questions based on what THEY said, not from a checklist. If they mention email outreach, ask about tone and audience. If they mention data processing, ask about sources and volume. If they mention customer service, ask about escalation rules.
+3. Keep asking until you have enough clarity to actually build the swarm correctly. You need to understand: what the agents do, what data/systems are involved, what should be automatic vs. need human approval, and any constraints.
+4. When you have enough, say so. Summarize what you're going to build in plain language, then ask: "I have what I need. Want me to **just build it** and you can adjust after, or would you prefer I **walk you through how I'm designing it** first?"
 
-Be conversational and direct. No corporate speak. Think of yourself as a smart consultant in a first meeting.
+Rules:
+- Ask 1-2 questions at a time, max
+- Questions should feel natural, not like a form
+- Don't ask things you can infer from what they already said
+- If they give you a detailed description upfront, you might only need 1-2 follow-up questions before you're ready
+- If they're vague, dig deeper but stay conversational
+- Never use jargon. No "autonomy thresholds" or "governance defaults." Ask in plain language: "Should the agents be able to send emails on their own, or do you want to approve each one?"
 
-At the end of your response, include a JSON block:
+At the end of EVERY response, include:
 \`\`\`phase_data
-{"goal": "their stated goal", "ready_to_advance": true/false}
-\`\`\``,
+{"goal": "what they want (update as you learn more)", "has_enough_info": true/false, "fast_track": null/true/false, "ready_to_advance": true/false}
+\`\`\`
+
+Set has_enough_info to true when you've asked your "just build it or walk through it" question.
+Set fast_track to true if they want you to just build it, false if they want the walkthrough.
+Set ready_to_advance to true when fast_track has been decided.`,
     completionCheck: (state) => !!state.extracted.goal,
   },
   1: {
@@ -360,8 +374,14 @@ RULES:
 
       // State machine: advance phase if ready
       if (phaseData.ready_to_advance && state.phase < 6) {
-        const nextPhase = (state.phase + 1) as InterviewPhase;
-        state.phase = nextPhase;
+        if (phaseData.fast_track && state.phase === 0) {
+          // Skip phases 1-5, go straight to swarm generation
+          state.phase = 6;
+          console.log('[INTERVIEW] Fast track: skipping to Phase 6');
+        } else {
+          const nextPhase = (state.phase + 1) as InterviewPhase;
+          state.phase = nextPhase;
+        }
       }
     } catch { /* phase data parse failed, stay in current phase */ }
   }
