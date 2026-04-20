@@ -82,7 +82,7 @@ function todayString(): string {
 // --- Component ---
 
 export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps) {
-  const [activeTab, setActiveTab] = useState<'inbox' | 'tasks' | 'documents'>('inbox');
+  const [openPanels, setOpenPanels] = useState<Set<string>>(new Set(['tasks']));
   const [tasks, setTasks] = useState<Task[]>(() =>
     loadJson(storageKey(swarmId, 'tasks'), [])
   );
@@ -143,11 +143,23 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
     }
   }, [transcript, extracting, swarmId]);
 
+  const togglePanel = useCallback((panel: string) => {
+    setOpenPanels(prev => {
+      const next = new Set(prev);
+      if (next.has(panel)) {
+        next.delete(panel);
+      } else {
+        next.add(panel);
+      }
+      return next;
+    });
+  }, []);
+
   const addExtractedToTasks = useCallback(() => {
     setTasks(prev => [...prev, ...extractedItems]);
     setExtractedItems([]);
     setTranscript('');
-    setActiveTab('tasks');
+    setOpenPanels(prev => new Set([...prev, 'tasks']));
   }, [extractedItems]);
 
   const handleChatSend = useCallback(async () => {
@@ -236,21 +248,32 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     },
     body: { display: 'flex', flex: 1, overflow: 'hidden' },
-    leftCol: {
-      width: 280, borderRight: '1px solid var(--border-default, #1e293b)',
-      display: 'flex', flexDirection: 'column' as const, overflow: 'hidden',
+    panelsArea: { flex: 1, display: 'flex', overflow: 'hidden' },
+    panel: {
+      flex: 1, display: 'flex', flexDirection: 'column' as const, overflow: 'hidden',
+      borderRight: '1px solid var(--border-default, #1e293b)',
     },
-    middleCol: { flex: 1, display: 'flex', flexDirection: 'column' as const, overflow: 'hidden' },
-    rightCol: {
-      width: 300, borderLeft: '1px solid var(--border-default, #1e293b)',
-      display: 'flex', flexDirection: 'column' as const, overflow: 'hidden',
+    panelHeader: {
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '10px 14px', borderBottom: '1px solid var(--border-default, #1e293b)',
+      background: 'var(--bg-elevated, #111827)',
+    },
+    panelTitle: { fontSize: 12, fontWeight: 700, textTransform: 'uppercase' as const, color: 'var(--text-secondary, #94a3b8)', letterSpacing: 1 },
+    panelCloseBtn: {
+      width: 22, height: 22, borderRadius: '50%', border: '1px solid var(--border-default, #2d3748)',
+      background: 'transparent', color: 'var(--text-secondary, #94a3b8)', cursor: 'pointer', fontSize: 12,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    },
+    chatCol: {
+      width: 320, borderLeft: '1px solid var(--border-default, #1e293b)',
+      display: 'flex', flexDirection: 'column' as const, overflow: 'hidden', flexShrink: 0,
     },
     sectionTitle: { fontSize: 11, fontWeight: 600, textTransform: 'uppercase' as const, color: 'var(--text-secondary, #94a3b8)', letterSpacing: 1, padding: '12px 16px 6px' },
-    tab: (active: boolean) => ({
-      padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-      background: active ? 'var(--bg-surface, #1e293b)' : 'transparent',
-      color: active ? '#00d9ff' : 'var(--text-secondary, #94a3b8)',
-      border: 'none', borderBottom: active ? '2px solid #00d9ff' : '2px solid transparent',
+    toggleBtn: (active: boolean) => ({
+      padding: '5px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', borderRadius: 6,
+      background: active ? '#00d9ff' : 'transparent',
+      color: active ? '#0a0e1a' : '#00d9ff',
+      border: active ? '1px solid #00d9ff' : '1px solid #00d9ff44',
     }),
     card: {
       background: 'var(--bg-surface, #1e293b)', borderRadius: 8,
@@ -536,7 +559,14 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
     <div style={s.overlay}>
       {/* Top bar */}
       <div style={s.topBar}>
-        <div style={s.title}>My Assistant</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={s.title}>My Assistant</div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button onClick={() => togglePanel('transcripts')} style={s.toggleBtn(openPanels.has('transcripts'))}>Transcripts</button>
+            <button onClick={() => togglePanel('tasks')} style={s.toggleBtn(openPanels.has('tasks'))}>Tasks</button>
+            <button onClick={() => togglePanel('calendar')} style={s.toggleBtn(openPanels.has('calendar'))}>Calendar</button>
+          </div>
+        </div>
         <div style={s.stats}>
           <span><span style={s.statNum}>{todayTasks}</span> tasks today</span>
           <span><span style={s.statNum}>{meetings}</span> meetings</span>
@@ -547,27 +577,44 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
 
       {/* Body */}
       <div style={s.body}>
-        {/* Left: Daily Planner */}
-        <div style={s.leftCol}>
-          <div style={s.sectionTitle}>Daily Planner</div>
-          {renderSchedule()}
+        {/* Left: Open panels */}
+        <div style={s.panelsArea}>
+          {openPanels.has('transcripts') && (
+            <div style={s.panel}>
+              <div style={s.panelHeader}>
+                <span style={s.panelTitle}>Transcripts</span>
+                <button onClick={() => togglePanel('transcripts')} style={s.panelCloseBtn}>x</button>
+              </div>
+              {renderInbox()}
+            </div>
+          )}
+          {openPanels.has('tasks') && (
+            <div style={s.panel}>
+              <div style={s.panelHeader}>
+                <span style={s.panelTitle}>Tasks</span>
+                <button onClick={() => togglePanel('tasks')} style={s.panelCloseBtn}>x</button>
+              </div>
+              {renderKanban()}
+            </div>
+          )}
+          {openPanels.has('calendar') && (
+            <div style={s.panel}>
+              <div style={s.panelHeader}>
+                <span style={s.panelTitle}>Calendar</span>
+                <button onClick={() => togglePanel('calendar')} style={s.panelCloseBtn}>x</button>
+              </div>
+              {renderSchedule()}
+            </div>
+          )}
+          {openPanels.size === 0 && (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary, #64748b)', fontSize: 14 }}>
+              Use the buttons above to open panels
+            </div>
+          )}
         </div>
 
-        {/* Middle: Workspace */}
-        <div style={s.middleCol}>
-          <div style={{ display: 'flex', borderBottom: '1px solid var(--border-default, #1e293b)', background: 'var(--bg-elevated, #111827)' }}>
-            {(['inbox', 'tasks'] as const).map(tab => (
-              <button key={tab} onClick={() => setActiveTab(tab)} style={s.tab(activeTab === tab)}>
-                {tab === 'inbox' ? 'Transcripts' : 'Tasks'}
-              </button>
-            ))}
-          </div>
-          {activeTab === 'inbox' && renderInbox()}
-          {activeTab === 'tasks' && renderKanban()}
-        </div>
-
-        {/* Right: Chat */}
-        <div style={s.rightCol}>
+        {/* Right: Chat (always visible) */}
+        <div style={s.chatCol}>
           {renderChat()}
         </div>
       </div>
