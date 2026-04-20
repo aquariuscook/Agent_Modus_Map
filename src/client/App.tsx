@@ -321,6 +321,7 @@ export function App() {
       <>
         <Dashboard
           onOpenSwarm={handleOpenSwarm}
+          onOpenAssistant={(id) => setAssistantSwarmId(id)}
           onStartInterview={() => { setResumeInterviewId(undefined); setShowInterview(true); }}
           onResumeInterview={(id) => { setResumeInterviewId(id); setShowInterview(true); }}
           onShowPricing={() => setShowPricing(true)}

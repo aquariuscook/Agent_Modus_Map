@@ -9,6 +9,7 @@ import type { TemplateInfo } from '../api.js';
 
 interface DashboardProps {
   onOpenSwarm: (swarmId: string) => void;
+  onOpenAssistant?: (swarmId: string) => void;
   onStartInterview?: () => void;
   onResumeInterview?: (interviewId: string) => void;
   onShowPricing?: () => void;
@@ -98,7 +99,7 @@ function SwarmExplainer() {
   );
 }
 
-export function Dashboard({ onOpenSwarm, onStartInterview, onResumeInterview, onShowPricing, onShowLogin }: DashboardProps) {
+export function Dashboard({ onOpenSwarm, onOpenAssistant, onStartInterview, onResumeInterview, onShowPricing, onShowLogin }: DashboardProps) {
   const { theme, toggleTheme } = useTheme();
   const [swarms, setSwarms] = useState<Swarm[]>([]);
   const [templates, setTemplates] = useState<TemplateInfo[]>([]);
@@ -300,8 +301,10 @@ export function Dashboard({ onOpenSwarm, onStartInterview, onResumeInterview, on
                 }}>Your Swarms</div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                  {swarms.map(s => (
-                    <button key={s.id} onClick={() => onOpenSwarm(s.id)} style={{
+                  {swarms.map(s => {
+                    const isAssistant = s.name.toLowerCase().includes('assistant') || s.name.toLowerCase().includes('personal');
+                    return (
+                    <button key={s.id} onClick={() => isAssistant && onOpenAssistant ? onOpenAssistant(s.id) : onOpenSwarm(s.id)} style={{
                       ...cardBase, cursor: 'pointer', textAlign: 'left',
                       display: 'flex', alignItems: 'center', gap: 'var(--space-4)',
                       padding: 'var(--space-4) var(--space-5)',
@@ -347,7 +350,8 @@ export function Dashboard({ onOpenSwarm, onStartInterview, onResumeInterview, on
                         title="Delete swarm"
                       >X</span>
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               </>
             )}

@@ -478,6 +478,9 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
 
   // --- Main render ---
 
+  // Debug: log render
+  console.log('[AssistantDashboard] Rendering with swarmId:', swarmId, 'panels:', [...openPanels]);
+
   return (
     <div style={s.overlay}>
       {/* Top bar */}
