@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { listSwarms, createBlankSwarm, importFromCSV, getCSVTemplateUrl, getTemplates, instantiateTemplate, deleteSwarm, getAllResults } from '../api.js';
+import { listSwarms, createBlankSwarm, importFromCSV, getCSVTemplateUrl, getTemplates, instantiateTemplate, deleteSwarm, getAllResults, listInterviews } from '../api.js';
 import { SettingsPanel } from './SettingsPanel.js';
 import { ThemeToggle } from './ThemeToggle.js';
 import { LogoWithText } from './Logo.js';
@@ -10,6 +10,7 @@ import type { TemplateInfo } from '../api.js';
 interface DashboardProps {
   onOpenSwarm: (swarmId: string) => void;
   onStartInterview?: () => void;
+  onResumeInterview?: (interviewId: string) => void;
   onShowPricing?: () => void;
   onShowLogin?: () => void;
 }
@@ -97,7 +98,7 @@ function SwarmExplainer() {
   );
 }
 
-export function Dashboard({ onOpenSwarm, onStartInterview, onShowPricing, onShowLogin }: DashboardProps) {
+export function Dashboard({ onOpenSwarm, onStartInterview, onResumeInterview, onShowPricing, onShowLogin }: DashboardProps) {
   const { theme, toggleTheme } = useTheme();
   const [swarms, setSwarms] = useState<Swarm[]>([]);
   const [templates, setTemplates] = useState<TemplateInfo[]>([]);
@@ -109,11 +110,16 @@ export function Dashboard({ onOpenSwarm, onStartInterview, onShowPricing, onShow
   const [csvName, setCsvName] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [recentResults, setRecentResults] = useState<any[]>([]);
+  const [activeInterviews, setActiveInterviews] = useState<Array<{ id: string; phase: number; goal: string; updatedAt: string }>>([]);
 
   useEffect(() => {
     listSwarms().then(setSwarms).catch(console.error);
     getTemplates().then(setTemplates).catch(console.error);
     getAllResults().then(r => setRecentResults((r || []).slice(0, 5))).catch(() => {});
+    listInterviews().then(interviews => {
+      // Only show interviews that aren't complete (phase < 6)
+      setActiveInterviews(interviews.filter(i => i.phase < 6));
+    }).catch(() => {});
   }, []);
 
   const handleCreateBlank = async () => {
@@ -243,6 +249,38 @@ export function Dashboard({ onOpenSwarm, onStartInterview, onShowPricing, onShow
                 <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Upload a spreadsheet of agents</div>
               </button>
             </div>
+
+            {/* In-Progress Interviews */}
+            {activeInterviews.length > 0 && (
+              <>
+                <div style={{
+                  fontSize: 'var(--text-xs)', fontWeight: 600, letterSpacing: '0.12em',
+                  textTransform: 'uppercase', color: '#22c55e', marginBottom: 'var(--space-4)',
+                }}>Continue Building</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-8)' }}>
+                  {activeInterviews.map(interview => (
+                    <button key={interview.id} onClick={() => onResumeInterview?.(interview.id)} style={{
+                      ...cardBase, cursor: 'pointer', textAlign: 'left',
+                      borderColor: '#22c55e', borderLeftWidth: 3,
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    }}>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {interview.goal || 'New interview'}
+                        </div>
+                        <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                          Phase {interview.phase + 1}/7, last updated {new Date(interview.updatedAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div style={{
+                        padding: '4px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600,
+                        background: 'rgba(34,197,94,0.1)', color: '#22c55e',
+                      }}>Resume</div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
 
             {/* Swarm List */}
             {swarms.length > 0 && (

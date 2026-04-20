@@ -5,6 +5,7 @@ import { SwarmService } from '../services/swarm-service.js';
 import {
   createInterview,
   getInterview,
+  listInterviews,
   processInterviewMessage,
   deployInterviewSwarm,
 } from '../services/interview-service.js';
@@ -12,6 +13,11 @@ import {
 export function createInterviewRoutes(db: Database.Database): Router {
   const router = Router();
   const swarmService = new SwarmService(db);
+
+  // GET /api/interview/list - list recent interviews
+  router.get('/list', (_req: Request, res: Response) => {
+    res.json({ data: listInterviews() });
+  });
 
   // POST /api/interview/start - start a new interview
   router.post('/start', (_req: Request, res: Response) => {

@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { startInterview, sendInterviewMessage, deployInterviewSwarm } from '../api.js';
+import { startInterview, sendInterviewMessage, deployInterviewSwarm, getInterviewState } from '../api.js';
 
 interface InterviewPanelProps {
   onClose: () => void;
   onSwarmCreated: (swarmId: string) => void;
+  resumeId?: string;
 }
 
 interface ChatMessage {
@@ -54,7 +55,7 @@ function renderFormattedText(text: string): React.ReactNode[] {
   });
 }
 
-export function InterviewPanel({ onClose, onSwarmCreated }: InterviewPanelProps) {
+export function InterviewPanel({ onClose, onSwarmCreated, resumeId }: InterviewPanelProps) {
   const [interviewId, setInterviewId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -75,16 +76,28 @@ export function InterviewPanel({ onClose, onSwarmCreated }: InterviewPanelProps)
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Initialize interview on mount
+  // Initialize interview on mount (start new or resume existing)
   useEffect(() => {
     let cancelled = false;
     async function init() {
       try {
-        const result = await startInterview();
-        if (cancelled) return;
-        setInterviewId(result.interviewId);
-        setPhase(result.phase);
-        setMessages([{ role: 'assistant', content: result.welcomeMessage }]);
+        if (resumeId) {
+          // Resume existing interview
+          const state = await getInterviewState(resumeId);
+          if (cancelled) return;
+          setInterviewId(state.id);
+          setPhase(state.phase);
+          setMessages(state.messages || []);
+          setExtracted(state.extracted || {});
+          if (state.extracted?.swarmConfig) setSwarmConfig(state.extracted.swarmConfig);
+        } else {
+          // Start new interview
+          const result = await startInterview();
+          if (cancelled) return;
+          setInterviewId(result.interviewId);
+          setPhase(result.phase);
+          setMessages([{ role: 'assistant', content: result.welcomeMessage }]);
+        }
       } catch (err: any) {
         if (cancelled) return;
         setInitError(err.message || 'Failed to start interview. Check that your API key is configured.');
@@ -92,7 +105,7 @@ export function InterviewPanel({ onClose, onSwarmCreated }: InterviewPanelProps)
     }
     init();
     return () => { cancelled = true; };
-  }, []);
+  }, [resumeId]);
 
   // Auto-resize textarea
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {

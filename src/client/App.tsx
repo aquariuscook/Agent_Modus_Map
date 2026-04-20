@@ -58,6 +58,7 @@ export function App() {
   const [loading, setLoading] = useState(false);
   const [editorMode, setEditorMode] = useState<EditorMode>('build');
   const [showInterview, setShowInterview] = useState(false);
+  const [resumeInterviewId, setResumeInterviewId] = useState<string | undefined>();
 
   // Panel state: only one panel open at a time (except editor modal and chat which overlay)
   type Panel = null | 'palette' | 'validation' | 'orchestrator' | 'wizard'
@@ -318,17 +319,20 @@ export function App() {
       <>
         <Dashboard
           onOpenSwarm={handleOpenSwarm}
-          onStartInterview={() => setShowInterview(true)}
+          onStartInterview={() => { setResumeInterviewId(undefined); setShowInterview(true); }}
+          onResumeInterview={(id) => { setResumeInterviewId(id); setShowInterview(true); }}
           onShowPricing={() => setShowPricing(true)}
           onShowLogin={() => setShowLogin(true)}
         />
         {showInterview && (
           <InterviewPanel
-            onClose={() => setShowInterview(false)}
+            onClose={() => { setShowInterview(false); setResumeInterviewId(undefined); }}
             onSwarmCreated={(newSwarmId) => {
               setShowInterview(false);
+              setResumeInterviewId(undefined);
               handleOpenSwarm(newSwarmId);
             }}
+            resumeId={resumeInterviewId}
           />
         )}
         {showOnboarding && <OnboardingOverlay onDismiss={dismissOnboarding} />}

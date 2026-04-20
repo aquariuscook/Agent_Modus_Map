@@ -498,6 +498,14 @@ export async function askCopilot(messages: Array<{ role: string; content: string
 }
 
 // Interview Engine
+export async function listInterviews(): Promise<Array<{ id: string; phase: number; goal: string; updatedAt: string }>> {
+  return fetchJson('/interview/list');
+}
+
+export async function getInterviewState(id: string): Promise<any> {
+  return fetchJson(`/interview/${id}`);
+}
+
 export async function startInterview(): Promise<{ interviewId: string; phase: number; welcomeMessage: string }> {
   return postJson('/interview/start', {});
 }

@@ -185,8 +185,51 @@ At the end, include:
   },
 };
 
-// In-memory interview store (keyed by interview ID)
-const interviews = new Map<string, InterviewState>();
+// SQLite-backed interview store
+import { getDb } from '../db/database.js';
+
+function ensureTable(): void {
+  const db = getDb();
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS interviews (
+      id TEXT PRIMARY KEY,
+      phase INTEGER NOT NULL DEFAULT 0,
+      messages TEXT NOT NULL DEFAULT '[]',
+      extracted TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+  `);
+}
+
+let tableReady = false;
+function getTable() {
+  if (!tableReady) { ensureTable(); tableReady = true; }
+}
+
+function saveState(state: InterviewState): void {
+  getTable();
+  const db = getDb();
+  db.prepare(`
+    INSERT OR REPLACE INTO interviews (id, phase, messages, extracted, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(state.id, state.phase, JSON.stringify(state.messages), JSON.stringify(state.extracted), state.createdAt, state.updatedAt);
+}
+
+function loadState(id: string): InterviewState | null {
+  getTable();
+  const db = getDb();
+  const row = db.prepare('SELECT * FROM interviews WHERE id = ?').get(id) as any;
+  if (!row) return null;
+  return {
+    id: row.id,
+    phase: row.phase as InterviewPhase,
+    messages: JSON.parse(row.messages),
+    extracted: JSON.parse(row.extracted),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
 
 function generateId(): string {
   return `int-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -201,20 +244,35 @@ export function createInterview(): InterviewState {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
-  interviews.set(state.id, state);
+  saveState(state);
   return state;
 }
 
 export function getInterview(id: string): InterviewState | null {
-  return interviews.get(id) || null;
+  return loadState(id);
+}
+
+export function listInterviews(): Array<{ id: string; phase: InterviewPhase; goal: string; updatedAt: string }> {
+  getTable();
+  const db = getDb();
+  const rows = db.prepare('SELECT id, phase, extracted, updated_at FROM interviews ORDER BY updated_at DESC LIMIT 10').all() as any[];
+  return rows.map(r => {
+    const extracted = JSON.parse(r.extracted);
+    return {
+      id: r.id,
+      phase: r.phase as InterviewPhase,
+      goal: extracted.goal || 'In progress...',
+      updatedAt: r.updated_at,
+    };
+  });
 }
 
 export async function processInterviewMessage(
   interviewId: string,
   userMessage: string,
 ): Promise<{ response: string; state: InterviewState; phaseAdvanced: boolean }> {
-  const state = interviews.get(interviewId);
-  if (!state) throw new Error('Interview not found');
+  const state = loadState(interviewId);
+  if (!state) throw new Error('Interview not found. It may have been deleted.');
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('Anthropic API key not configured. Add it in Settings.');
@@ -306,6 +364,9 @@ RULES:
   state.messages.push({ role: 'assistant', content: cleanResponse });
   state.updatedAt = new Date().toISOString();
 
+  // Persist to database after every message
+  saveState(state);
+
   return {
     response: cleanResponse,
     state,
@@ -391,7 +452,7 @@ Output ONLY valid JSON matching this schema:
 }
 
 export function deployInterviewSwarm(interviewId: string): GeneratedSwarmConfig | null {
-  const state = interviews.get(interviewId);
+  const state = loadState(interviewId);
   if (!state?.extracted.swarmConfig) return null;
   return state.extracted.swarmConfig;
 }
