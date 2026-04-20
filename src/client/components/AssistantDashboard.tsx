@@ -338,10 +338,13 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
   function renderInbox() {
     return (
       <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: 'var(--text-primary, #e2e8f0)' }}>Paste meeting transcript</div>
+        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4, color: 'var(--text-primary, #e2e8f0)' }}>Meeting Transcripts</div>
+        <div style={{ fontSize: 13, color: 'var(--text-secondary, #94a3b8)', marginBottom: 16, lineHeight: 1.5 }}>
+          Paste a meeting transcript below and your assistant will extract every action item, decision, and follow-up. They'll be added to your task board automatically.
+        </div>
         <textarea
           value={transcript} onChange={e => setTranscript(e.target.value)}
-          placeholder="Paste your meeting transcript or notes here..."
+          placeholder="Paste your meeting transcript here. Your assistant will find every action item, decision, and follow-up and add them to your task board."
           style={{ ...s.input, height: 200, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5 }}
         />
         <button
@@ -349,12 +352,13 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
           disabled={extracting || !transcript.trim()}
           style={{ ...s.btn('#00d9ff'), marginTop: 10, opacity: extracting || !transcript.trim() ? 0.5 : 1 }}
         >
-          {extracting ? 'Extracting...' : 'Extract Action Items'}
+          {extracting ? 'Reading your transcript...' : 'Extract Action Items'}
         </button>
 
         {extractedItems.length > 0 && (
           <div style={{ marginTop: 20 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Extracted items ({extractedItems.length})</div>
+            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Found {extractedItems.length} items</div>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary, #94a3b8)', marginBottom: 12 }}>Uncheck anything you don't want added to your tasks.</div>
             {extractedItems.map(item => (
               <div key={item.id} style={{ ...s.card, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                 <input type="checkbox" defaultChecked style={{ marginTop: 3 }} />
@@ -368,7 +372,7 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
               </div>
             ))}
             <button onClick={addExtractedToTasks} style={{ ...s.btn('#22c55e'), marginTop: 10 }}>
-              Add All to Tasks
+              Add to Task Board
             </button>
           </div>
         )}
@@ -424,36 +428,69 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
   }
 
   function renderDocuments() {
+    const [askInput, setAskInput] = useState('');
+    const [askResult, setAskResult] = useState('');
+    const [asking, setAsking] = useState(false);
+
+    const handleAsk = async () => {
+      if (!askInput.trim() || asking) return;
+      setAsking(true);
+      setAskResult('');
+      try {
+        const result = await askCopilot(
+          [{ role: 'user', content: askInput }],
+          swarmId
+        );
+        setAskResult(result.answer);
+      } catch {
+        setAskResult('Something went wrong. Try again.');
+      }
+      setAsking(false);
+    };
+
     return (
       <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-          {(['doc', 'deck', 'email'] as const).map(t => (
-            <button key={t} onClick={() => addDoc(t)} style={s.btn('#00d9ff')}>
-              + New {t}
-            </button>
+        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4, color: 'var(--text-primary, #e2e8f0)' }}>Ask Your Assistant</div>
+        <div style={{ fontSize: 13, color: 'var(--text-secondary, #94a3b8)', marginBottom: 16, lineHeight: 1.5 }}>
+          Tell your assistant what you need. It can help you draft documents, write emails, create outlines, summarize information, or anything else.
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+          <div style={{ fontSize: 12, color: 'var(--text-tertiary, #64748b)' }}>Try things like:</div>
+          {[
+            'Draft an email to my team about the Q2 roadmap changes',
+            'Create an outline for a presentation on our AI strategy',
+            'Summarize the key decisions from this week',
+            'Write a proposal for the new vendor partnership',
+          ].map((suggestion, i) => (
+            <button key={i} onClick={() => setAskInput(suggestion)} style={{
+              padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border-default, #1e293b)',
+              background: 'var(--bg-surface, #1e293b)', color: 'var(--text-secondary, #94a3b8)',
+              fontSize: 12, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+            }}>{suggestion}</button>
           ))}
         </div>
-        {docs.length === 0 && (
-          <div style={{ color: 'var(--text-secondary, #64748b)', fontSize: 13, padding: 20, textAlign: 'center' }}>
-            No documents yet. Create one above or ask your assistant.
+        <textarea
+          value={askInput}
+          onChange={e => setAskInput(e.target.value)}
+          placeholder="What do you need?"
+          style={{ ...s.input, height: 100, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5 }}
+        />
+        <button
+          onClick={handleAsk}
+          disabled={asking || !askInput.trim()}
+          style={{ ...s.btn('#00d9ff'), marginTop: 10, opacity: asking || !askInput.trim() ? 0.5 : 1 }}
+        >
+          {asking ? 'Working on it...' : 'Go'}
+        </button>
+        {askResult && (
+          <div style={{
+            marginTop: 16, padding: 16, borderRadius: 10,
+            background: 'var(--bg-surface, #1e293b)', border: '1px solid var(--border-default, #1e293b)',
+            fontSize: 13, color: 'var(--text-primary, #e2e8f0)', lineHeight: 1.7, whiteSpace: 'pre-wrap',
+          }}>
+            {askResult}
           </div>
         )}
-        {docs.map(doc => (
-          <div key={doc.id} style={{ ...s.card, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 500 }}>{doc.title}</div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                <span style={s.badge('#6366f1')}>{doc.type}</span>
-                <span style={s.badge(doc.status === 'ready' ? '#22c55e' : doc.status === 'sent' ? '#00d9ff' : '#94a3b8')}>{doc.status}</span>
-                <span style={{ fontSize: 10, color: 'var(--text-secondary, #94a3b8)' }}>{doc.createdAt}</span>
-              </div>
-            </div>
-            <button
-              onClick={() => setDocs(prev => prev.filter(d => d.id !== doc.id))}
-              style={{ background: 'none', border: 'none', color: 'var(--text-secondary, #64748b)', cursor: 'pointer', fontSize: 13 }}
-            >x</button>
-          </div>
-        ))}
       </div>
     );
   }
@@ -461,7 +498,7 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
   function renderChat() {
     return (
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div style={{ ...s.sectionTitle, borderBottom: '1px solid var(--border-default, #1e293b)' }}>AI Chat</div>
+        <div style={{ ...s.sectionTitle, borderBottom: '1px solid var(--border-default, #1e293b)' }}>Chat with your assistant</div>
         <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
           {chatMessages.map((msg, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
@@ -521,7 +558,7 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
           <div style={{ display: 'flex', borderBottom: '1px solid var(--border-default, #1e293b)', background: 'var(--bg-elevated, #111827)' }}>
             {(['inbox', 'tasks', 'documents'] as const).map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)} style={s.tab(activeTab === tab)}>
-                {tab === 'inbox' ? 'Inbox' : tab === 'tasks' ? 'Tasks' : 'Documents'}
+                {tab === 'inbox' ? 'Transcripts' : tab === 'tasks' ? 'Tasks' : 'Ask'}
               </button>
             ))}
           </div>
