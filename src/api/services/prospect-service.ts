@@ -1,7 +1,7 @@
 // Prospect database service for lead gen swarm results.
-// Uses a SQLite-backed VectorDB for vector storage with metadata-based filtering.
+// Uses ruvector for vector storage with metadata-based filtering.
 
-import { VectorDB } from '../lib/vector-db.js';
+import { VectorDB } from 'ruvector';
 
 // --- Types ---
 
