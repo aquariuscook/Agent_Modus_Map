@@ -54,6 +54,15 @@
       },
       "optional": true,
       "requiresAuth": true
+    },
+    "agentic-qe": {
+      "command": "aqe-mcp",
+      "args": [],
+      "env": {
+        "AQE_LEARNING_ENABLED": "true",
+        "AQE_WORKERS_ENABLED": "true",
+        "NODE_ENV": "production"
+      }
     }
   }
 }
