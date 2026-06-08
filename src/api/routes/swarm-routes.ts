@@ -4,6 +4,8 @@ import type { Request, Response } from 'express';
 type Req = Request<Record<string, string>>;
 import { SwarmService } from '../services/swarm-service.js';
 import { GraphService } from '../services/graph-service.js';
+import { generateSwarmFromPrompt } from '../services/swarm-generator-service.js';
+import { swarmToCLI } from '../services/swarm-cli-bridge-service.js';
 import type Database from 'better-sqlite3';
 
 function paramStr(val: unknown): string {
@@ -30,6 +32,32 @@ export function createSwarmRoutes(db: Database.Database): Router {
     }
     const swarm = swarmService.create({ name, description });
     res.status(201).json({ data: swarm });
+  });
+
+  // POST /api/swarms/generate — Prompt-to-Swarm auto-generator (Rec 3)
+  router.post('/generate', async (req: Req, res: Response) => {
+    const { prompt, maxAgents, preferCheapest } = req.body;
+    if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 10) {
+      res.status(400).json({ error: 'validation', message: 'A prompt of at least 10 characters is required.' });
+      return;
+    }
+    try {
+      const result = await generateSwarmFromPrompt({
+        prompt: prompt.trim(),
+        maxAgents: typeof maxAgents === 'number' ? maxAgents : undefined,
+        preferCheapest: preferCheapest !== false,
+      });
+      res.status(201).json({
+        data: result.swarm,
+        meta: {
+          generated: result.generated,
+          modelUsed: result.modelUsed,
+          ...(result.error ? { warning: result.error } : {}),
+        },
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: 'generation_failed', message: err.message || 'Swarm generation failed.' });
+    }
   });
 
   // GET /api/swarms/:id
@@ -112,6 +140,21 @@ export function createSwarmRoutes(db: Database.Database): Router {
       return;
     }
     res.status(204).send();
+  });
+
+  // POST /api/swarms/:id/cli-bridge — Visual→CLI bridge (Rec 4)
+  router.post('/:id/cli-bridge', (req: Req, res: Response) => {
+    const swarm = swarmService.findById(req.params.id);
+    if (!swarm) {
+      res.status(404).json({ error: 'not_found', message: 'Swarm not found.' });
+      return;
+    }
+    try {
+      const result = swarmToCLI(swarm);
+      res.json({ data: result });
+    } catch (err: any) {
+      res.status(500).json({ error: 'bridge_failed', message: err.message || 'CLI bridge conversion failed.' });
+    }
   });
 
   // GET /api/swarms/:id/export

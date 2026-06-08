@@ -636,7 +636,7 @@ export function AgentBuilderWizard({ layers, existingNicknames, onCreate, onCanc
             <Row>
               <Field label="AI Provider" hint="Which AI provider to use">
                 <select value={provider} onChange={e => setProvider(e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
-                  {['anthropic','openai','google','mistral','meta','local','custom'].map(p => <option key={p} value={p}>{p}</option>)}
+                  {['anthropic','openai','google','mistral','nvidia','meta','local','custom'].map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </Field>
               <Field label="Model" hint="Specific model ID from the provider">

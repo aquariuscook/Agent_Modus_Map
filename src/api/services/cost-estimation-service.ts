@@ -66,6 +66,13 @@ const PRICING: Record<string, Record<string, { input: number; output: number }>>
   local: {
     default: { input: 0.0, output: 0.0 },
   },
+  nvidia: {
+    'meta/llama-3.3-70b-instruct': { input: 0.20, output: 0.20 },
+    'nvidia/llama-3.1-nemotron-70b-instruct': { input: 0.08, output: 0.08 },
+    'mistralai/mixtral-8x22b-instruct-v0.1': { input: 0.60, output: 0.60 },
+    'google/gemma-2-27b-it': { input: 0.08, output: 0.08 },
+    default: { input: 0.20, output: 0.20 },
+  },
   custom: {
     default: { input: 1.0, output: 3.0 },
   },
@@ -176,7 +183,7 @@ function getModelPricing(provider: string, model: string): { input: number; outp
 }
 
 function calculateProviderAlternatives(swarm: Swarm, callsPerDay?: number): Record<string, number> {
-  const providers = ['anthropic', 'openai', 'google', 'mistral'];
+  const providers = ['anthropic', 'openai', 'google', 'mistral', 'nvidia'];
   const result: Record<string, number> = {};
 
   for (const provider of providers) {
