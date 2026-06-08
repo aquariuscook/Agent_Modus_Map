@@ -5,7 +5,8 @@
 
 import { generateObject } from 'ai';
 import { z } from 'zod';
-import { getModelForTier, getCheapestModel } from './provider-router-service.js';
+import type { LanguageModel } from 'ai';
+import { getModelForTier, getCheapestModel, NoProviderAvailableError } from './provider-router-service.js';
 import type { Swarm, Agent, Relationship, LayerDefinition, Badge, RelationshipType } from '../../shared/types/index.js';
 import { v7 as uuidv7 } from 'uuid';
 
@@ -49,7 +50,7 @@ Rules:
 - Create 2-8 agents, each with a distinct role and memorable nickname
 - Assign each agent to one of 4 layers: Interface (user-facing), Processing (data transformation), Intelligence (reasoning/LLM), Operations (infrastructure/monitoring)
 - Use appropriate badges: ENTRY for first-contact agents, HUB for high-connectivity, CRITICAL for must-not-fail, AUTO for autonomous, HUMAN for human-in-the-loop
-- Connect agents with relationships: feedsInto (data flows A→B), dependsOn (B needs A's output), collaboratesWith (peer-to-peer), canOverride (supervisor pattern)
+- Connect agents with relationships: feedsInto (data flows A->B), dependsOn (B needs A's output), collaboratesWith (peer-to-peer), canOverride (supervisor pattern)
 - Suggest a topology: hierarchical (supervision chains), mesh (peer collaboration), ring (pipeline), star (hub-and-spoke)
 - Choose cost-effective models: use nvidia/meta/llama-3.3-70b-instruct for simple agents, anthropic/claude-sonnet for complex reasoning
 - Be practical: only add agents that serve a clear purpose in the workflow`;
@@ -59,7 +60,7 @@ Rules:
 export interface GenerateSwarmOptions {
   prompt: string;
   maxAgents?: number;
-  // Prefer Tier 2 (NVIDIA NIM) for cost — default true
+  // Prefer Tier 2 (NVIDIA NIM) for cost -- default true
   preferCheapest?: boolean;
 }
 
@@ -67,6 +68,8 @@ export interface GenerateSwarmResult {
   generated: GeneratedSwarmInput;
   swarm: Swarm;
   modelUsed: { provider: string; model: string; tier: number };
+  /** Set when the result is a heuristic fallback rather than LLM-generated */
+  heuristicFallback?: 'no-provider' | 'tier-unavailable' | 'no-keyword-match' | 'llm-failed';
   error?: string;
 }
 
@@ -78,13 +81,26 @@ export async function generateSwarmFromPrompt(options: GenerateSwarmOptions): Pr
   const { prompt, maxAgents = 8, preferCheapest = true } = options;
 
   // Select model: prefer cheapest (NVIDIA NIM Tier 2) for generation
-  const { model, route } = preferCheapest
-    ? getCheapestModel(0.2) // Low complexity → NIM preferred
-    : getModelForTier(3);   // High quality → Anthropic
+  let model: LanguageModel | null;
+  let route: { provider: string; model: string; tier: number; available: boolean };
+
+  try {
+    const selected = preferCheapest
+      ? getCheapestModel(0.2) // Low complexity -> NIM preferred
+      : getModelForTier(3); // High quality -> Anthropic
+    model = selected.model;
+    route = selected.route;
+  } catch (err) {
+    if (err instanceof NoProviderAvailableError) {
+      // No API key configured at all -- fall back to heuristic
+      return generateHeuristicSwarm(prompt, { provider: 'none', model: 'heuristic', tier: 0, available: false }, 'no-provider');
+    }
+    throw err;
+  }
 
   if (!model) {
-    // Build a fallback heuristic swarm when no LLM is available
-    return generateHeuristicSwarm(prompt, route);
+    // Build a fallback heuristic swarm when specific tier model is unavailable
+    return generateHeuristicSwarm(prompt, route, 'tier-unavailable');
   }
 
   try {
@@ -105,7 +121,7 @@ export async function generateSwarmFromPrompt(options: GenerateSwarmOptions): Pr
     };
   } catch (err: any) {
     // Fall back to heuristic generation if LLM fails
-    const fallback = generateHeuristicSwarm(prompt, route);
+    const fallback = generateHeuristicSwarm(prompt, route, 'llm-failed');
     fallback.error = `LLM generation failed: ${err.message}. Using heuristic fallback.`;
     return fallback;
   }
@@ -131,7 +147,7 @@ function convertToSwarm(generated: GeneratedSwarmInput): Swarm {
     ...l,
   }));
 
-  // Build a layer name → id map for agent assignment
+  // Build a layer name -> id map for agent assignment
   const layerMap = new Map(layers.map(l => [l.name.toLowerCase(), l.id]));
 
   // Create agents
@@ -156,7 +172,7 @@ function convertToSwarm(generated: GeneratedSwarmInput): Swarm {
     };
   });
 
-  // Build nickname → id map for relationships
+  // Build nickname -> id map for relationships
   const agentMap = new Map(agents.map(a => [a.nickname.toLowerCase(), a.id]));
 
   // Create relationships
@@ -194,7 +210,7 @@ const TASK_AGENT_MAP: Array<{ keywords: string[]; agents: Array<{ nickname: stri
       { nickname: 'Sentinel', formalName: 'Content Intake Agent', descriptor: 'Receives and normalizes incoming content', layerName: 'Interface', badges: ['ENTRY', 'AUTO'] },
       { nickname: 'Censor', formalName: 'Policy Check Agent', descriptor: 'Applies moderation rules and flags violations', layerName: 'Processing', badges: ['CRITICAL', 'AUTO'] },
       { nickname: 'Judge', formalName: 'Escalation Review Agent', descriptor: 'Human-in-the-loop for edge cases', layerName: 'Intelligence', badges: ['HUMAN', 'HUB'] },
-      { nickname: 'Scribe', formalName: 'Audit Log Agent', descriptor: 'Records all moderation decisions', layerName: 'Operations', badges: ['ALWAYS_ON', 'LOGS_ALL'] },
+      { nickname: 'Scribe', formalName: 'Audit Log Agent', descriptor: 'Records all moderation decisions', layerName: 'Operations', badges: ['ALWAYS_ON'] },
     ],
   },
   {
@@ -217,9 +233,16 @@ const TASK_AGENT_MAP: Array<{ keywords: string[]; agents: Array<{ nickname: stri
   },
 ];
 
-function generateHeuristicSwarm(prompt: string, route: { provider: string; model: string; tier: number; available: boolean }): GenerateSwarmResult {
+/** Why the heuristic was used instead of an LLM. */
+export type HeuristicReason = 'no-provider' | 'tier-unavailable' | 'no-keyword-match' | 'llm-failed';
+
+function generateHeuristicSwarm(
+  prompt: string,
+  route: { provider: string; model: string; tier: number; available: boolean },
+  reason: HeuristicReason,
+): GenerateSwarmResult {
   const lower = prompt.toLowerCase();
-  let bestMatch = TASK_AGENT_MAP[0]; // Default to moderation
+  let bestMatch = TASK_AGENT_MAP[0];
   let bestScore = 0;
 
   for (const pattern of TASK_AGENT_MAP) {
@@ -228,6 +251,12 @@ function generateHeuristicSwarm(prompt: string, route: { provider: string; model
       bestScore = score;
       bestMatch = pattern;
     }
+  }
+
+  // Fix 3: If no keywords matched, generate a generic single-agent swarm
+  // instead of silently returning the wrong template (moderation by default)
+  if (bestScore === 0) {
+    return generateGenericStarterSwarm(prompt, route, 'no-keyword-match');
   }
 
   const generated: GeneratedSwarmInput = {
@@ -244,9 +273,53 @@ function generateHeuristicSwarm(prompt: string, route: { provider: string; model
       sourceNickname: a.nickname,
       targetNickname: bestMatch.agents[i + 1].nickname,
       type: 'feedsInto' as const,
-      description: `Sequential pipeline step`,
+      description: 'Sequential pipeline step',
     })),
     topology: 'ring',
+  };
+
+  const swarm = convertToSwarm(generated);
+
+  const result: GenerateSwarmResult = {
+    generated,
+    swarm,
+    modelUsed: { provider: route.provider, model: route.model, tier: route.tier },
+    heuristicFallback: reason,
+  };
+  if (!route.available) {
+    result.error = 'No LLM API key configured -- using heuristic fallback';
+  }
+  return result;
+}
+
+/**
+ * Generate a minimal single-agent swarm when no keyword template matches.
+ * This is honest: "I couldn't figure out what you want, here's a starter."
+ */
+function generateGenericStarterSwarm(
+  prompt: string,
+  route: { provider: string; model: string; tier: number; available: boolean },
+  reason: HeuristicReason,
+): GenerateSwarmResult {
+  const shortName = prompt.split(' ').slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+
+  const generated: GeneratedSwarmInput = {
+    swarmName: `${shortName || 'Starter'} Swarm`,
+    description: `Generic starter swarm for: ${prompt}. Add more agents to customize this workflow.`,
+    agents: [
+      {
+        nickname: 'Worker',
+        formalName: 'General Purpose Agent',
+        descriptor: 'Handles the core task described in the prompt',
+        layerName: 'Intelligence',
+        badges: ['ENTRY', 'AUTO'],
+        skills: ['task-handling'],
+        modelProvider: 'nvidia',
+        modelName: 'meta/llama-3.3-70b-instruct',
+      },
+    ],
+    relationships: [],
+    topology: 'star',
   };
 
   const swarm = convertToSwarm(generated);
@@ -255,6 +328,7 @@ function generateHeuristicSwarm(prompt: string, route: { provider: string; model
     generated,
     swarm,
     modelUsed: { provider: route.provider, model: route.model, tier: route.tier },
-    error: route.available ? undefined : 'No LLM API key configured — using heuristic fallback',
+    heuristicFallback: reason,
+    error: 'No matching template found for your prompt -- generated a generic single-agent starter. Provide more detail or configure an LLM API key for better results.',
   };
 }

@@ -46,7 +46,7 @@ Aligns with the existing Ruflo ADR-026 routing pattern:
 
 | Tier | Handler | Use Cases | Cost |
 |---|---|---|---|
-| 1 | WASM Agent Booster (deterministic codemods) | `var-to-const`, `remove-console`, `add-logging` | $0 |
+| 1 | WASM Agent Booster (deterministic codemods) | `var-to-const`, `remove-console`, `add-logging` | $0 *(future — not yet implemented)* |
 | 2 | NVIDIA NIM (open-weight models) | Low-complexity tasks, prompt-to-swarm generation | ~$0.20/1M tokens |
 | 3 | Anthropic Sonnet/Opus | Architecture, security, complex reasoning | ~$3/1M tokens |
 
@@ -75,15 +75,24 @@ The SDK handles all of this internally.
 ### Provider Fallback Chain
 
 `getCheapestModel(complexity)` falls back through available providers:
+
+**Low complexity (`complexity < 0.5`):**
 1. NVIDIA NIM (preferred for low complexity)
 2. OpenAI `gpt-4o-mini` (if NIM unavailable)
 3. Anthropic `claude-haiku-4-5-20251001` (last resort)
+
+**High complexity (`complexity >= 0.5`):**
+1. Anthropic `claude-sonnet-4-6` (preferred for complex reasoning)
+2. OpenAI `gpt-4o` (if Anthropic unavailable)
+3. NVIDIA NIM `meta/llama-3.3-70b-instruct` (degraded last resort)
+
+If **no provider** has an API key configured, `getCheapestModel()` throws `NoProviderAvailableError` instead of returning a `null` model. Callers should catch this and fall back to heuristic generation.
 
 Each fallback is automatic — the caller never specifies a provider, only a complexity level.
 
 ### Heuristic Fallback (No LLM Required)
 
-When no API key is configured at all, `swarm-generator-service.ts` falls back to keyword-matching heuristics (`TASK_AGENT_MAP`). This ensures the prompt-to-swarm feature works offline or in sandboxed environments.
+When no API key is configured at all (or `NoProviderAvailableError` is thrown), `swarm-generator-service.ts` falls back to keyword-matching heuristics (`TASK_AGENT_MAP`). If no keywords match the prompt, a **generic single-agent starter swarm** is returned instead of silently using the wrong template. This ensures the prompt-to-swarm feature works offline or in sandboxed environments, and communicates honestly when it can't infer intent.
 
 ## Detailed Design
 
@@ -107,6 +116,12 @@ When no API key is configured at all, `swarm-generator-service.ts` falls back to
 |---|---|---|
 | `POST` | `/api/swarms/generate` | Prompt-to-swarm auto-generator |
 | `POST` | `/api/swarms/:id/cli-bridge` | Visual → CLI command bridge |
+
+### Anthropic Auth Header Compatibility
+
+The `@ai-sdk/openai-compatible` package sends `Authorization: Bearer <key>` for all providers. Anthropic's **native** API (`/v1/messages`) requires the `x-api-key` header instead and would reject `Bearer`. However, Anthropic provides an **OpenAI-compatible endpoint** at `https://api.anthropic.com/v1` that accepts `Authorization: Bearer`. Our provider registry uses this compatible endpoint, so the Bearer auth works without special handling.
+
+If we ever need Anthropic-specific features (extended thinking, prompt caching, PDF processing), we would need to switch the Anthropic provider to use `@ai-sdk/anthropic` with the native endpoint — which sends `x-api-key` internally. This can be done by changing one provider config entry and adding the package; no other code changes are required.
 
 ### Why `@ai-sdk/openai-compatible` Instead of Provider-Specific Packages
 
@@ -144,6 +159,7 @@ No keys = heuristic-only mode. All features still work; LLM generation degrades 
 - **Abstraction leak risk** — if a provider's OpenAI compatibility has quirks (e.g., non-standard error codes, rate limit headers), debugging goes through the SDK layer first
 
 ## Future Considerations
+- **Implement Tier 1 (WASM Agent Booster):** Tier 1 is currently a placeholder in the routing table (`TIER_MODELS[1]`). Implementing it requires integrating a WASM-based deterministic codemod engine that can handle `var-to-const`, `remove-console`, and `add-logging` transforms without any LLM call. Until then, `getModelForTier(1)` returns `null` and callers should fall back to Tier 2 or Tier 3.
 - Add dedicated `@ai-sdk/anthropic` package if Anthropic-specific features (extended thinking, tool use) are needed
 - Add streaming support via the AI SDK's `streamObject()` for real-time swarm generation progress
 - Wire provider selection into the UI so users can choose models from the canvas

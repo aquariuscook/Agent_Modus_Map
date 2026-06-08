@@ -17,6 +17,9 @@ interface ProviderConfig {
 }
 
 const PROVIDERS: ProviderConfig[] = [
+  // Auth note: uses Anthropic's OpenAI-compatible endpoint, which accepts
+  // Authorization: Bearer (unlike the native API that requires x-api-key).
+  // See ADR-012 "Anthropic Auth Header Compatibility" section.
   {
     id: 'anthropic',
     name: 'Anthropic',
@@ -91,6 +94,16 @@ export interface ModelRoute {
   reason?: string;
 }
 
+/** Thrown when no LLM provider has an API key configured. */
+export class NoProviderAvailableError extends Error {
+  constructor(
+    message = 'No LLM provider available — configure at least one API key (NVIDIA_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY)',
+  ) {
+    super(message);
+    this.name = 'NoProviderAvailableError';
+  }
+}
+
 /**
  * Get a LanguageModel instance for a given provider + model.
  * This is the core abstraction: callers never touch provider internals.
@@ -156,12 +169,29 @@ export function getCheapestModel(complexity: number): { model: LanguageModel | n
 
     // Last resort: Anthropic Haiku
     const haiku = getModel('anthropic', 'claude-haiku-4-5-20251001');
+    if (!haiku) throw new NoProviderAvailableError();
     return {
       model: haiku,
-      route: { provider: 'anthropic', model: 'claude-haiku-4-5-20251001', endpoint: 'https://api.anthropic.com/v1', tier: 3, available: !!haiku, reason: 'NVIDIA + OpenAI unavailable, using Anthropic Haiku fallback' },
+      route: { provider: 'anthropic', model: 'claude-haiku-4-5-20251001', endpoint: 'https://api.anthropic.com/v1', tier: 3, available: true, reason: 'NVIDIA + OpenAI unavailable, using Anthropic Haiku fallback' },
     };
   }
 
-  // High complexity: use Tier 3
-  return getModelForTier(3);
+  // High complexity: try Tier 3 first, then degrade to cheaper providers
+  const anthropic = getModelForTier(3);
+  if (anthropic.model) return anthropic;
+
+  // Fallback to OpenAI gpt-4o (near-Tier-3 quality)
+  const openai = getModel('openai', 'gpt-4o');
+  if (openai) return {
+    model: openai,
+    route: { provider: 'openai', model: 'gpt-4o', endpoint: 'https://api.openai.com/v1', tier: 3, available: true, reason: 'Anthropic unavailable, using OpenAI GPT-4o fallback' },
+  };
+
+  // Last resort: use NVIDIA NIM as a degraded high-complexity option
+  const nim = getModel('nvidia', 'meta/llama-3.3-70b-instruct');
+  if (!nim) throw new NoProviderAvailableError();
+  return {
+    model: nim,
+    route: { provider: 'nvidia', model: 'meta/llama-3.3-70b-instruct', endpoint: 'https://integrate.api.nvidia.com/v1', tier: 2, available: true, reason: 'Anthropic + OpenAI unavailable, using NVIDIA NIM as degraded fallback' },
+  };
 }
