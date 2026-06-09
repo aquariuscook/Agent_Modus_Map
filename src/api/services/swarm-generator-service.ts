@@ -3,10 +3,10 @@
 // to generate a Swarm JSON from a natural language prompt.
 // Leverages the existing provider-router-service for model selection.
 
-import { generateObject } from 'ai';
 import { z } from 'zod';
 import type { LanguageModel } from 'ai';
-import { getModelForTier, getCheapestModel, NoProviderAvailableError } from './provider-router-service.js';
+import { getModelForTier, getCheapestModel, NoProviderAvailableError, callGenerateObject } from './provider-router-service.js';
+import type { ModelRoute } from './provider-router-service.js';
 import type { Swarm, Agent, Relationship, LayerDefinition, Badge, RelationshipType } from '../../shared/types/index.js';
 import { v7 as uuidv7 } from 'uuid';
 
@@ -82,7 +82,7 @@ export async function generateSwarmFromPrompt(options: GenerateSwarmOptions): Pr
 
   // Select model: prefer cheapest (NVIDIA NIM Tier 2) for generation
   let model: LanguageModel | null;
-  let route: { provider: string; model: string; tier: number; available: boolean };
+  let route: ModelRoute;
 
   try {
     const selected = preferCheapest
@@ -104,12 +104,14 @@ export async function generateSwarmFromPrompt(options: GenerateSwarmOptions): Pr
   }
 
   try {
-    const result = await generateObject({
-      model,
-      schema: GeneratedSwarmSchema,
-      system: SYSTEM_PROMPT,
-      prompt: `Design a swarm for: ${prompt}\n\nUse at most ${maxAgents} agents. Be specific about each agent's role and how they connect.`,
-    });
+    const result = await callGenerateObject(
+      { caller: 'swarm-generator', route, model },
+      {
+        schema: GeneratedSwarmSchema,
+        system: SYSTEM_PROMPT,
+        prompt: `Design a swarm for: ${prompt}\n\nUse at most ${maxAgents} agents. Be specific about each agent's role and how they connect.`,
+      },
+    );
 
     const generated = result.object;
     const swarm = convertToSwarm(generated);

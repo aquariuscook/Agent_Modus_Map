@@ -19,6 +19,7 @@ import { createSettingsRoutes } from './routes/settings-routes.js';
 import { createImportRoutes } from './routes/import-routes.js';
 import { createProspectRoutes } from './routes/prospect-routes.js';
 import { createInterviewRoutes } from './routes/interview-routes.js';
+import { getLLMStats, isTelemetryEnabled, getTelemetryLogInfo } from './services/provider-router-service.js';
 import { initKnowledgeBase, seedKnowledgeBase } from './db/knowledge-base.js';
 import { initHealthStore } from './db/health-store.js';
 import { initDecisionTraceStore } from './db/decision-trace-store.js';
@@ -65,6 +66,15 @@ export function createApp(db?: ReturnType<typeof getDb>) {
   // Health check
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString(), llmAvailable: isLLMAvailable() });
+  });
+
+  // LLM telemetry endpoints
+  app.get('/api/llm/stats', (_req, res) => {
+    const since = (_req.query.since as string) || undefined;
+    res.json({ data: getLLMStats(since) });
+  });
+  app.get('/api/llm/telemetry-info', (_req, res) => {
+    res.json({ data: { enabled: isTelemetryEnabled(), log: getTelemetryLogInfo() } });
   });
 
   if (process.env.NODE_ENV === 'production') {

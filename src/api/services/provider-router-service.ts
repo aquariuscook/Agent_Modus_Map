@@ -4,7 +4,10 @@
 // through this single service rather than hardcoded model strings.
 
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+import { generateText, generateObject } from 'ai';
 import type { LanguageModel } from 'ai';
+import type { z } from 'zod';
+import { recordTelemetry, getLLMStats, isTelemetryEnabled, getTelemetryLogInfo } from './llm-telemetry.js';
 
 // ── Provider configuration ──────────────────────────────────────────────────
 
@@ -195,3 +198,101 @@ export function getCheapestModel(complexity: number): { model: LanguageModel | n
     route: { provider: 'nvidia', model: 'meta/llama-3.3-70b-instruct', endpoint: 'https://integrate.api.nvidia.com/v1', tier: 2, available: true, reason: 'Anthropic + OpenAI unavailable, using NVIDIA NIM as degraded fallback' },
   };
 }
+
+// ── Telemetry-wrapped AI SDK calls ──────────────────────────────────────────
+
+export interface CallLLMOptions {
+  /** Who is making this call (e.g. 'interview', 'swarm-generator') */
+  caller: string;
+  /** Provider+route info from getCheapestModel/getModelForTier */
+  route: ModelRoute;
+  /** The LanguageModel from the route */
+  model: LanguageModel;
+}
+
+/**
+ * generateText() with telemetry. Accepts the same options as the SDK,
+ * plus caller/route tracking. Returns the full AI SDK result.
+ */
+export async function callGenerateText(
+  opts: CallLLMOptions,
+  params: Record<string, any>,
+): Promise<any> {
+  const start = Date.now();
+  try {
+    const result = await generateText({ model: opts.model, ...params } as any);
+    const elapsed = Date.now() - start;
+
+    recordTelemetry({
+      caller: opts.caller,
+      provider: opts.route.provider,
+      model: opts.route.model,
+      inputTokens: result.usage?.inputTokens,
+      outputTokens: result.usage?.outputTokens,
+      cachedTokens: result.usage?.inputTokenDetails?.cacheReadTokens,
+      durationMs: elapsed,
+      success: true,
+    });
+
+    return result;
+  } catch (err: any) {
+    const elapsed = Date.now() - start;
+    recordTelemetry({
+      caller: opts.caller,
+      provider: opts.route.provider,
+      model: opts.route.model,
+      inputTokens: undefined,
+      outputTokens: undefined,
+      cachedTokens: undefined,
+      durationMs: elapsed,
+      success: false,
+      error: err.message,
+    });
+    throw err;
+  }
+}
+
+/**
+ * generateObject() with telemetry. Accepts the same options as the SDK,
+ * plus caller/route tracking. Returns the full AI SDK result.
+ */
+export async function callGenerateObject<T extends z.ZodType>(
+  opts: CallLLMOptions,
+  params: Record<string, any> & { schema: T },
+): Promise<any> {
+  const start = Date.now();
+  try {
+    const result = await generateObject({ model: opts.model, ...params } as any);
+    const elapsed = Date.now() - start;
+
+    recordTelemetry({
+      caller: opts.caller,
+      provider: opts.route.provider,
+      model: opts.route.model,
+      inputTokens: result.usage?.inputTokens,
+      outputTokens: result.usage?.outputTokens,
+      cachedTokens: result.usage?.inputTokenDetails?.cacheReadTokens,
+      durationMs: elapsed,
+      success: true,
+    });
+
+    return result;
+  } catch (err: any) {
+    const elapsed = Date.now() - start;
+    recordTelemetry({
+      caller: opts.caller,
+      provider: opts.route.provider,
+      model: opts.route.model,
+      inputTokens: undefined,
+      outputTokens: undefined,
+      cachedTokens: undefined,
+      durationMs: elapsed,
+      success: false,
+      error: err.message,
+    });
+    throw err;
+  }
+}
+
+// Re-export telemetry utilities for consumers that need them
+export { getLLMStats, isTelemetryEnabled, getTelemetryLogInfo };

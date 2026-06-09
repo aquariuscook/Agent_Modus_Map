@@ -1,9 +1,9 @@
 // Interview Engine: State machine + LLM-powered conversational swarm builder
 // Implements ADR-004-A: State machine governs phases, LLM governs language
 // Uses the provider router (ADR-012) for multi-provider LLM access
-import { generateText } from 'ai';
 import type { LanguageModel } from 'ai';
-import { getCheapestModel, NoProviderAvailableError } from './provider-router-service.js';
+import { getCheapestModel, NoProviderAvailableError, callGenerateText } from './provider-router-service.js';
+import type { ModelRoute } from './provider-router-service.js';
 
 export type InterviewPhase = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -358,7 +358,7 @@ RULES:
   if (state.phase === 6 && !state.extracted.swarmConfig) {
     try {
       console.log('[INTERVIEW] Generating swarm config...');
-      const config = await generateSwarmConfig(state, model!);
+      const config = await generateSwarmConfig(state, model!, route!);
       state.extracted.swarmConfig = config;
       console.log(`[INTERVIEW] Config generated: ${config.name}, ${config.agents.length} agents`);
       systemPrompt += `\n\nGenerated swarm configuration:\n${JSON.stringify(config, null, 2)}`;
@@ -372,12 +372,14 @@ RULES:
   }
 
   // Call LLM via provider router (any provider, not just Anthropic)
-  const result = await generateText({
-    model: model!,
-    system: systemPrompt,
-    messages: state.messages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-    maxOutputTokens: 1500,
-  });
+  const result = await callGenerateText(
+    { caller: 'interview', route: route!, model: model! },
+    {
+      system: systemPrompt,
+      messages: state.messages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+      maxOutputTokens: 1500,
+    },
+  );
 
   const assistantMessage = result.text;
 
@@ -430,7 +432,7 @@ RULES:
   };
 }
 
-async function generateSwarmConfig(state: InterviewState, model: LanguageModel): Promise<GeneratedSwarmConfig> {
+async function generateSwarmConfig(state: InterviewState, model: LanguageModel, route: ModelRoute): Promise<GeneratedSwarmConfig> {
   const prompt = `Based on this interview, generate a complete swarm configuration as JSON.
 
 Interview data:
@@ -466,12 +468,14 @@ Output ONLY valid JSON matching this schema:
   "relationships": [{"sourceNickname": "string", "targetNickname": "string", "type": "feedsInto|dependsOn|collaboratesWith|canOverride"}]
 }`;
 
-  const result = await generateText({
-    model,
-    prompt,
-    maxOutputTokens: 4000,
-    temperature: 0.3,
-  });
+  const result = await callGenerateText(
+    { caller: 'interview-config', route, model },
+    {
+      prompt,
+      maxOutputTokens: 4000,
+      temperature: 0.3,
+    },
+  );
 
   const text = result.text;
   const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();

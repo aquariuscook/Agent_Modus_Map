@@ -100,5 +100,23 @@ function initSchema(database: Database.Database): void {
 
     CREATE INDEX IF NOT EXISTS idx_deploy_results_swarm ON deploy_results(swarm_id);
     CREATE INDEX IF NOT EXISTS idx_deploy_results_timestamp ON deploy_results(timestamp);
+
+    CREATE TABLE IF NOT EXISTS llm_calls (
+      id TEXT PRIMARY KEY,
+      ts TEXT NOT NULL DEFAULT (datetime('now')),
+      caller TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      model TEXT NOT NULL,
+      input_tokens INTEGER,
+      output_tokens INTEGER,
+      cached_tokens INTEGER,
+      duration_ms INTEGER,
+      success INTEGER NOT NULL DEFAULT 1,
+      error TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_llm_calls_ts ON llm_calls(ts);
+    CREATE INDEX IF NOT EXISTS idx_llm_calls_caller ON llm_calls(caller);
+    CREATE INDEX IF NOT EXISTS idx_llm_calls_provider ON llm_calls(provider);
   `);
 }
