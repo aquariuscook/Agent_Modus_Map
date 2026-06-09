@@ -201,6 +201,9 @@ export function getCheapestModel(complexity: number): { model: LanguageModel | n
 
 // ── Telemetry-wrapped AI SDK calls ──────────────────────────────────────────
 
+/** Callback for streaming lifecycle updates to callers (e.g. SSE to frontend). */
+export type StatusCallback = (event: { step: string; [key: string]: any }) => void;
+
 export interface CallLLMOptions {
   /** Who is making this call (e.g. 'interview', 'swarm-generator') */
   caller: string;
@@ -208,6 +211,8 @@ export interface CallLLMOptions {
   route: ModelRoute;
   /** The LanguageModel from the route */
   model: LanguageModel;
+  /** Optional callback to emit lifecycle status events (selecting-model, sending-request, etc.) */
+  onStatus?: StatusCallback;
 }
 
 /**
@@ -218,10 +223,46 @@ export async function callGenerateText(
   opts: CallLLMOptions,
   params: Record<string, any>,
 ): Promise<any> {
+  // Emit lifecycle: selecting model
+  opts.onStatus?.({
+    step: 'selecting-model',
+    provider: opts.route.provider,
+    model: opts.route.model,
+    tier: opts.route.tier,
+  });
+
+  // Emit lifecycle: sending request (count messages/tools if available)
+  const messageCount = params.messages?.length ?? (params.prompt ? 1 : 0);
+  const toolCount = params.tools?.length ?? 0;
+  opts.onStatus?.({
+    step: 'sending-request',
+    messageCount,
+    toolCount,
+    provider: opts.route.provider,
+    model: opts.route.model,
+  });
+
+  // Emit lifecycle: waiting for response
+  opts.onStatus?.({
+    step: 'waiting-response',
+    provider: opts.route.provider,
+    model: opts.route.model,
+  });
+
   const start = Date.now();
   try {
     const result = await generateText({ model: opts.model, ...params } as any);
     const elapsed = Date.now() - start;
+
+    // Emit lifecycle: response received
+    opts.onStatus?.({
+      step: 'response-received',
+      durationMs: elapsed,
+      inputTokens: result.usage?.inputTokens,
+      outputTokens: result.usage?.outputTokens,
+      cachedTokens: result.usage?.inputTokenDetails?.cacheReadTokens,
+      provider: opts.route.provider,
+    });
 
     recordTelemetry({
       caller: opts.caller,
@@ -237,6 +278,16 @@ export async function callGenerateText(
     return result;
   } catch (err: any) {
     const elapsed = Date.now() - start;
+
+    // Emit lifecycle: error
+    opts.onStatus?.({
+      step: 'error',
+      durationMs: elapsed,
+      provider: opts.route.provider,
+      model: opts.route.model,
+      error: err.message,
+    });
+
     recordTelemetry({
       caller: opts.caller,
       provider: opts.route.provider,
@@ -260,10 +311,45 @@ export async function callGenerateObject<T extends z.ZodType>(
   opts: CallLLMOptions,
   params: Record<string, any> & { schema: T },
 ): Promise<any> {
+  // Emit lifecycle: selecting model
+  opts.onStatus?.({
+    step: 'selecting-model',
+    provider: opts.route.provider,
+    model: opts.route.model,
+    tier: opts.route.tier,
+  });
+
+  // Emit lifecycle: sending request
+  const promptInfo = params.prompt ? 'single prompt' : `${params.messages?.length ?? 0} messages`;
+  opts.onStatus?.({
+    step: 'sending-request',
+    messageCount: params.messages?.length ?? (params.prompt ? 1 : 0),
+    toolCount: 0,
+    provider: opts.route.provider,
+    model: opts.route.model,
+  });
+
+  // Emit lifecycle: waiting for response
+  opts.onStatus?.({
+    step: 'waiting-response',
+    provider: opts.route.provider,
+    model: opts.route.model,
+  });
+
   const start = Date.now();
   try {
     const result = await generateObject({ model: opts.model, ...params } as any);
     const elapsed = Date.now() - start;
+
+    // Emit lifecycle: response received
+    opts.onStatus?.({
+      step: 'response-received',
+      durationMs: elapsed,
+      inputTokens: result.usage?.inputTokens,
+      outputTokens: result.usage?.outputTokens,
+      cachedTokens: result.usage?.inputTokenDetails?.cacheReadTokens,
+      provider: opts.route.provider,
+    });
 
     recordTelemetry({
       caller: opts.caller,
@@ -279,6 +365,16 @@ export async function callGenerateObject<T extends z.ZodType>(
     return result;
   } catch (err: any) {
     const elapsed = Date.now() - start;
+
+    // Emit lifecycle: error
+    opts.onStatus?.({
+      step: 'error',
+      durationMs: elapsed,
+      provider: opts.route.provider,
+      model: opts.route.model,
+      error: err.message,
+    });
+
     recordTelemetry({
       caller: opts.caller,
       provider: opts.route.provider,

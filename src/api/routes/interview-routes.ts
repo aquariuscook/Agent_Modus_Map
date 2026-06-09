@@ -9,6 +9,7 @@ import {
   processInterviewMessage,
   deployInterviewSwarm,
 } from '../services/interview-service.js';
+import type { StatusCallback } from '../services/provider-router-service.js';
 
 export function createInterviewRoutes(db: Database.Database): Router {
   const router = Router();
@@ -63,6 +64,58 @@ export function createInterviewRoutes(db: Database.Database): Router {
           : isNotFound ? 'This interview session was lost. Start a new one.'
           : 'Try sending your message again. If it keeps failing, start a new interview.',
       });
+    }
+  });
+
+  // POST /api/interview/:id/message-stream - SSE streaming variant
+  // Emits lifecycle status events during LLM call, then a final result event.
+  router.post('/:id/message-stream', async (req: Request, res: Response) => {
+    const { message } = req.body;
+    if (!message?.trim()) {
+      res.status(400).json({ error: 'Message is required' });
+      return;
+    }
+
+    // Set up SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
+    res.flushHeaders();
+
+    // Status callback that writes SSE events to the response
+    const onStatus: StatusCallback = (event) => {
+      try {
+        res.write(`data: ${JSON.stringify({ type: 'status', ...event })}\n\n`);
+      } catch {
+        // Client likely disconnected — swallow write errors
+      }
+    };
+
+    try {
+      const result = await processInterviewMessage(
+        req.params.id as string,
+        message.trim(),
+        { onStatus },
+      );
+
+      // Send final result event
+      res.write(`data: ${JSON.stringify({
+        type: 'result',
+        response: result.response,
+        phase: result.state.phase,
+        phaseAdvanced: result.phaseAdvanced,
+        extracted: result.state.extracted,
+        swarmConfig: result.state.extracted.swarmConfig || null,
+      })}\n\n`);
+    } catch (err: any) {
+      // Send error event
+      res.write(`data: ${JSON.stringify({
+        type: 'error',
+        error: err.message || 'Unknown error',
+      })}\n\n`);
+    } finally {
+      res.end();
     }
   });
 

@@ -678,6 +678,102 @@ export async function sendInterviewMessage(interviewId: string, message: string)
   return postJson(`/interview/${interviewId}/message`, { message });
 }
 
+/** SSE status event emitted during LLM calls */
+export interface InterviewStatusEvent {
+  type: 'status';
+  step: string;
+  provider?: string;
+  model?: string;
+  tier?: number;
+  messageCount?: number;
+  toolCount?: number;
+  durationMs?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  cachedTokens?: number;
+  error?: string;
+}
+
+/** SSE result event (final) */
+export interface InterviewResultEvent {
+  type: 'result';
+  response: string;
+  phase: number;
+  phaseAdvanced: boolean;
+  extracted: Record<string, any>;
+  swarmConfig: any;
+}
+
+/** SSE error event */
+export interface InterviewErrorEvent {
+  type: 'error';
+  error: string;
+}
+
+export type InterviewStreamEvent = InterviewStatusEvent | InterviewResultEvent | InterviewErrorEvent;
+
+/**
+ * Send an interview message via SSE streaming.
+ * Calls onStatus for each lifecycle event, then resolves with the final result.
+ */
+export async function sendInterviewMessageStreaming(
+  interviewId: string,
+  message: string,
+  onStatus: (event: InterviewStatusEvent) => void,
+): Promise<InterviewResultEvent> {
+  const res = await fetch(`${BASE}/interview/${interviewId}/message-stream`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ message }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
+    throw new Error(err.message || err.error || `API error: ${res.status}`);
+  }
+
+  const reader = res.body?.getReader();
+  if (!reader) throw new Error('No response stream');
+
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let finalResult: InterviewResultEvent | null = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        try {
+          const event: InterviewStreamEvent = JSON.parse(line.slice(6));
+          if (event.type === 'status') {
+            onStatus(event);
+          } else if (event.type === 'result') {
+            finalResult = event;
+          } else if (event.type === 'error') {
+            throw new Error(event.error);
+          }
+        } catch (err) {
+          if (err instanceof Error && err.message !== 'Unexpected end of JSON input') {
+            throw err;
+          }
+          // Skip malformed lines
+        }
+      }
+    }
+  }
+
+  if (!finalResult) {
+    throw new Error('Stream ended without a result event');
+  }
+  return finalResult;
+}
+
 export async function deployInterviewSwarm(interviewId: string, name?: string): Promise<{
   swarmId: string;
   swarm: any;
