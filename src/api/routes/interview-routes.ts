@@ -54,10 +54,12 @@ export function createInterviewRoutes(db: Database.Database): Router {
       console.error('[INTERVIEW] Message error:', err.message);
       const msg = err.message || 'Unknown error';
       const isCredits = msg.includes('credit') || msg.includes('balance');
+      const isNoProvider = msg.includes('No LLM provider configured');
       const isNotFound = msg.includes('not found');
-      res.status(isNotFound ? 404 : isCredits ? 402 : 500).json({
+      res.status(isNotFound ? 404 : isCredits ? 402 : isNoProvider ? 503 : 500).json({
         error: msg,
         hint: isCredits ? 'Add API credits at console.anthropic.com'
+          : isNoProvider ? 'Add any LLM API key in Settings (Anthropic, NVIDIA, or OpenAI) to use the interview.'
           : isNotFound ? 'This interview session was lost. Start a new one.'
           : 'Try sending your message again. If it keeps failing, start a new interview.',
       });

@@ -1,6 +1,9 @@
 // Interview Engine: State machine + LLM-powered conversational swarm builder
 // Implements ADR-004-A: State machine governs phases, LLM governs language
-import Anthropic from '@anthropic-ai/sdk';
+// Uses the provider router (ADR-012) for multi-provider LLM access
+import { generateText } from 'ai';
+import type { LanguageModel } from 'ai';
+import { getCheapestModel, NoProviderAvailableError } from './provider-router-service.js';
 
 export type InterviewPhase = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -306,8 +309,19 @@ export async function processInterviewMessage(
   const state = loadState(interviewId);
   if (!state) throw new Error('Interview not found. It may have been deleted.');
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error('Anthropic API key not configured. Add it in Settings.');
+  // Select model via provider router (falls back across providers)
+  let model;
+  let route;
+  try {
+    const selected = getCheapestModel(0.35); // Medium-low complexity for interview
+    model = selected.model;
+    route = selected.route;
+  } catch (err) {
+    if (err instanceof NoProviderAvailableError) {
+      throw new Error('No LLM provider configured. Add an API key in Settings (Anthropic, NVIDIA, or OpenAI).');
+    }
+    throw err;
+  }
 
   // Add user message to history
   state.messages.push({ role: 'user', content: userMessage });
@@ -344,7 +358,7 @@ RULES:
   if (state.phase === 6 && !state.extracted.swarmConfig) {
     try {
       console.log('[INTERVIEW] Generating swarm config...');
-      const config = await generateSwarmConfig(state, apiKey);
+      const config = await generateSwarmConfig(state, model!);
       state.extracted.swarmConfig = config;
       console.log(`[INTERVIEW] Config generated: ${config.name}, ${config.agents.length} agents`);
       systemPrompt += `\n\nGenerated swarm configuration:\n${JSON.stringify(config, null, 2)}`;
@@ -357,19 +371,15 @@ RULES:
     systemPrompt += `\n\nCurrent swarm configuration:\n${JSON.stringify(state.extracted.swarmConfig, null, 2)}`;
   }
 
-  // Call Claude
-  const client = new Anthropic({ apiKey });
-  const response = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 1500,
+  // Call LLM via provider router (any provider, not just Anthropic)
+  const result = await generateText({
+    model: model!,
     system: systemPrompt,
-    messages: state.messages.map(m => ({ role: m.role, content: m.content })),
+    messages: state.messages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+    maxOutputTokens: 1500,
   });
 
-  const assistantMessage = response.content
-    .filter(b => b.type === 'text')
-    .map(b => (b as any).text)
-    .join('');
+  const assistantMessage = result.text;
 
   // Extract phase data from the response
   const phaseDataMatch = assistantMessage.match(/```phase_data\s*([\s\S]*?)```/);
@@ -420,9 +430,7 @@ RULES:
   };
 }
 
-async function generateSwarmConfig(state: InterviewState, apiKey: string): Promise<GeneratedSwarmConfig> {
-  const client = new Anthropic({ apiKey });
-
+async function generateSwarmConfig(state: InterviewState, model: LanguageModel): Promise<GeneratedSwarmConfig> {
   const prompt = `Based on this interview, generate a complete swarm configuration as JSON.
 
 Interview data:
@@ -458,14 +466,14 @@ Output ONLY valid JSON matching this schema:
   "relationships": [{"sourceNickname": "string", "targetNickname": "string", "type": "feedsInto|dependsOn|collaboratesWith|canOverride"}]
 }`;
 
-  const response = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 4000,
+  const result = await generateText({
+    model,
+    prompt,
+    maxOutputTokens: 4000,
     temperature: 0.3,
-    messages: [{ role: 'user', content: prompt }],
   });
 
-  const text = response.content.filter(b => b.type === 'text').map(b => (b as any).text).join('');
+  const text = result.text;
   const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
 
   // Find the JSON object
