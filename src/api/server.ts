@@ -77,7 +77,11 @@ export function createApp(db?: ReturnType<typeof getDb>) {
     res.json({ data: { enabled: isTelemetryEnabled(), log: getTelemetryLogInfo() } });
   });
 
-  if (process.env.NODE_ENV === 'production') {
+    if (isLLMAvailable()) {
+    console.log('LLM integration: enabled (provider-router multi-provider)');
+  } else {
+    console.log('LLM integration: disabled (set NVIDIA_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY to enable)');
+  } if (process.env.NODE_ENV === 'production') {
     const clientDistPath = path.resolve(__dirname, '../../client');
     if (fs.existsSync(clientDistPath)) {
       app.use(express.static(clientDistPath));
@@ -121,9 +125,9 @@ if (isMain) {
   const server = app.listen(port, () => {
     console.log(`Agent Modus Map API running on port ${port}`);
     if (isLLMAvailable()) {
-      console.log('LLM integration: enabled (Claude API)');
+      console.log('LLM integration: enabled (provider-router multi-provider)');
     } else {
-      console.log('LLM integration: disabled (set ANTHROPIC_API_KEY to enable)');
+      console.log('LLM integration: disabled (set NVIDIA_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY to enable)');
     }
   });
 

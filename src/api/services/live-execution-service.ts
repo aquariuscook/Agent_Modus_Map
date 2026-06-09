@@ -1,11 +1,16 @@
 // Stage 4: Live Test Execution
 // Runs real LLM calls through the agent graph, one request at a time
-import Anthropic from '@anthropic-ai/sdk';
+// Routes all LLM calls through provider-router-service (ADR-012)
 import type { Swarm, Agent } from '../../shared/types/index.js';
 import { searchWeb, formatSearchResults, scrapeDirectoryPages } from './web-search-service.js';
 import { getDb } from '../db/database.js';
 import { insertDecisionTrace } from '../db/decision-trace-store.js';
 import { getUserProfile } from '../routes/settings-routes.js';
+import {
+  getCheapestModel,
+  callGenerateText,
+  NoProviderAvailableError,
+} from './provider-router-service.js';
 
 const NON_BUSINESS_DOMAINS = [
   'linkedin.com', 'yelp.com', 'bbb.org', 'google.com', 'facebook.com', 'twitter.com', 'instagram.com', 'tiktok.com', 'pinterest.com',
@@ -50,7 +55,7 @@ export interface LiveExecutionResult {
   agentsTotal: number;
 }
 
-// Pricing per 1M tokens
+// Pricing per 1M tokens (fallback for unknown models)
 const PRICING: Record<string, { input: number; output: number }> = {
   'claude-opus-4-6': { input: 15.0, output: 75.0 },
   'claude-sonnet-4-6': { input: 3.0, output: 15.0 },
@@ -58,6 +63,32 @@ const PRICING: Record<string, { input: number; output: number }> = {
   'claude-sonnet-4-5-20250514': { input: 3.0, output: 15.0 },
   default: { input: 3.0, output: 15.0 },
 };
+
+/** Helper: call provider-router and return { text, inputTokens, outputTokens, model }. */
+async function callLLM(
+  caller: string,
+  system: string,
+  userContent: string,
+  maxTokens: number,
+  temperature = 0.7,
+): Promise<{ text: string; inputTokens: number; outputTokens: number; model: string }> {
+  const { model, route } = getCheapestModel(0.6);
+  const result = await callGenerateText(
+    { caller, route, model },
+    {
+      system,
+      messages: [{ role: 'user', content: userContent }],
+      maxTokens,
+      temperature,
+    },
+  );
+  return {
+    text: result.text || '',
+    inputTokens: result.usage?.inputTokens ?? 0,
+    outputTokens: result.usage?.outputTokens ?? 0,
+    model: route.model,
+  };
+}
 
 export type ProgressCallback = (event: { type: 'progress'; agent: string; step: number; total: number; status: string }) => void;
 
@@ -77,17 +108,7 @@ export async function previewSearch(userInput: string): Promise<{
   results: Array<{ title: string; url: string; description: string; isDirectory: boolean; hasRawContent: boolean }>;
   totalResults: number;
 }> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error('ANTHROPIC_API_KEY not configured.');
-
-  const client = new Anthropic({ apiKey });
-
-  // Generate search queries (same logic as live execution)
-  const queryResponse = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 300,
-    temperature: 0,
-    system: `You generate web search queries that find ACTUAL COMPANY WEBSITES. Not directories, not certification bodies, not news articles, not nonprofit organizations.
+  const querySystem = `You generate web search queries that find ACTUAL COMPANY WEBSITES. Not directories, not certification bodies, not news articles, not nonprofit organizations.
 
 Your job: take the user's request and generate 12 highly specific search queries. Each query should find a REAL COMPANY'S OWN WEBSITE.
 
@@ -111,12 +132,10 @@ If the user mentions "women-owned," add that as a modifier to SOME queries but n
 
 Output exactly 12 queries, one per line. No numbering, no explanation.
 
-CRITICAL: NEVER ask for more information. Output ONLY queries.`,
-    messages: [{ role: 'user', content: userInput }],
-  });
+CRITICAL: NEVER ask for more information. Output ONLY queries.`;
 
-  const queryText = queryResponse.content.filter(b => b.type === 'text').map(b => (b as any).text).join('\n');
-  const queries = queryText.split('\n').map(q => q.trim()).filter(q => q.length > 5).slice(0, 12);
+  const llmResult = await callLLM('live-execution:previewSearch', querySystem, userInput, 300, 0);
+  const queries = llmResult.text.split('\n').map(q => q.trim()).filter(q => q.length > 5).slice(0, 12);
 
   let allResults: Awaited<ReturnType<typeof searchWeb>> = [];
   for (const q of queries) {
@@ -152,12 +171,6 @@ CRITICAL: NEVER ask for more information. Output ONLY queries.`,
 }
 
 async function runLiveExecutionInternal(swarm: Swarm, userInput: string, onProgress?: ProgressCallback): Promise<LiveExecutionResult> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    throw new Error('ANTHROPIC_API_KEY not configured. Set it in your environment to run live tests.');
-  }
-
-  const client = new Anthropic({ apiKey });
   const startedAt = new Date().toISOString();
   const steps: LiveExecutionStep[] = [];
   const dataFlow: Array<{ from: string; to: string; data: string }> = [];
@@ -171,19 +184,20 @@ async function runLiveExecutionInternal(swarm: Swarm, userInput: string, onProgr
   try {
     console.log('[LIVE] Extracting industries and location from query...');
 
-    // Step 1: Have Haiku extract the structured info from the user's plain English query
-    const extractResponse = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 200,
-      temperature: 0,
-      system: `Extract the location and industries from the user's query. Output JSON only, no explanation.
+    // Step 1: Extract the structured info from the user's plain English query
+    const extractResult = await callLLM(
+      'live-execution:extractIndustries',
+      `Extract the location and industries from the user's query. Output JSON only, no explanation.
 Format: {"location": "city/county, state", "industries": ["industry1", "industry2", ...]}
 If no industries specified, infer common ones: healthcare, dental, legal, accounting, real estate, insurance, construction, veterinary.
 If no location specified, use "United States".
 CRITICAL: Output ONLY the JSON. Nothing else.`,
-      messages: [{ role: 'user', content: userInput }],
-    });
-    const extractText = extractResponse.content.filter(b => b.type === 'text').map(b => (b as any).text).join('');
+      userInput,
+      200,
+      0,
+    );
+
+    const extractText = extractResult.text;
     let location = '';
     let industries = ['healthcare', 'dental', 'accounting', 'legal', 'real estate', 'insurance'];
     try {
@@ -196,7 +210,6 @@ CRITICAL: Output ONLY the JSON. Nothing else.`,
     console.log(`[LIVE] Location: ${location}, Industries: ${industries.join(', ')}`);
 
     // Step 2: Build search queries programmatically - search for ACTUAL BUSINESS WEBSITES
-    // Map industries to better search terms that find actual business websites
     const industrySearchTerms: Record<string, string[]> = {
       'dental': ['dental practice', 'dentist office', 'family dentistry'],
       'healthcare': ['medical practice', 'physician office', 'healthcare clinic'],
@@ -226,7 +239,7 @@ CRITICAL: Output ONLY the JSON. Nothing else.`,
     let allResults: Awaited<ReturnType<typeof searchWeb>> = [];
     const seenUrls = new Set<string>();
     for (const q of queries.slice(0, 16)) {
-      const results = await searchWeb(q, 4); // Fewer per query = more industry diversity
+      const results = await searchWeb(q, 4);
       for (const r of results) {
         if (!r.url || seenUrls.has(r.url)) continue;
         seenUrls.add(r.url);
@@ -314,7 +327,7 @@ CRITICAL: Output ONLY the JSON. Nothing else.`,
         const contactUrls: string[] = [];
         for (const url of companyUrls) {
           const base = url.replace(/\/$/, '');
-          contactUrls.push(base); // Home page (many small biz have email right there)
+          contactUrls.push(base);
           contactUrls.push(base + '/contact');
           contactUrls.push(base + '/about');
         }
@@ -329,11 +342,10 @@ CRITICAL: Output ONLY the JSON. Nothing else.`,
 
           if (extractRes.ok) {
             const extractData = await extractRes.json() as any;
-            const pageResults = extractData.results || [];
             const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
             const contactParts: string[] = [];
 
-            for (const page of pageResults) {
+            for (const page of (extractData.results || [])) {
               if (!page.raw_content) continue;
               const emails: string[] = (page.raw_content.match(emailRegex) || [])
                 .filter((e: string) => !e.includes('example.com') && !e.includes('sentry') && !e.includes('webpack') && !e.startsWith('email@') && !e.startsWith('name@') && !e.startsWith('not@'));
@@ -357,8 +369,10 @@ CRITICAL: Output ONLY the JSON. Nothing else.`,
       sharedSearchContext = '\n\n=== REAL WEB SEARCH RESULTS ===\nBELOW ARE ACTUAL BUSINESS WEBSITES found by searching. List EVERY business you find.\n\nCRITICAL RULES:\n1. ONLY list companies whose website URL appears in these results. Do NOT make up companies.\n2. Include the website URL for every company.\n3. Include any emails found in scraped content.\n4. Be CONCISE. For each company: name, website, industry, location, phone, email. One line per company. Do NOT write paragraphs.\n5. List as many companies as possible. Quantity matters.\n6. Do NOT fabricate companies from your training data.\n\n' + formatSearchResults(allResults) + '\n\n=== END SEARCH RESULTS ===' + contactData;
       console.log(`[LIVE] Found ${allResults.length} search results (deduped) to share with all agents`);
     }
-    // Token tracking for search query generation happens after main variables are declared
   } catch (err) {
+    if (err instanceof NoProviderAvailableError) {
+      throw new Error('No LLM provider available. Set NVIDIA_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY in Settings.');
+    }
     console.log('[LIVE] Search query generation failed, continuing without search:', (err as Error).message);
   }
 
@@ -386,7 +400,6 @@ CRITICAL: Output ONLY the JSON. Nothing else.`,
 
     const config = agent.config as Record<string, any>;
     const modelConfig = config.modelConfig || {};
-    const model = 'claude-haiku-4-5-20251001';
     const temperature = modelConfig.temperature ?? 0.7;
     const isEntryAgent = entryAgents.some(e => e.id === agent.id);
     const isProfileAgent = agent.nickname.toLowerCase() === 'profile';
@@ -398,29 +411,23 @@ CRITICAL: Output ONLY the JSON. Nothing else.`,
 
     const stepStart = Date.now();
     let step: LiveExecutionStep;
-    console.log(`[LIVE] Agent ${stepOrder + 1}: ${agent.nickname} (${model}, max ${maxTokens} tokens)...`);
+    console.log(`[LIVE] Agent ${stepOrder + 1}: ${agent.nickname} (max ${maxTokens} tokens)...`);
 
     try {
       const truncatedInput = input.slice(0, 12000);
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30000);
 
-      const response = await client.messages.create({
-        model,
-        max_tokens: maxTokens,
+      const llmResult = await callLLM(
+        `live-execution:agent:${agent.nickname}`,
+        systemPrompt,
+        truncatedInput,
+        maxTokens,
         temperature,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: truncatedInput }],
-      });
-      clearTimeout(timeout);
+      );
 
-      const output = response.content
-        .filter(block => block.type === 'text')
-        .map(block => (block as any).text)
-        .join('\n');
-
-      const inputTokens = response.usage?.input_tokens || 0;
-      const outputTokens = response.usage?.output_tokens || 0;
+      const output = llmResult.text;
+      const model = llmResult.model;
+      const inputTokens = llmResult.inputTokens;
+      const outputTokens = llmResult.outputTokens;
       const pricing = PRICING[model] || PRICING.default;
       const cost = (inputTokens * pricing.input + outputTokens * pricing.output) / 1_000_000;
 
@@ -470,7 +477,7 @@ CRITICAL: Output ONLY the JSON. Nothing else.`,
         agentId: agent.id,
         nickname: agent.nickname,
         order: stepOrder++,
-        model,
+        model: 'unknown',
         input: input.slice(0, 500),
         output: '',
         durationMs: Date.now() - stepStart,
@@ -512,8 +519,8 @@ CRITICAL: Output ONLY the JSON. Nothing else.`,
           },
           {
             stage: 'reasoning',
-            content: `Core task: ${(config.coreTask || 'Process input according to role').slice(0, 200)}. Autonomy: ${config.autonomyLevel || 'autonomous'}. Model: ${model}.`,
-            data: { model, temperature, maxTokens, autonomy: config.autonomyLevel || 'autonomous' },
+            content: `Core task: ${(config.coreTask || 'Process input according to role').slice(0, 200)}. Autonomy: ${config.autonomyLevel || 'autonomous'}. Model: ${step.model}.`,
+            data: { model: step.model, temperature, maxTokens, autonomy: config.autonomyLevel || 'autonomous' },
             timestamp: now,
           },
           {
@@ -591,22 +598,19 @@ CRITICAL: Output ONLY the JSON. Nothing else.`,
       onProgress?.({ type: 'progress', agent: 'Command', step: stepOrder + 1, total: stepOrder + 1, status: 'running' });
 
       try {
-        const response = await client.messages.create({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 8000,
-          temperature: 0.3,
-          system: systemPrompt,
-          messages: [{ role: 'user', content: commandInput.slice(0, 12000) }],
-        });
+        const llmResult = await callLLM(
+          'live-execution:command',
+          systemPrompt,
+          commandInput.slice(0, 12000),
+          8000,
+          0.3,
+        );
 
-        const output = response.content
-          .filter(block => block.type === 'text')
-          .map(block => (block as any).text)
-          .join('\n');
-
-        const inputTokens = response.usage?.input_tokens || 0;
-        const outputTokens = response.usage?.output_tokens || 0;
-        const pricing = PRICING['claude-haiku-4-5-20251001'] || PRICING.default;
+        const output = llmResult.text;
+        const model = llmResult.model;
+        const inputTokens = llmResult.inputTokens;
+        const outputTokens = llmResult.outputTokens;
+        const pricing = PRICING[model] || PRICING.default;
         const cost = (inputTokens * pricing.input + outputTokens * pricing.output) / 1_000_000;
         totalInputTokens += inputTokens;
         totalOutputTokens += outputTokens;
@@ -616,7 +620,7 @@ CRITICAL: Output ONLY the JSON. Nothing else.`,
           agentId: commandAgent.id,
           nickname: 'Command',
           order: stepOrder++,
-          model: 'claude-haiku-4-5-20251001',
+          model,
           input: commandInput.slice(0, 500),
           output,
           durationMs: Date.now() - stepStart,
@@ -637,7 +641,7 @@ CRITICAL: Output ONLY the JSON. Nothing else.`,
           agentId: commandAgent.id,
           nickname: 'Command',
           order: stepOrder++,
-          model: 'claude-haiku-4-5-20251001',
+          model: 'unknown',
           input: commandInput.slice(0, 500),
           output: '',
           durationMs: Date.now() - stepStart,
@@ -662,7 +666,7 @@ CRITICAL: Output ONLY the JSON. Nothing else.`,
           timestamp: now,
           stages: [
             { stage: 'observation', content: `Received combined output from ${combinedParts.length} upstream agents: ${keyAgents.filter(n => agentOutputs.has(n)).join(', ')}`, data: { sourceAgents: combinedParts.length }, timestamp: now },
-            { stage: 'reasoning', content: 'Aggregating all agent outputs into structured JSON for the prospect dashboard. Deduplicating, scoring, and generating outreach emails.', data: { model: 'claude-haiku-4-5-20251001', maxTokens: 4000 }, timestamp: now },
+            { stage: 'reasoning', content: 'Aggregating all agent outputs into structured JSON for the prospect dashboard. Deduplicating, scoring, and generating outreach emails.', data: { model: cmdStep.model, maxTokens: 8000 }, timestamp: now },
             { stage: 'action', content: cmdStep.status === 'success' ? `Generated ${cmdStep.output?.length || 0} chars of structured JSON.` : `Failed: ${cmdStep.error}`, data: { outputLength: cmdStep.output?.length || 0 }, timestamp: now },
             { stage: 'outcome', content: cmdStep.status === 'success' ? 'Dashboard data ready for display.' : 'Dashboard will use fallback extraction from individual agent outputs.', data: { status: cmdStep.status }, timestamp: now },
           ],
@@ -731,7 +735,6 @@ function buildSystemPrompt(agent: Agent, config: Record<string, any>): string {
 function generateSearchQueries(input: string, coreTask: string): string[] {
   const lower = (input + ' ' + coreTask).toLowerCase();
 
-  // Extract location phrases (greedy, handles multi-word like "Long Island New York")
   const locPatterns = [
     /on (long island[^,.]*)/, /in (long island[^,.]*)/, /in (nassau[^,.]*)/, /in (suffolk[^,.]*)/,
     /on ([a-z]+ island[^,.]*)/, /in ([a-z ]{3,30}(?:new york|ny|california|ca|texas|tx|florida|fl)[^,.]*)/,
@@ -745,12 +748,10 @@ function generateSearchQueries(input: string, coreTask: string): string[] {
 
   const queries: string[] = [];
 
-  // Extract industries mentioned
   const industries = ['healthcare', 'finance', 'legal', 'real estate', 'manufacturing', 'professional services', 'insurance', 'retail'];
   const mentionedIndustries = industries.filter(i => lower.includes(i));
 
   if (location) {
-    // Directory and LinkedIn searches for actual companies
     queries.push(`site:bbb.org "${location}" business directory`);
     if (mentionedIndustries.length > 0) {
       queries.push(`"${location}" ${mentionedIndustries.slice(0, 2).join(' OR ')} companies employees`);

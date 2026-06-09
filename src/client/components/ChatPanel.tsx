@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { askCopilot } from '../api.js';
+import { askCopilotStreaming, type CopilotStatusEvent } from '../api.js';
 import { Logo } from './Logo.js';
 
 interface ChatMessage {
@@ -14,6 +14,69 @@ interface ChatPanelProps {
   onHighlightAgents?: (nicknames: string[]) => void;
 }
 
+// ── Activity log line (matches InterviewPanel pattern) ─────────────────────
+
+const STEP_LABELS: Record<string, string> = {
+  'selecting-model': 'Selecting model',
+  'sending-request': 'Sending request',
+  'waiting-response': 'Waiting for response',
+  'response-received': 'Response received',
+  'error': 'Error',
+};
+
+const STEP_ICONS: Record<string, string> = {
+  'selecting-model': '🔍',
+  'sending-request': '📤',
+  'waiting-response': '⏳',
+  'response-received': '✅',
+  'error': '❌',
+};
+
+function ActivityLine({ event, isLatest }: { event: CopilotStatusEvent; isLatest: boolean }) {
+  const label = STEP_LABELS[event.step] || event.step;
+  const icon = STEP_ICONS[event.step] || '•';
+  const parts: string[] = [];
+
+  if (event.provider) {
+    const modelName = event.model?.split('/').pop() || event.model || '';
+    parts.push(`${event.provider}/${modelName}`);
+  }
+  if (event.messageCount != null) {
+    parts.push(`${event.messageCount} msg${event.messageCount !== 1 ? 's' : ''}`);
+  }
+  if (event.durationMs != null) {
+    parts.push(event.durationMs >= 1000 ? `${(event.durationMs / 1000).toFixed(1)}s` : `${event.durationMs}ms`);
+  }
+  if (event.inputTokens != null) {
+    const inK = event.inputTokens >= 1000 ? `${(event.inputTokens / 1000).toFixed(1)}k` : `${event.inputTokens}`;
+    const outK = event.outputTokens != null
+      ? (event.outputTokens >= 1000 ? `${(event.outputTokens / 1000).toFixed(1)}k` : `${event.outputTokens}`)
+      : '';
+    parts.push(`${inK}${outK ? `→${outK}` : ''} tok`);
+  }
+  if (event.error) {
+    parts.push(event.error);
+  }
+
+  return (
+    <div style={{
+      fontSize: 11, lineHeight: 1.4,
+      color: isLatest ? 'var(--text-secondary)' : 'var(--text-tertiary)',
+      display: 'flex', gap: 5, alignItems: 'baseline',
+      animation: isLatest ? 'fadeIn 0.2s ease-out' : 'none',
+      opacity: isLatest ? 1 : 0.6,
+    }}>
+      <span style={{ flexShrink: 0 }}>{icon}</span>
+      <span style={{ fontWeight: isLatest ? 500 : 400 }}>{label}</span>
+      {parts.length > 0 && (
+        <span style={{ color: 'var(--text-tertiary)' }}>{parts.join(' · ')}</span>
+      )}
+    </div>
+  );
+}
+
+// ── Component ──────────────────────────────────────────────────────────────
+
 export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([{
     role: 'assistant',
@@ -21,11 +84,12 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
   }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [statusEvents, setStatusEvents] = useState<CopilotStatusEvent[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, statusEvents]);
 
   async function handleSend() {
     const question = input.trim();
@@ -34,24 +98,32 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
     setInput('');
     setMessages(prev => [...prev, { role: 'user', content: question }]);
     setLoading(true);
+    setStatusEvents([]);
 
     try {
-      // Build conversation history for the copilot (exclude the welcome message)
       const history = [...messages.slice(1), { role: 'user' as const, content: question }]
         .map(m => ({ role: m.role, content: m.content }));
 
-      const response = await askCopilot(history, swarmId);
+      const result = await askCopilotStreaming(history, swarmId, (event) => {
+        setStatusEvents(prev => [...prev, event]);
+      });
+
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: response.answer,
+        content: result.answer,
       }]);
-    } catch {
+    } catch (err: any) {
+      const msg = err.message || 'Something went wrong.';
+      const isConfig = msg.includes('API key') || msg.includes('Add any');
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'I need a Claude API key to work. Go to Settings and add your Anthropic API key.',
+        content: isConfig
+          ? 'Add any LLM API key in Settings (Anthropic, NVIDIA, or OpenAI) to use the copilot.'
+          : `Error: ${msg}`,
       }]);
     } finally {
       setLoading(false);
+      setStatusEvents([]);
     }
   }
 
@@ -109,7 +181,7 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
         <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-accent)' }}>Copilot</span>
         <button onClick={onToggle} style={{
           background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 18,
-        }}>{'\u00D7'}</button>
+        }}>{'×'}</button>
       </div>
 
       {/* Messages */}
@@ -131,12 +203,20 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
               <div style={{ fontSize: 13, color: 'var(--text-primary)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
                 {msg.content}
               </div>
-
             </div>
           </div>
         ))}
-        {loading && (
-          <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontStyle: 'italic' }}>Thinking...</div>
+
+        {/* Activity log during loading */}
+        {loading && statusEvents.length > 0 && (
+          <div style={{ padding: '4px 0 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {statusEvents.map((evt, i) => (
+              <ActivityLine key={i} event={evt} isLatest={i === statusEvents.length - 1} />
+            ))}
+          </div>
+        )}
+        {loading && statusEvents.length === 0 && (
+          <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontStyle: 'italic' }}>Connecting...</div>
         )}
         <div ref={messagesEndRef} />
       </div>

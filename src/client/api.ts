@@ -655,6 +655,98 @@ export async function askCopilot(messages: Array<{ role: string; content: string
   return postJson('/intelligence/copilot', { messages, swarmId });
 }
 
+/** SSE status event emitted during copilot LLM calls */
+export interface CopilotStatusEvent {
+  type: 'status';
+  step: string;
+  provider?: string;
+  model?: string;
+  tier?: number;
+  messageCount?: number;
+  toolCount?: number;
+  durationMs?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  cachedTokens?: number;
+  error?: string;
+}
+
+/** SSE result event (final) for copilot */
+export interface CopilotResultEvent {
+  type: 'result';
+  answer: string;
+  usage?: { inputTokens?: number; outputTokens?: number };
+}
+
+/** SSE error event for copilot */
+export interface CopilotErrorEvent {
+  type: 'error';
+  error: string;
+}
+
+export type CopilotStreamEvent = CopilotStatusEvent | CopilotResultEvent | CopilotErrorEvent;
+
+/**
+ * Send a copilot message via SSE streaming.
+ * Calls onStatus for each lifecycle event, then resolves with the final result.
+ */
+export async function askCopilotStreaming(
+  messages: Array<{ role: string; content: string }>,
+  swarmId: string | undefined,
+  onStatus: (event: CopilotStatusEvent) => void,
+): Promise<CopilotResultEvent> {
+  const res = await fetch(`${BASE}/intelligence/copilot-stream`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ messages, swarmId }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
+    throw new Error(err.message || err.error || `API error: ${res.status}`);
+  }
+
+  const reader = res.body?.getReader();
+  if (!reader) throw new Error('No response stream');
+
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let finalResult: CopilotResultEvent | null = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        try {
+          const event: CopilotStreamEvent = JSON.parse(line.slice(6));
+          if (event.type === 'status') {
+            onStatus(event);
+          } else if (event.type === 'result') {
+            finalResult = event;
+          } else if (event.type === 'error') {
+            throw new Error(event.error);
+          }
+        } catch (err) {
+          if (err instanceof Error && err.message !== 'Unexpected end of JSON input') {
+            throw err;
+          }
+        }
+      }
+    }
+  }
+
+  if (!finalResult) {
+    throw new Error('Stream ended without a result event');
+  }
+  return finalResult;
+}
+
 // Interview Engine
 export async function listInterviews(): Promise<Array<{ id: string; phase: number; goal: string; updatedAt: string }>> {
   return fetchJson('/interview/list');

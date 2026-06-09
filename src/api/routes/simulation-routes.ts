@@ -6,6 +6,7 @@ import { estimateSwarmCost } from '../services/cost-estimation-service.js';
 import { deploySwarm, pauseSwarm, resumeSwarm, stopSwarm, getDeployStatus, getRunHistory, getAllDeployments, getAllResults, setRuntimeDb, deleteRunResult, clearRunHistory } from '../services/swarm-runtime-service.js';
 import { runLiveExecution, runLiveExecutionStreaming, previewSearch } from '../services/live-execution-service.js';
 import { generateSwarmPackage } from '../services/swarm-export-service.js';
+import { isLLMAvailable } from '../services/llm-service.js';
 import { requireCapability } from '../services/license-service.js';
 
 export function createSimulationRoutes(db: Database.Database): Router {
@@ -93,7 +94,7 @@ export function createSimulationRoutes(db: Database.Database): Router {
 
   // GET /api/simulate/status - check if LLM is available
   router.get('/status/llm', (_req, res) => {
-    res.json({ available: !!process.env.ANTHROPIC_API_KEY });
+    res.json({ available: isLLMAvailable() });
   });
 
   // === DEPLOY / RUNTIME ROUTES ===

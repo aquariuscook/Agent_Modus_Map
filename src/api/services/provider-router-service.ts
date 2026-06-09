@@ -157,11 +157,11 @@ export function listProviders(): Array<ProviderConfig & { available: boolean }> 
  * Get the cheapest available model for a given complexity level.
  * Falls back through providers if the preferred one isn't available.
  */
-export function getCheapestModel(complexity: number): { model: LanguageModel | null; route: ModelRoute } {
+export function getCheapestModel(complexity: number): { model: LanguageModel; route: ModelRoute } {
   // Low complexity: try NVIDIA first, then OpenAI, then Anthropic
   if (complexity < 0.5) {
     const nim = getModelForTier(2);
-    if (nim.model) return nim;
+    if (nim.model) return { model: nim.model, route: nim.route };
 
     // Fallback to OpenAI mini
     const openai = getModel('openai', 'gpt-4o-mini');
@@ -181,7 +181,7 @@ export function getCheapestModel(complexity: number): { model: LanguageModel | n
 
   // High complexity: try Tier 3 first, then degrade to cheaper providers
   const anthropic = getModelForTier(3);
-  if (anthropic.model) return anthropic;
+  if (anthropic.model) return { model: anthropic.model, route: anthropic.route };
 
   // Fallback to OpenAI gpt-4o (near-Tier-3 quality)
   const openai = getModel('openai', 'gpt-4o');

@@ -345,6 +345,9 @@ export async function processInterviewMessage(
   // Build the system prompt for this phase
   const configuredKeys: string[] = [];
   if (process.env.ANTHROPIC_API_KEY) configuredKeys.push('anthropic');
+  if (process.env.NVIDIA_API_KEY) configuredKeys.push('nvidia');
+  if (process.env.OPENAI_API_KEY) configuredKeys.push('openai');
+  if (process.env.GOOGLE_API_KEY) configuredKeys.push('google');
   if (process.env.TAVILY_API_KEY) configuredKeys.push('tavily');
   if (process.env.HUNTER_API_KEY) configuredKeys.push('hunter');
 

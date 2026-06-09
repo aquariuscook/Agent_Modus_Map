@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { askCopilot } from '../api.js';
+import { askCopilotStreaming, type CopilotStatusEvent } from '../api.js';
 
 // --- Types ---
 
@@ -27,6 +27,67 @@ interface TimeSlot {
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+}
+
+// --- Activity Log (matches InterviewPanel pattern) ---
+
+const STEP_LABELS: Record<string, string> = {
+  'selecting-model': 'Selecting model',
+  'sending-request': 'Sending request',
+  'waiting-response': 'Waiting for response',
+  'response-received': 'Response received',
+  'error': 'Error',
+};
+
+const STEP_ICONS: Record<string, string> = {
+  'selecting-model': '🔍',
+  'sending-request': '📤',
+  'waiting-response': '⏳',
+  'response-received': '✅',
+  'error': '❌',
+};
+
+function ActivityLine({ event, isLatest }: { event: CopilotStatusEvent; isLatest: boolean }) {
+  const label = STEP_LABELS[event.step] || event.step;
+  const icon = STEP_ICONS[event.step] || '•';
+  const parts: string[] = [];
+
+  if (event.provider) {
+    const modelName = event.model?.split('/').pop() || event.model || '';
+    parts.push(`${event.provider}/${modelName}`);
+  }
+  if (event.messageCount != null) {
+    parts.push(`${event.messageCount} msg${event.messageCount !== 1 ? 's' : ''}`);
+  }
+  if (event.durationMs != null) {
+    parts.push(event.durationMs >= 1000 ? `${(event.durationMs / 1000).toFixed(1)}s` : `${event.durationMs}ms`);
+  }
+  if (event.inputTokens != null) {
+    const inK = event.inputTokens >= 1000 ? `${(event.inputTokens / 1000).toFixed(1)}k` : `${event.inputTokens}`;
+    const outK = event.outputTokens != null
+      ? (event.outputTokens >= 1000 ? `${(event.outputTokens / 1000).toFixed(1)}k` : `${event.outputTokens}`)
+      : '';
+    parts.push(`${inK}${outK ? `→${outK}` : ''} tok`);
+  }
+  if (event.error) {
+    parts.push(event.error);
+  }
+
+  return (
+    <div style={{
+      fontSize: 11, lineHeight: 1.4,
+      color: isLatest ? 'var(--text-secondary, #94a3b8)' : 'var(--text-tertiary, #64748b)',
+      display: 'flex', gap: 5, alignItems: 'baseline',
+      animation: isLatest ? 'fadeIn 0.2s ease-out' : 'none',
+      opacity: isLatest ? 1 : 0.6,
+    }}>
+      <span style={{ flexShrink: 0 }}>{icon}</span>
+      <span style={{ fontWeight: isLatest ? 500 : 400 }}>{label}</span>
+      {parts.length > 0 && (
+        <span style={{ color: 'var(--text-tertiary, #64748b)' }}>{parts.join(' · ')}</span>
+      )}
+    </div>
+  );
 }
 
 // --- Constants ---
@@ -91,6 +152,7 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
   ]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
+  const [chatStatusEvents, setChatStatusEvents] = useState<CopilotStatusEvent[]>([]);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [editingSlot, setEditingSlot] = useState<number | null>(null);
   const [slotInput, setSlotInput] = useState('');
@@ -100,7 +162,7 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
   // Persist state
   useEffect(() => { localStorage.setItem(storageKey(swarmId, 'tasks'), JSON.stringify(tasks)); }, [tasks, swarmId]);
   useEffect(() => { localStorage.setItem(storageKey(swarmId, 'schedule'), JSON.stringify(schedule)); }, [schedule, swarmId]);
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatMessages]);
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatMessages, chatStatusEvents]);
 
   // Stats
   const todayTasks = tasks.filter(t => t.column !== 'done').length;
@@ -114,7 +176,7 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
     setExtracting(true);
     try {
       const prompt = `Extract all action items, decisions, and follow-ups from this meeting transcript. For each item, provide: task description, priority (P1/P2/P3), suggested due date (YYYY-MM-DD). Output ONLY a JSON array with objects like: {"title": "...", "priority": "P1", "dueDate": "2026-04-15"}. No markdown fences.\n\nTranscript:\n${transcript}`;
-      const res = await askCopilot([{ role: 'user', content: prompt }], swarmId);
+      const res = await askCopilotStreaming([{ role: 'user', content: prompt }], swarmId, () => {});
       const cleaned = res.answer.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       const parsed: Array<{ title: string; priority: string; dueDate: string }> = JSON.parse(cleaned);
       const items: Task[] = parsed.map(item => ({
@@ -160,15 +222,24 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
     setChatInput('');
     setChatMessages(prev => [...prev, { role: 'user', content: text }]);
     setChatLoading(true);
+    setChatStatusEvents([]);
     try {
       const history = [...chatMessages.slice(1), { role: 'user' as const, content: text }]
         .map(m => ({ role: m.role, content: m.content }));
-      const res = await askCopilot(history, swarmId);
+      const res = await askCopilotStreaming(history, swarmId, (event) => {
+        setChatStatusEvents(prev => [...prev, event]);
+      });
       setChatMessages(prev => [...prev, { role: 'assistant', content: res.answer }]);
-    } catch {
-      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Could not reach the assistant. Check that your API key is configured in Settings.' }]);
+    } catch (err: any) {
+      const msg = err.message || 'Error reaching assistant.';
+      const isConfig = msg.includes('API key') || msg.includes('Add any');
+      setChatMessages(prev => [...prev, { role: 'assistant', content: isConfig
+        ? 'Add any LLM API key in Settings (Anthropic, NVIDIA, or OpenAI) to use the assistant.'
+        : msg,
+      }]);
     } finally {
       setChatLoading(false);
+      setChatStatusEvents([]);
     }
   }, [chatInput, chatLoading, chatMessages, swarmId]);
 
@@ -177,14 +248,18 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
     if (!taskList) return;
     setChatMessages(prev => [...prev, { role: 'user', content: 'Plan my day based on my current tasks.' }]);
     setChatLoading(true);
+    setChatStatusEvents([]);
     try {
       const prompt = `Here are my current tasks:\n${taskList}\n\nPrioritize these for my day. Suggest a time-blocked schedule from 8am to 6pm. Be concise.`;
-      const res = await askCopilot([{ role: 'user', content: prompt }], swarmId);
+      const res = await askCopilotStreaming([{ role: 'user', content: prompt }], swarmId, (event) => {
+        setChatStatusEvents(prev => [...prev, event]);
+      });
       setChatMessages(prev => [...prev, { role: 'assistant', content: res.answer }]);
     } catch {
       setChatMessages(prev => [...prev, { role: 'assistant', content: 'Could not plan your day right now.' }]);
     } finally {
       setChatLoading(false);
+      setChatStatusEvents([]);
     }
   }, [tasks, swarmId]);
 
@@ -450,9 +525,16 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
               </div>
             </div>
           ))}
-          {chatLoading && (
-            <div style={{ fontSize: 12, color: 'var(--text-secondary, #94a3b8)', padding: '4px 12px' }}>Thinking...</div>
-          )}
+          {chatLoading && chatStatusEvents.length > 0 && (
+          <div style={{ padding: '4px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {chatStatusEvents.map((evt, i) => (
+              <ActivityLine key={i} event={evt} isLatest={i === chatStatusEvents.length - 1} />
+            ))}
+          </div>
+        )}
+        {chatLoading && chatStatusEvents.length === 0 && (
+          <div style={{ fontSize: 12, color: 'var(--text-secondary, #94a3b8)', padding: '4px 12px' }}>Connecting...</div>
+        )}
           <div ref={chatEndRef} />
         </div>
         <div style={{ padding: 10, borderTop: '1px solid var(--border-default, #1e293b)', display: 'flex', gap: 6 }}>

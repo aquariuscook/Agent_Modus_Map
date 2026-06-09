@@ -16,6 +16,7 @@ import {
 } from '../services/prospect-service.js';
 import { getUserProfile } from './settings-routes.js';
 import { requireCapability } from '../services/license-service.js';
+import { getCheapestModel, callGenerateText, NoProviderAvailableError } from '../services/provider-router-service.js';
 
 type ProspectStatus =
   | 'new'
@@ -432,14 +433,7 @@ export function createProspectRoutes(): Router {
         return;
       }
 
-      const apiKey = process.env.ANTHROPIC_API_KEY;
-      if (!apiKey) {
-        res.status(500).json({ error: 'config', message: 'ANTHROPIC_API_KEY not set.' });
-        return;
-      }
-
-      const Anthropic = (await import('@anthropic-ai/sdk')).default;
-      const client = new Anthropic({ apiKey });
+ const { model, route } = getCheapestModel(0.6);
 
       const voiceInstruction = profile.voiceSample
         ? `\n=== VOICE SAMPLE (match this writing style exactly) ===\n${profile.voiceSample}\n=== END VOICE SAMPLE ===\nIMPORTANT: Write ALL emails in the same voice, tone, and style as the sample above. If the sample is casual and direct, be casual and direct. If it uses humor, use humor. Do NOT default to corporate speak. Match the personality.`
@@ -489,14 +483,16 @@ Rules:
 
 Output ONLY valid JSON: {"professional":{"subject":"...","body":"..."},"conversational":{"subject":"...","body":"..."},"valueLead":{"subject":"...","body":"..."},"direct":{"subject":"...","body":"..."}}`;
 
-      const response = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 3000,
-        temperature: 0.7,
-        messages: [{ role: 'user', content: prompt }],
-      });
+ const result = await callGenerateText(
+   { caller: 'prospect-routes:regenerate-emails', route, model },
+   {
+     messages: [{ role: 'user', content: prompt }],
+     maxTokens: 3000,
+     temperature: 0.7,
+   },
+ );
 
-      const text = response.content.filter(b => b.type === 'text').map(b => (b as any).text).join('');
+ const text = result.text || '';
       const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
       const jsonMatch = cleaned.match(/\{[\s\S]*"professional"[\s\S]*\}/);
 
@@ -518,7 +514,7 @@ Output ONLY valid JSON: {"professional":{"subject":"...","body":"..."},"conversa
       // We need to save back - use saveProspect which does delete+insert
       await saveProspect({ ...prospect, outreach });
 
-      res.json({ data: { outreach, cost: response.usage } });
+      res.json({ data: { outreach, cost: result.usage } });
     } catch (err: any) {
       console.error('Error regenerating emails:', err);
       res.status(500).json({ error: 'internal', message: err.message || 'Failed to regenerate emails.' });
