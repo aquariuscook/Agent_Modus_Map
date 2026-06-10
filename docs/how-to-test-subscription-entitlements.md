@@ -51,10 +51,10 @@ const token = `test-google:${Buffer.from(JSON.stringify(payload)).toString('base
 
 | `plan` value | Result | What unlocks |
 |---|---|---|
-| *(omit)* | `free` / `unverified` | Nothing — same as no Paddle key |
-| `starter` | Starter tier | Basic paid features |
-| `pro` | Pro tier | Interview, traces, live simulation, deploy |
-| `enterprise` | Enterprise tier | All features including prospect export |
+| *(omit)* | `free` / `unverified` | `traces.capture` only — agent decisions are recorded but not viewable |
+| `starter` | Starter tier | + `traces.view`, `prospects.view`, `interview.view`, `templates.full`, `simulation.live`, `docs.handoff`, `deploy.once` |
+| `pro` | Pro tier | + `traces.patterns`, `prospects.generate`, `prospects.export`, `interview.conduct`, `deploy.scheduled`, `support.priority` |
+| `enterprise` | Enterprise tier | + `auth.sso`, `branding.whiteLabel`, `hosting.selfHosted` |
 
 ### Using it with the API
 

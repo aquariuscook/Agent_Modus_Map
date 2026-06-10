@@ -10,7 +10,7 @@ export function createDecisionTraceRoutes(db: Database.Database): Router {
   const router = Router();
 
   // GET /api/traces/:swarmId
-  router.get('/:swarmId', requireCapability('traces.read'), (req, res) => {
+  router.get('/:swarmId', requireCapability('traces.view'), (req, res) => {
     const swarmId = String(req.params.swarmId);
     const { agentId, tag, limit, offset } = req.query;
     const traces = getDecisionTraces(db, swarmId, {
@@ -23,20 +23,20 @@ export function createDecisionTraceRoutes(db: Database.Database): Router {
   });
 
   // GET /api/traces/:swarmId/patterns
-  router.get('/:swarmId/patterns', requireCapability('traces.read'), (req, res) => {
+  router.get('/:swarmId/patterns', requireCapability('traces.patterns'), (req, res) => {
     const patterns = detectTracePatterns(db, String(req.params.swarmId));
     res.json({ data: patterns });
   });
 
   // GET /api/traces/:swarmId/:traceId
-  router.get('/:swarmId/:traceId', requireCapability('traces.read'), (req, res) => {
+  router.get('/:swarmId/:traceId', requireCapability('traces.view'), (req, res) => {
     const trace = getDecisionTrace(db, String(req.params.traceId));
     if (!trace) return res.status(404).json({ error: 'Trace not found' });
     res.json({ data: trace });
   });
 
   // POST /api/traces/:swarmId
-  router.post('/:swarmId', requireCapability('traces.write'), (req, res) => {
+  router.post('/:swarmId', requireCapability('traces.capture'), (req, res) => {
     const { agentId, agentNickname, title, stages, tags, confidence, durationMs } = req.body;
     if (!agentId || !title || !stages) {
       return res.status(400).json({ error: 'agentId, title, and stages are required' });

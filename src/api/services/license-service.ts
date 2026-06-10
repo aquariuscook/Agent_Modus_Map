@@ -26,11 +26,14 @@ export type Capability =
   | 'docs.handoff'
   | 'deploy.once'
   | 'deploy.scheduled'
-  | 'interview.access'
-  | 'prospects.access'
+  | 'interview.view'
+  | 'interview.conduct'
+  | 'prospects.view'
+  | 'prospects.generate'
   | 'prospects.export'
-  | 'traces.read'
-  | 'traces.write'
+  | 'traces.capture'
+  | 'traces.view'
+  | 'traces.patterns'
   | 'support.priority'
   | 'auth.sso'
   | 'branding.whiteLabel'
@@ -77,32 +80,38 @@ const LICENSE_ISSUER = 'agent-modus-map-local';
 const LICENSE_AUDIENCE = 'agent-modus-map';
 
 const PLAN_CAPABILITIES: Record<LicensePlan, Capability[]> = {
-  free: [],
-  starter: ['templates.full', 'simulation.live', 'docs.handoff', 'deploy.once'],
+  free: ['traces.capture'],
+  starter: ['traces.capture', 'traces.view', 'templates.full', 'simulation.live', 'docs.handoff', 'deploy.once', 'prospects.view', 'interview.view'],
   pro: [
+    'traces.capture',
+    'traces.view',
+    'traces.patterns',
     'templates.full',
     'simulation.live',
     'docs.handoff',
     'deploy.once',
     'deploy.scheduled',
-    'interview.access',
-    'prospects.access',
+    'interview.view',
+    'interview.conduct',
+    'prospects.view',
+    'prospects.generate',
     'prospects.export',
-    'traces.read',
-    'traces.write',
     'support.priority',
   ],
   enterprise: [
+    'traces.capture',
+    'traces.view',
+    'traces.patterns',
     'templates.full',
     'simulation.live',
     'docs.handoff',
     'deploy.once',
     'deploy.scheduled',
-    'interview.access',
-    'prospects.access',
+    'interview.view',
+    'interview.conduct',
+    'prospects.view',
+    'prospects.generate',
     'prospects.export',
-    'traces.read',
-    'traces.write',
     'support.priority',
     'auth.sso',
     'branding.whiteLabel',
@@ -116,11 +125,14 @@ const CAPABILITY_MIN_PLAN: Record<Capability, LicensePlan> = {
   'docs.handoff': 'starter',
   'deploy.once': 'starter',
   'deploy.scheduled': 'pro',
-  'interview.access': 'pro',
-  'prospects.access': 'pro',
+  'interview.view': 'starter',
+  'interview.conduct': 'pro',
+  'prospects.view': 'starter',
+  'prospects.generate': 'pro',
   'prospects.export': 'pro',
-  'traces.read': 'pro',
-  'traces.write': 'pro',
+  'traces.capture': 'free',
+  'traces.view': 'starter',
+  'traces.patterns': 'pro',
   'support.priority': 'pro',
   'auth.sso': 'enterprise',
   'branding.whiteLabel': 'enterprise',

@@ -60,8 +60,8 @@ export function createApp(db?: ReturnType<typeof getDb>) {
   app.use('/api/auth', createAuthRoutes(database));
   app.use('/api/mcp', createMcpRoutes());
   app.use('/api/import', createImportRoutes(database));
-  app.use('/api/prospects', requireCapability('prospects.access'), createProspectRoutes());
-  app.use('/api/interview', requireCapability('interview.access'), createInterviewRoutes(database));
+  app.use('/api/prospects', requireCapability('prospects.view'), createProspectRoutes());
+  app.use('/api/interview', requireCapability('interview.conduct'), createInterviewRoutes(database));
 
   // Health check
   app.get('/api/health', (_req, res) => {

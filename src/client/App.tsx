@@ -365,7 +365,7 @@ export function App() {
         <Dashboard
           onOpenSwarm={handleOpenSwarm}
           onOpenAssistant={(id) => setAssistantSwarmId(id)}
-          onStartInterview={() => requireFeature('interview.access', () => {
+          onStartInterview={() => requireFeature('interview.conduct', () => {
             setResumeInterviewId(undefined);
             setShowInterview(true);
           })}
@@ -424,7 +424,7 @@ export function App() {
           onToggleValidation={() => togglePanel('validation')}
           onToggleOrchestrator={() => togglePanel('orchestrator')}
           onOpenHealth={() => setOpenPanel('health')}
-          onOpenTraces={() => requireFeature('traces.read', () => setOpenPanel('traces'))}
+          onOpenTraces={() => requireFeature('traces.view', () => setOpenPanel('traces'))}
           onOpenGovernance={() => setOpenPanel('governance')}
           onOpenCollaboration={() => setOpenPanel('collaboration')}
           onOpenOptimization={() => setOpenPanel('optimization')}
