@@ -63,7 +63,7 @@ function ActivityLine({ event, isLatest }: { event: CopilotStatusEvent; isLatest
       fontSize: 11, lineHeight: 1.4,
       color: isLatest ? 'var(--text-secondary)' : 'var(--text-tertiary)',
       display: 'flex', gap: 5, alignItems: 'baseline',
-      animation: isLatest ? 'fadeIn 0.2s ease-out' : 'none',
+      animation: isLatest ? 'chatFadeIn 0.2s ease-out' : 'none',
       opacity: isLatest ? 1 : 0.6,
     }}>
       <span style={{ flexShrink: 0 }}>{icon}</span>
@@ -179,9 +179,7 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
         alignItems: 'center',
       }}>
         <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-accent)' }}>Copilot</span>
-        <button onClick={onToggle} style={{
-          background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 18,
-        }}>{'×'}</button>
+        <button onClick={onToggle} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 18 }}>{'×'}</button>
       </div>
 
       {/* Messages */}
@@ -207,16 +205,42 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
           </div>
         ))}
 
-        {/* Activity log during loading */}
-        {loading && statusEvents.length > 0 && (
-          <div style={{ padding: '4px 0 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {statusEvents.map((evt, i) => (
-              <ActivityLine key={i} event={evt} isLatest={i === statusEvents.length - 1} />
-            ))}
+        {/* Thinking indicator + Activity log during loading */}
+        {loading && (
+          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+            <div style={{
+              padding: '10px 16px',
+              borderRadius: '16px 16px 16px 4px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid var(--border-subtle)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+              minWidth: 200,
+              maxWidth: 360,
+            }}>
+              {/* Pulsing dots header */}
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 2 }}>
+                {[0, 1, 2].map(idx => (
+                  <div key={idx} style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    background: 'var(--text-tertiary)',
+                    animation: `chatPulse 1.2s ease-in-out ${idx * 0.15}s infinite`,
+                  }} />
+                ))}
+                <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 4 }}>Thinking</span>
+              </div>
+              {/* Activity log */}
+              {statusEvents.map((evt, i) => (
+                <ActivityLine key={i} event={evt} isLatest={i === statusEvents.length - 1} />
+              ))}
+              {statusEvents.length === 0 && (
+                <div style={{ fontSize: 11, color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Connecting…</div>
+              )}
+            </div>
           </div>
-        )}
-        {loading && statusEvents.length === 0 && (
-          <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontStyle: 'italic' }}>Connecting...</div>
         )}
         <div ref={messagesEndRef} />
       </div>
@@ -262,6 +286,18 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
           Ask
         </button>
       </div>
+
+      {/* Keyframes */}
+      <style>{`
+        @keyframes chatPulse {
+          0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+          40% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes chatFadeIn {
+          from { opacity: 0; transform: translateY(4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }

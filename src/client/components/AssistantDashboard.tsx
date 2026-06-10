@@ -525,15 +525,42 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
               </div>
             </div>
           ))}
-          {chatLoading && chatStatusEvents.length > 0 && (
-          <div style={{ padding: '4px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {chatStatusEvents.map((evt, i) => (
-              <ActivityLine key={i} event={evt} isLatest={i === chatStatusEvents.length - 1} />
-            ))}
+          {/* Thinking indicator + Activity log during loading */}
+        {chatLoading && (
+          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+            <div style={{
+              padding: '10px 16px',
+              borderRadius: '16px 16px 16px 4px',
+              background: 'var(--bg-surface, #1e293b)',
+              border: '1px solid var(--border-default, #1e293b)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+              minWidth: 200,
+              maxWidth: 340,
+            }}>
+              {/* Pulsing dots header */}
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 2 }}>
+                {[0, 1, 2].map(idx => (
+                  <div key={idx} style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    background: 'var(--text-tertiary, #64748b)',
+                    animation: `dashPulse 1.2s ease-in-out ${idx * 0.15}s infinite`,
+                  }} />
+                ))}
+                <span style={{ fontSize: 11, color: 'var(--text-tertiary, #64748b)', marginLeft: 4 }}>Thinking</span>
+              </div>
+              {/* Activity log */}
+              {chatStatusEvents.map((evt, i) => (
+                <ActivityLine key={i} event={evt} isLatest={i === chatStatusEvents.length - 1} />
+              ))}
+              {chatStatusEvents.length === 0 && (
+                <div style={{ fontSize: 11, color: 'var(--text-tertiary, #64748b)', fontStyle: 'italic' }}>Connecting…</div>
+              )}
+            </div>
           </div>
-        )}
-        {chatLoading && chatStatusEvents.length === 0 && (
-          <div style={{ fontSize: 12, color: 'var(--text-secondary, #94a3b8)', padding: '4px 12px' }}>Connecting...</div>
         )}
           <div ref={chatEndRef} />
         </div>
@@ -546,6 +573,17 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
           />
           <button onClick={handleChatSend} disabled={chatLoading} style={s.btn('#00d9ff')}>Send</button>
         </div>
+      {/* Keyframes for pulsing dots + activity fade-in */}
+      <style>{`
+        @keyframes dashPulse {
+          0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+          40% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes chatFadeIn {
+          from { opacity: 0; transform: translateY(4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
       </div>
     );
   }
