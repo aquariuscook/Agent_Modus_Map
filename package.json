@@ -10,7 +10,7 @@
     "build:api": "tsc -p tsconfig.api.json",
     "build:client": "vite build",
     "build": "pnpm run build:api && pnpm run build:client",
-    "start": "NODE_ENV=production node dist/api/api/server.js",
+    "start": "bash -c 'NODE_ENV=production node dist/api/api/server.js'",
     "start:api": "node dist/api/api/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
