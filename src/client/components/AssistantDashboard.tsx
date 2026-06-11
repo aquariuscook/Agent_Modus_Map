@@ -564,14 +564,52 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
         )}
           <div ref={chatEndRef} />
         </div>
-        <div style={{ padding: 10, borderTop: '1px solid var(--border-default, #1e293b)', display: 'flex', gap: 6 }}>
-          <input
-            value={chatInput} onChange={e => setChatInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleChatSend()}
+        <div style={{ padding: 10, borderTop: '1px solid var(--border-default, #1e293b)' }}>
+          <textarea
+            value={chatInput}
+            onChange={e => {
+              setChatInput(e.target.value);
+              const el = e.target;
+              el.style.height = 'auto';
+              el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+            }}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleChatSend();
+              }
+            }}
             placeholder="Ask your assistant..."
-            style={{ ...s.input, flex: 1 }}
+            rows={1}
+            disabled={chatLoading}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              borderRadius: 8,
+              border: '1px solid var(--accent-primary-muted, #1e293b)',
+              background: 'var(--bg-elevated, #1e293b)',
+              color: 'var(--text-primary, #e2e8f0)',
+              fontSize: 13,
+              fontFamily: 'inherit',
+              outline: 'none',
+              resize: 'none',
+              lineHeight: 1.5,
+              maxHeight: 160,
+              boxSizing: 'border-box' as const,
+              display: 'block',
+              transition: 'border-color 0.2s',
+            }}
+            onFocus={e => e.target.style.borderColor = 'var(--accent-primary, #00d9ff)'}
+            onBlur={e => e.target.style.borderColor = 'var(--accent-primary-muted, #1e293b)'}
           />
-          <button onClick={handleChatSend} disabled={chatLoading} style={s.btn('#00d9ff')}>Send</button>
+          <div style={{
+            fontSize: 10,
+            color: 'var(--text-tertiary, #64748b)',
+            marginTop: 6,
+            textAlign: 'center',
+          }}>
+            Press Enter to send, Shift+Enter for new line
+          </div>
         </div>
       {/* Keyframes for pulsing dots + activity fade-in */}
       <style>{`
