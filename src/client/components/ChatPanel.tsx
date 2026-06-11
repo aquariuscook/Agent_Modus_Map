@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { askCopilotStreaming, type CopilotStatusEvent } from '../api.js';
 import { Logo } from './Logo.js';
 
@@ -13,6 +13,11 @@ interface ChatPanelProps {
   onToggle: () => void;
   onHighlightAgents?: (nicknames: string[]) => void;
 }
+
+const MIN_PANEL_WIDTH = 320;
+const DEFAULT_PANEL_WIDTH = 420;
+const MAX_PANEL_WIDTH_RATIO = 0.9; // never exceed 90% of viewport width
+const TEXTAREA_MAX_HEIGHT = 160;
 
 // ── Activity log line (matches InterviewPanel pattern) ─────────────────────
 
@@ -85,17 +90,37 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [statusEvents, setStatusEvents] = useState<CopilotStatusEvent[]>([]);
+  const [panelWidth, setPanelWidth] = useState(DEFAULT_PANEL_WIDTH);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, statusEvents]);
+
+  // Auto-resize textarea to match content (matches InterviewPanel pattern).
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    const el = e.target;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, TEXTAREA_MAX_HEIGHT) + 'px';
+  }, []);
+
+  // Enter to send, Shift+Enter for newline (matches InterviewPanel).
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [input, loading, messages]);
 
   async function handleSend() {
     const question = input.trim();
     if (!question || loading) return;
 
     setInput('');
+    if (textareaRef.current) textareaRef.current.style.height = 'auto';
     setMessages(prev => [...prev, { role: 'user', content: question }]);
     setLoading(true);
     setStatusEvents([]);
@@ -126,6 +151,49 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
       setStatusEvents([]);
     }
   }
+
+  // Drag handle: adjust panel width from the left edge of the chat panel.
+  const resizeHandleRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handle = resizeHandleRef.current;
+    if (!handle) return;
+
+    let startX = 0;
+    let startWidth = 0;
+    let dragging = false;
+
+    const onMove = (e: MouseEvent) => {
+      if (!dragging) return;
+      const maxWidth = Math.floor(window.innerWidth * MAX_PANEL_WIDTH_RATIO);
+      // Dragging left increases width (cursor on left edge), dragging right shrinks.
+      const delta = startX - e.clientX;
+      const next = Math.min(maxWidth, Math.max(MIN_PANEL_WIDTH, startWidth + delta));
+      setPanelWidth(next);
+    };
+    const onUp = () => {
+      if (!dragging) return;
+      dragging = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    const onDown = (e: MouseEvent) => {
+      dragging = true;
+      startX = e.clientX;
+      startWidth = panelWidth;
+      document.body.style.cursor = 'ew-resize';
+      document.body.style.userSelect = 'none';
+    };
+
+    handle.addEventListener('mousedown', onDown);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      handle.removeEventListener('mousedown', onDown);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [panelWidth]);
 
   if (!isOpen) {
     return (
@@ -160,7 +228,8 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
       position: 'absolute',
       bottom: 20,
       right: 20,
-      width: 420,
+      width: panelWidth,
+      maxWidth: '90vw',
       height: 500,
       background: 'var(--bg-surface)',
       border: '1px solid var(--border-accent)',
@@ -170,6 +239,25 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
       zIndex: 30,
       boxShadow: '0 10px 40px rgba(0, 0, 0, 0.6)',
     }}>
+      {/* Drag handle on left edge to resize panel width */}
+      <div
+        ref={resizeHandleRef}
+        title="Drag to resize"
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 12,
+          bottom: 12,
+          width: 6,
+          marginLeft: -3,
+          cursor: 'ew-resize',
+          borderRadius: 3,
+          zIndex: 1,
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent-primary-muted)'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+      />
+
       {/* Header */}
       <div style={{
         padding: '12px 16px',
@@ -249,42 +337,42 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
       <div style={{
         padding: '10px 14px',
         borderTop: '1px solid var(--border-subtle)',
-        display: 'flex',
-        gap: 8,
       }}>
-        <input
+        <textarea
+          ref={textareaRef}
           value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleSend()}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
           placeholder="Ask about your swarm..."
+          rows={1}
           style={{
-            flex: 1,
-            padding: '8px 12px',
+            width: '100%',
+            padding: '10px 12px',
             borderRadius: 8,
             border: '1px solid var(--accent-primary-muted)',
             background: 'var(--bg-elevated)',
             color: 'var(--text-primary)',
             fontSize: 13,
+            fontFamily: 'inherit',
             outline: 'none',
+            resize: 'none',
+            lineHeight: 1.5,
+            maxHeight: TEXTAREA_MAX_HEIGHT,
+            boxSizing: 'border-box',
+            display: 'block',
+            transition: 'border-color 0.2s',
           }}
+          onFocus={e => e.target.style.borderColor = 'var(--accent-primary)'}
+          onBlur={e => e.target.style.borderColor = 'var(--accent-primary-muted)'}
         />
-        <button
-          onClick={handleSend}
-          disabled={loading || !input.trim()}
-          style={{
-            padding: '8px 16px',
-            borderRadius: 8,
-            border: 'none',
-            background: 'var(--accent-primary)',
-            color: 'var(--text-inverse)',
-            fontWeight: 600,
-            cursor: loading ? 'default' : 'pointer',
-            opacity: loading || !input.trim() ? 0.5 : 1,
-            fontSize: 13,
-          }}
-        >
-          Ask
-        </button>
+        <div style={{
+          fontSize: 10,
+          color: 'var(--text-tertiary)',
+          marginTop: 6,
+          textAlign: 'center',
+        }}>
+          Press Enter to send, Shift+Enter for new line
+        </div>
       </div>
 
       {/* Keyframes */}
