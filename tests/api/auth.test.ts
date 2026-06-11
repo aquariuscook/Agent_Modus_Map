@@ -64,7 +64,7 @@ describe('Auth and licensing API', () => {
 
     expect(meRes.status).toBe(200);
     expect(meRes.body.data.user.email).toBe('admin@agentmodus.local');
-    expect(meRes.body.data.featureFlags['traces.read']).toBe(true);
+    expect(meRes.body.data.featureFlags['traces.capture']).toBe(true);
   });
 
   it('activates a Google-backed pro license from a verified test token', async () => {
@@ -84,7 +84,7 @@ describe('Auth and licensing API', () => {
     expect(activateRes.body.data.user.email).toBe('pro-user@example.com');
     expect(activateRes.body.data.user.authProvider).toBe('google');
     expect(activateRes.body.data.license.plan).toBe('pro');
-    expect(activateRes.body.data.featureFlags['interview.access']).toBe(true);
+    expect(activateRes.body.data.featureFlags['interview.conduct']).toBe(true);
 
     const interviewRes = await request(app)
       .get('/api/interview/list')
@@ -107,7 +107,7 @@ describe('Auth and licensing API', () => {
     expect(activateRes.status).toBe(200);
     expect(activateRes.body.data.license.plan).toBe('free');
     expect(activateRes.body.data.license.status).toBe('unverified');
-    expect(activateRes.body.data.featureFlags['interview.access']).toBe(false);
+    expect(activateRes.body.data.featureFlags['interview.conduct']).toBe(false);
 
     const lockedRes = await request(app)
       .get('/api/interview/list')
@@ -115,6 +115,58 @@ describe('Auth and licensing API', () => {
 
     expect(lockedRes.status).toBe(402);
     expect(lockedRes.body.error).toBe('feature_locked');
+  });
+
+  it('grants traces.capture to free users but denies traces.view and traces.patterns', async () => {
+    const activateRes = await request(app)
+      .post('/api/auth/google/activate')
+      .send({
+        idToken: makeDevGoogleToken({
+          sub: 'google-user-free-traces',
+          email: 'free-traces@example.com',
+          name: 'Free Traces',
+        }),
+      });
+
+    expect(activateRes.status).toBe(200);
+    expect(activateRes.body.data.featureFlags['traces.capture']).toBe(true);
+    expect(activateRes.body.data.featureFlags['traces.view']).toBe(false);
+    expect(activateRes.body.data.featureFlags['traces.patterns']).toBe(false);
+  });
+
+  it('grants traces.view and interview.view to starter users but denies traces.patterns', async () => {
+    const activateRes = await request(app)
+      .post('/api/auth/google/activate')
+      .send({
+        idToken: makeDevGoogleToken({
+          sub: 'google-user-starter',
+          email: 'starter@example.com',
+          name: 'Starter User',
+          plan: 'starter',
+        }),
+      });
+
+    expect(activateRes.status).toBe(200);
+    expect(activateRes.body.data.featureFlags['traces.view']).toBe(true);
+    expect(activateRes.body.data.featureFlags['interview.view']).toBe(true);
+    expect(activateRes.body.data.featureFlags['traces.patterns']).toBe(false);
+  });
+
+  it('grants traces.patterns and interview.conduct to pro users', async () => {
+    const activateRes = await request(app)
+      .post('/api/auth/google/activate')
+      .send({
+        idToken: makeDevGoogleToken({
+          sub: 'google-user-pro-patterns',
+          email: 'pro-patterns@example.com',
+          name: 'Pro Patterns',
+          plan: 'pro',
+        }),
+      });
+
+    expect(activateRes.status).toBe(200);
+    expect(activateRes.body.data.featureFlags['traces.patterns']).toBe(true);
+    expect(activateRes.body.data.featureFlags['interview.conduct']).toBe(true);
   });
 
   it('stores a Google avatar when the client provides a picture fallback', async () => {
