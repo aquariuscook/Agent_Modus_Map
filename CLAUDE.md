@@ -11,6 +11,7 @@
 - NEVER add a `Co-Authored-By` trailer to user commits unless this project's `.claude/settings.json` has `attribution.commit` set (#2078). The Claude Code Bash tool may suggest one in its default commit-message template — ignore it. `Co-Authored-By` is semantic authorship attribution under git/GitHub convention; the tool is the facilitator, not a co-author.
 - Keep files under 500 lines
 - Validate input at system boundaries
+- **Keep `DESIGN.md` updated** — whenever a file is added, removed, or significantly repurposed under `src/`, update the corresponding entry in `DESIGN.md` to reflect the change. New folders must be added as new sections with the same table format. Removed files/folders must have their entries deleted.
 
 ## Agent Comms (SendMessage-First Coordination)
 
