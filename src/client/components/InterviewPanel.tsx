@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { startInterview, sendInterviewMessageStreaming, deployInterviewSwarm, getInterviewState } from '../api.js';
-import type { InterviewStatusEvent } from '../api.js';
+import { ActivityLine } from './chat/ActivityLine.js';
+import { ThinkingIndicator } from './chat/ThinkingIndicator.js';
+import { ChatInput } from './chat/ChatInput.js';
 
 interface InterviewPanelProps {
   onClose: () => void;
@@ -29,71 +31,6 @@ interface ExtractedData {
 const PHASE_NAMES = ['Prompt', 'Goals', 'Scope', 'Authority', 'Compliance', 'APIs', 'Review'];
 
 const LAYER_COLORS = ['#00d9ff', '#a855f7', '#22c55e', '#fbbf24'];
-
-const STEP_LABELS: Record<string, string> = {
-  'selecting-model': 'Selecting model',
-  'sending-request': 'Sending request',
-  'waiting-response': 'Waiting for response',
-  'response-received': 'Response received',
-  'error': 'Error',
-};
-
-const STEP_ICONS: Record<string, string> = {
-  'selecting-model': '🔍',
-  'sending-request': '📤',
-  'waiting-response': '⏳',
-  'response-received': '✅',
-  'error': '❌',
-};
-
-function ActivityLine({ event, isLatest }: { event: InterviewStatusEvent; isLatest: boolean }) {
-  const label = STEP_LABELS[event.step] || event.step;
-  const icon = STEP_ICONS[event.step] || '•';
-  const parts: string[] = [];
-
-  if (event.provider) {
-    const modelName = event.model?.split('/').pop() || event.model || '';
-    parts.push(`${event.provider}/${modelName}`);
-  }
-  if (event.messageCount != null) {
-    parts.push(`${event.messageCount} msg${event.messageCount !== 1 ? 's' : ''}`);
-  }
-  if (event.toolCount != null && event.toolCount > 0) {
-    parts.push(`${event.toolCount} tool${event.toolCount !== 1 ? 's' : ''}`);
-  }
-  if (event.durationMs != null) {
-    parts.push(event.durationMs >= 1000 ? `${(event.durationMs / 1000).toFixed(1)}s` : `${event.durationMs}ms`);
-  }
-  if (event.inputTokens != null) {
-    const inK = event.inputTokens >= 1000 ? `${(event.inputTokens / 1000).toFixed(1)}k` : `${event.inputTokens}`;
-    const outK = event.outputTokens != null
-      ? (event.outputTokens >= 1000 ? `${(event.outputTokens / 1000).toFixed(1)}k` : `${event.outputTokens}`)
-      : '';
-    parts.push(`${inK}${outK ? `→${outK}` : ''} tok`);
-  }
-  if (event.error) {
-    parts.push(event.error);
-  }
-
-  return (
-    <div style={{
-      fontSize: 11,
-      lineHeight: 1.4,
-      color: isLatest ? 'var(--text-secondary)' : 'var(--text-tertiary)',
-      display: 'flex',
-      gap: 5,
-      alignItems: 'baseline',
-      animation: isLatest ? 'fadeIn 0.2s ease-out' : 'none',
-      opacity: isLatest ? 1 : 0.6,
-    }}>
-      <span style={{ flexShrink: 0 }}>{icon}</span>
-      <span style={{ fontWeight: isLatest ? 500 : 400 }}>{label}</span>
-      {parts.length > 0 && (
-        <span style={{ color: 'var(--text-tertiary)' }}>{parts.join(' · ')}</span>
-      )}
-    </div>
-  );
-}
 
 const AUTONOMY_COLORS: Record<string, string> = {
   'Fully Automated': '#22c55e',
@@ -133,10 +70,9 @@ export function InterviewPanel({ onClose, onSwarmCreated, resumeId }: InterviewP
   const [deploying, setDeploying] = useState(false);
   const [phaseAnimating, setPhaseAnimating] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
-  const [statusEvents, setStatusEvents] = useState<InterviewStatusEvent[]>([]);
+  const [statusEvents, setStatusEvents] = useState<any[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -149,7 +85,6 @@ export function InterviewPanel({ onClose, onSwarmCreated, resumeId }: InterviewP
     async function init() {
       try {
         if (resumeId) {
-          // Resume existing interview
           const state = await getInterviewState(resumeId);
           if (cancelled) return;
           setInterviewId(state.id);
@@ -158,7 +93,6 @@ export function InterviewPanel({ onClose, onSwarmCreated, resumeId }: InterviewP
           setExtracted(state.extracted || {});
           if (state.extracted?.swarmConfig) setSwarmConfig(state.extracted.swarmConfig);
         } else {
-          // Start new interview
           const result = await startInterview();
           if (cancelled) return;
           setInterviewId(result.interviewId);
@@ -174,23 +108,14 @@ export function InterviewPanel({ onClose, onSwarmCreated, resumeId }: InterviewP
     return () => { cancelled = true; };
   }, [resumeId]);
 
-  // Auto-resize textarea
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value);
-    const el = e.target;
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
-  }, []);
-
   const handleSend = useCallback(async () => {
     const text = input.trim();
     if (!text || loading || !interviewId) return;
 
     setInput('');
-    if (textareaRef.current) textareaRef.current.style.height = 'auto';
     setMessages(prev => [...prev, { role: 'user', content: text }]);
     setLoading(true);
-    setStatusEvents([]); // clear previous activity log
+    setStatusEvents([]);
 
     try {
       const result = await sendInterviewMessageStreaming(
@@ -228,13 +153,6 @@ export function InterviewPanel({ onClose, onSwarmCreated, resumeId }: InterviewP
       setLoading(false);
     }
   }, [input, loading, interviewId]);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  }, [handleSend]);
 
   const handleDeploy = useCallback(async () => {
     if (!interviewId || deploying) return;
@@ -324,7 +242,7 @@ export function InterviewPanel({ onClose, onSwarmCreated, resumeId }: InterviewP
               style={{
                 display: 'flex',
                 justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                animation: 'fadeIn 0.3s ease-out',
+                animation: 'chatFadeIn 0.3s ease-out',
               }}
             >
               <div style={{
@@ -354,20 +272,7 @@ export function InterviewPanel({ onClose, onSwarmCreated, resumeId }: InterviewP
                 minWidth: 200,
                 maxWidth: 360,
               }}>
-                {/* Pulsing dots header */}
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 2 }}>
-                  {[0, 1, 2].map(idx => (
-                    <div key={idx} style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: '50%',
-                      background: 'var(--text-tertiary)',
-                      animation: `pulse 1.2s ease-in-out ${idx * 0.15}s infinite`,
-                    }} />
-                  ))}
-                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 4 }}>Thinking</span>
-                </div>
-                {/* Activity log */}
+                <ThinkingIndicator />
                 {statusEvents.map((evt, i) => (
                   <ActivityLine key={i} event={evt} isLatest={i === statusEvents.length - 1} />
                 ))}
@@ -388,32 +293,15 @@ export function InterviewPanel({ onClose, onSwarmCreated, resumeId }: InterviewP
             gap: 12,
             alignItems: 'flex-end',
           }}>
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder={interviewId ? 'Type your response...' : 'Connecting...'}
-              disabled={!interviewId || loading}
-              rows={1}
-              style={{
-                flex: 1,
-                padding: '12px 16px',
-                borderRadius: 12,
-                border: '1px solid var(--border-default)',
-                background: 'var(--bg-elevated)',
-                color: 'var(--text-primary)',
-                fontSize: 14,
-                fontFamily: 'inherit',
-                resize: 'none',
-                outline: 'none',
-                lineHeight: 1.5,
-                maxHeight: 160,
-                transition: 'border-color 0.2s',
-              }}
-              onFocus={e => e.target.style.borderColor = 'var(--accent-primary, #00d9ff)'}
-              onBlur={e => e.target.style.borderColor = 'var(--border-default)'}
-            />
+            <div style={{ flex: 1 }}>
+              <ChatInput
+                value={input}
+                onChange={setInput}
+                onSend={handleSend}
+                placeholder={interviewId ? 'Type your response...' : 'Connecting...'}
+                disabled={!interviewId || loading}
+              />
+            </div>
             <button
               onClick={handleSend}
               disabled={!input.trim() || loading || !interviewId}
@@ -439,14 +327,6 @@ export function InterviewPanel({ onClose, onSwarmCreated, resumeId }: InterviewP
                 <polygon points="22 2 15 22 11 13 2 9 22 2" />
               </svg>
             </button>
-          </div>
-          <div style={{
-            fontSize: 11,
-            color: 'var(--text-tertiary)',
-            marginTop: 8,
-            textAlign: 'center',
-          }}>
-            Press Enter to send, Shift+Enter for new line
           </div>
         </div>
       </div>
@@ -618,18 +498,6 @@ export function InterviewPanel({ onClose, onSwarmCreated, resumeId }: InterviewP
           )}
         </div>
       </div>
-
-      {/* Inline animation keyframes */}
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pulse {
-          0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
-          40% { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
     </div>
   );
 }
@@ -694,7 +562,7 @@ function ExtractedDataSection({ extracted, currentPhase }: ExtractedDataSectionP
                 background: 'var(--bg-elevated)',
                 borderRadius: 8,
                 border: '1px solid var(--border-default)',
-                animation: 'fadeIn 0.3s ease-out',
+                animation: 'chatFadeIn 0.3s ease-out',
               }}
             >
               <div style={{
@@ -789,7 +657,7 @@ function AgentCardsSection({ agents, swarmName, onNameChange, onDeploy, deployin
                 border: '1px solid var(--border-default)',
                 borderLeftColor: borderColor,
                 borderLeftWidth: 3,
-                animation: `fadeIn 0.3s ease-out ${i * 0.08}s both`,
+                animation: `chatFadeIn 0.3s ease-out ${i * 0.08}s both`,
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>

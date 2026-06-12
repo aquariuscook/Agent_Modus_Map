@@ -191,6 +191,16 @@ body {
 ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
 ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
 
+/* Shared chat animations (used by ChatPanel, InterviewPanel, AssistantDashboard) */
+@keyframes chatPulse {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
+@keyframes chatFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* React Flow overrides for theme */
 .react-flow__background { background: transparent !important; }
 .react-flow__minimap { background: var(--bg-surface) !important; }

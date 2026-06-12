@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { askCopilotStreaming, type CopilotStatusEvent } from '../api.js';
 import { Logo } from './Logo.js';
+import { ActivityLine } from './chat/ActivityLine.js';
+import { ThinkingIndicator } from './chat/ThinkingIndicator.js';
+import { ChatInput } from './chat/ChatInput.js';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -17,70 +20,6 @@ interface ChatPanelProps {
 const MIN_PANEL_WIDTH = 320;
 const DEFAULT_PANEL_WIDTH = 420;
 const MAX_PANEL_WIDTH_RATIO = 0.9; // never exceed 90% of viewport width
-const TEXTAREA_MAX_HEIGHT = 160;
-
-// ── Activity log line (matches InterviewPanel pattern) ─────────────────────
-
-const STEP_LABELS: Record<string, string> = {
-  'selecting-model': 'Selecting model',
-  'sending-request': 'Sending request',
-  'waiting-response': 'Waiting for response',
-  'response-received': 'Response received',
-  'error': 'Error',
-};
-
-const STEP_ICONS: Record<string, string> = {
-  'selecting-model': '🔍',
-  'sending-request': '📤',
-  'waiting-response': '⏳',
-  'response-received': '✅',
-  'error': '❌',
-};
-
-function ActivityLine({ event, isLatest }: { event: CopilotStatusEvent; isLatest: boolean }) {
-  const label = STEP_LABELS[event.step] || event.step;
-  const icon = STEP_ICONS[event.step] || '•';
-  const parts: string[] = [];
-
-  if (event.provider) {
-    const modelName = event.model?.split('/').pop() || event.model || '';
-    parts.push(`${event.provider}/${modelName}`);
-  }
-  if (event.messageCount != null) {
-    parts.push(`${event.messageCount} msg${event.messageCount !== 1 ? 's' : ''}`);
-  }
-  if (event.durationMs != null) {
-    parts.push(event.durationMs >= 1000 ? `${(event.durationMs / 1000).toFixed(1)}s` : `${event.durationMs}ms`);
-  }
-  if (event.inputTokens != null) {
-    const inK = event.inputTokens >= 1000 ? `${(event.inputTokens / 1000).toFixed(1)}k` : `${event.inputTokens}`;
-    const outK = event.outputTokens != null
-      ? (event.outputTokens >= 1000 ? `${(event.outputTokens / 1000).toFixed(1)}k` : `${event.outputTokens}`)
-      : '';
-    parts.push(`${inK}${outK ? `→${outK}` : ''} tok`);
-  }
-  if (event.error) {
-    parts.push(event.error);
-  }
-
-  return (
-    <div style={{
-      fontSize: 11, lineHeight: 1.4,
-      color: isLatest ? 'var(--text-secondary)' : 'var(--text-tertiary)',
-      display: 'flex', gap: 5, alignItems: 'baseline',
-      animation: isLatest ? 'chatFadeIn 0.2s ease-out' : 'none',
-      opacity: isLatest ? 1 : 0.6,
-    }}>
-      <span style={{ flexShrink: 0 }}>{icon}</span>
-      <span style={{ fontWeight: isLatest ? 500 : 400 }}>{label}</span>
-      {parts.length > 0 && (
-        <span style={{ color: 'var(--text-tertiary)' }}>{parts.join(' · ')}</span>
-      )}
-    </div>
-  );
-}
-
-// ── Component ──────────────────────────────────────────────────────────────
 
 export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([{
@@ -97,23 +36,6 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, statusEvents]);
-
-  // Auto-resize textarea to match content (matches InterviewPanel pattern).
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value);
-    const el = e.target;
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, TEXTAREA_MAX_HEIGHT) + 'px';
-  }, []);
-
-  // Enter to send, Shift+Enter for newline (matches InterviewPanel).
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [input, loading, messages]);
 
   async function handleSend() {
     const question = input.trim();
@@ -307,20 +229,7 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
               minWidth: 200,
               maxWidth: 360,
             }}>
-              {/* Pulsing dots header */}
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 2 }}>
-                {[0, 1, 2].map(idx => (
-                  <div key={idx} style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    background: 'var(--text-tertiary)',
-                    animation: `chatPulse 1.2s ease-in-out ${idx * 0.15}s infinite`,
-                  }} />
-                ))}
-                <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 4 }}>Thinking</span>
-              </div>
-              {/* Activity log */}
+              <ThinkingIndicator />
               {statusEvents.map((evt, i) => (
                 <ActivityLine key={i} event={evt} isLatest={i === statusEvents.length - 1} />
               ))}
@@ -338,54 +247,15 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
         padding: '10px 14px',
         borderTop: '1px solid var(--border-subtle)',
       }}>
-        <textarea
-          ref={textareaRef}
+        <ChatInput
           value={input}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
+          onChange={setInput}
+          onSend={handleSend}
           placeholder="Ask about your swarm..."
-          rows={1}
-          style={{
-            width: '100%',
-            padding: '10px 12px',
-            borderRadius: 8,
-            border: '1px solid var(--accent-primary-muted)',
-            background: 'var(--bg-elevated)',
-            color: 'var(--text-primary)',
-            fontSize: 13,
-            fontFamily: 'inherit',
-            outline: 'none',
-            resize: 'none',
-            lineHeight: 1.5,
-            maxHeight: TEXTAREA_MAX_HEIGHT,
-            boxSizing: 'border-box',
-            display: 'block',
-            transition: 'border-color 0.2s',
-          }}
-          onFocus={e => e.target.style.borderColor = 'var(--accent-primary)'}
-          onBlur={e => e.target.style.borderColor = 'var(--accent-primary-muted)'}
+          disabled={loading}
+          textareaRef={textareaRef}
         />
-        <div style={{
-          fontSize: 10,
-          color: 'var(--text-tertiary)',
-          marginTop: 6,
-          textAlign: 'center',
-        }}>
-          Press Enter to send, Shift+Enter for new line
-        </div>
       </div>
-
-      {/* Keyframes */}
-      <style>{`
-        @keyframes chatPulse {
-          0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
-          40% { opacity: 1; transform: scale(1); }
-        }
-        @keyframes chatFadeIn {
-          from { opacity: 0; transform: translateY(4px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 }
