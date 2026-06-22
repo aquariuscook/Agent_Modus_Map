@@ -131,6 +131,29 @@ Anthropic, OpenAI, and Google each have dedicated AI SDK packages (`@ai-sdk/anth
 2. **One import** instead of four — every provider uses the same 3-line instantiation
 3. **Trade-off**: We lose provider-specific features (Anthropic's extended thinking, Google's grounding). These can be added later with dedicated packages if needed — the `provider-router-service.ts` interface supports mixing provider types
 
+### Tier Selection Process
+
+The system automatically routes tasks to appropriate tiers based on complexity analysis:
+
+1. **Low Complexity Tasks** (< 0.5) → **Tier 2** (NVIDIA NIM)
+2. **High Complexity Tasks** (≥ 0.5) → **Tier 3** (Anthropic)
+
+### Provider Selection Logic
+
+When a tier is selected, the system chooses the best available provider:
+
+1. **Tier 2**: 
+   - Use NVIDIA NIM if API key is configured
+   - Fallback to OpenAI if NVIDIA unavailable and key is configured
+   - Fallback to Ollama if no other providers available (uses local instance)
+   - Fallback to heuristic if no providers available
+
+2. **Tier 3**:
+   - Use Anthropic if API key is configured  
+   - Fallback to OpenAI if Anthropic unavailable and key is configured
+   - Fallback to Ollama if no other providers available (uses local instance)
+   - Fallback to heuristic if no providers available
+
 ### Configuration
 
 | Environment Variable | Purpose | Required |
@@ -141,6 +164,12 @@ Anthropic, OpenAI, and Google each have dedicated AI SDK packages (`@ai-sdk/anth
 | `GOOGLE_API_KEY` | Future use | No |
 
 No keys = heuristic-only mode. All features still work; LLM generation degrades gracefully.
+
+### Ollama Integration
+
+Ollama is supported as a local fallback provider that can be used when cloud providers are unavailable or not configured. It works automatically without requiring an API key - the system detects when Ollama is running locally and uses it as a last resort option.
+
+Ollama integration allows users to leverage local LLMs without internet connectivity or API costs, providing privacy and cost-free processing capabilities.
 
 ## Consequences
 
