@@ -58,6 +58,13 @@ const PROVIDERS: ProviderConfig[] = [
     envKey: 'OPENROUTER_API_KEY',
     defaultModel: 'gpt-4o-mini',
   },
+  {
+    id: 'ollama',
+    name: 'Ollama Local',
+    endpoint: 'http://localhost:11434/v1',
+    envKey: 'OLLAMA_API_KEY',
+    defaultModel: 'qwen3-coder:30b',
+  },
 ];
 
 // ── Model selection for tiers ───────────────────────────────────────────────
@@ -65,7 +72,7 @@ const PROVIDERS: ProviderConfig[] = [
 const TIER_MODELS: Record<number, { provider: string; model: string }> = {
   1: { provider: 'wasm-booster', model: 'codemod' }, // No LLM — deterministic
   2: { provider: 'nvidia', model: 'meta/llama-3.3-70b-instruct' },
-  3: { provider: 'anthropic', model: 'claude-sonnet-4-6' },
+  3: { provider: 'ollama', model: 'qwen3-coder:30b' },
 };
 
 // ── Provider instance cache ─────────────────────────────────────────────────
