@@ -51,6 +51,13 @@ const PROVIDERS: ProviderConfig[] = [
     envKey: 'GOOGLE_API_KEY',
     defaultModel: 'gemini-2.0-flash',
   },
+  {
+    id: 'openrouter',
+    name: 'OpenRouter',
+    endpoint: 'https://openrouter.ai/api/v1',
+    envKey: 'OPENROUTER_API_KEY',
+    defaultModel: 'gpt-4o-mini',
+  },
 ];
 
 // ── Model selection for tiers ───────────────────────────────────────────────
