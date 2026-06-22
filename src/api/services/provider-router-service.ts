@@ -72,7 +72,7 @@ const PROVIDERS: ProviderConfig[] = [
 const TIER_MODELS: Record<number, { provider: string; model: string }> = {
   1: { provider: 'wasm-booster', model: 'codemod' }, // No LLM — deterministic
   2: { provider: 'nvidia', model: 'meta/llama-3.3-70b-instruct' },
-  3: { provider: 'ollama', model: 'qwen3-coder:30b' },
+  3: { provider: 'anthropic', model: 'claude-sonnet-4-6' },
 };
 
 // ── Provider instance cache ─────────────────────────────────────────────────
