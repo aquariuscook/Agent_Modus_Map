@@ -8,6 +8,15 @@ import { generateSwarmFromPrompt } from '../services/swarm-generator-service.js'
 import { swarmToCLI } from '../services/swarm-cli-bridge-service.js';
 import type Database from 'better-sqlite3';
 
+// Import deployment service
+import {
+  createDeploymentConfig,
+  getDeploymentConfig,
+  updateDeploymentConfig,
+  deploySwarmWithConfig,
+  listPendingDeployments
+} from '../services/swarm-deployment-service.js';
+
 function paramStr(val: unknown): string {
   return typeof val === 'string' ? val : String(val ?? '');
 }
@@ -217,6 +226,89 @@ export function createSwarmRoutes(db: Database.Database): Router {
   router.get('/:id/graph/hubs', (req: Req, res: Response) => {
     const results = graphService.hubAgents(req.params.id);
     res.json({ data: results });
+  });
+
+  // POST /api/swarms/:id/deploy - Deploy a swarm with configuration
+  router.post('/:id/deploy', async (req: Req, res: Response) => {
+    const { query, schedule, budgetLimit } = req.body;
+
+    try {
+      // Validate required parameters
+      if (!query || typeof query !== 'string') {
+        res.status(400).json({ error: 'validation', message: 'Query is required.' });
+        return;
+      }
+
+      const swarm = swarmService.findById(req.params.id);
+      if (!swarm) {
+        res.status(404).json({ error: 'not_found', message: 'Swarm not found.' });
+        return;
+      }
+
+      // Create deployment configuration
+      const configParams = req.body.config || {};
+      createDeploymentConfig(req.params.id, configParams);
+
+      // Deploy the swarm with configuration
+      const deployConfig = await deploySwarmWithConfig(
+        req.params.id,
+        query,
+        schedule || 'once',
+        swarmService,
+        budgetLimit
+      );
+
+      res.status(201).json({
+        data: deployConfig,
+        message: 'Deployment started successfully'
+      });
+    } catch (err: any) {
+      if (err.message.includes('Configuration required') || err.message.includes('Missing configuration')) {
+        // Return specific error for missing config
+        res.status(400).json({
+          error: 'config_required',
+          message: err.message,
+          swarmId: req.params.id,
+          requiredConfigs: swarm?.configRequirements?.map(r => r.parameterName) || []
+        });
+      } else {
+        res.status(500).json({
+          error: 'deployment_failed',
+          message: err.message || 'Deployment failed.'
+        });
+      }
+    }
+  });
+
+  // GET /api/swarms/:id/deploy/config - Get deployment configuration
+  router.get('/:id/deploy/config', (req: Req, res: Response) => {
+    const config = getDeploymentConfig(req.params.id);
+    if (!config) {
+      res.status(404).json({ error: 'not_found', message: 'Deployment configuration not found.' });
+      return;
+    }
+    res.json({ data: config });
+  });
+
+  // PUT /api/swarms/:id/deploy/config - Update deployment configuration
+  router.put('/:id/deploy/config', (req: Req, res: Response) => {
+    const config = updateDeploymentConfig(req.params.id, {
+      configParams: req.body.config || {},
+      updatedAt: new Date().toISOString()
+    });
+
+    if (!config) {
+      res.status(404).json({ error: 'not_found', message: 'Deployment configuration not found.' });
+      return;
+    }
+
+    res.json({ data: config });
+  });
+
+  // GET /api/swarms/deploy/pending - List pending deployments requiring configuration
+  router.get('/deploy/pending', (req: Req, res: Response) => {
+    const pending = listPendingDeployments();
+    res.json({ data: pending });
   });
 
   return router;

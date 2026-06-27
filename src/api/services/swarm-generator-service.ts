@@ -80,7 +80,7 @@ export interface GenerateSwarmResult {
 export async function generateSwarmFromPrompt(options: GenerateSwarmOptions): Promise<GenerateSwarmResult> {
   const { prompt, maxAgents = 8, preferCheapest = true } = options;
 
-  // Select model: prefer cheapest (NVIDIA NIM Tier 2) for generation
+  // Select model: prefer cheapest (NVIDIA NIM) for generation
   let model: LanguageModel | null;
   let route: ModelRoute;
 
@@ -98,109 +98,108 @@ export async function generateSwarmFromPrompt(options: GenerateSwarmOptions): Pr
     throw err;
   }
 
-  if (!model) {
-    // Build a fallback heuristic swarm when specific tier model is unavailable
-    return generateHeuristicSwarm(prompt, route, 'tier-unavailable');
-  }
+  const promptWithSystem = SYSTEM_PROMPT + `\n\nUser request: ${prompt}`;
 
   try {
-    const result = await callGenerateObject(
-      { caller: 'swarm-generator', route, model },
-      {
-        schema: GeneratedSwarmSchema,
-        system: SYSTEM_PROMPT,
-        prompt: `Design a swarm for: ${prompt}\n\nUse at most ${maxAgents} agents. Be specific about each agent's role and how they connect.`,
-      },
-    );
+    const result = await callGenerateObject({
+      model,
+      schema: GeneratedSwarmSchema,
+      system: promptWithSystem,
+      maxTokens: 2048,
+    });
 
-    const generated = result.object;
-    const swarm = convertToSwarm(generated);
+    // Build the swarm from the generated data
+    const now = new Date().toISOString();
+    const swarmId = uuidv7();
 
-    return {
-      generated,
-      swarm,
-      modelUsed: { provider: route.provider, model: route.model, tier: route.tier },
-    };
-  } catch (err: any) {
-    // Fall back to heuristic generation if LLM fails
-    const fallback = generateHeuristicSwarm(prompt, route, 'llm-failed');
-    fallback.error = `LLM generation failed: ${err.message}. Using heuristic fallback.`;
-    return fallback;
-  }
-}
+    // Create layers (if not already in generated)
+    const layers: LayerDefinition[] = [
+      { id: uuidv7(), name: 'Interface', colorTheme: '#00d9ff', order: 1 },
+      { id: uuidv7(), name: 'Processing', colorTheme: '#a855f7', order: 2 },
+      { id: uuidv7(), name: 'Intelligence', colorTheme: '#22c55e', order: 3 },
+      { id: uuidv7(), name: 'Operations', colorTheme: '#fbbf24', order: 4 },
+    ];
 
-// ── Convert LLM output to Swarm typed object ─────────────────────────────────
+    // Build a layer name -> id map for agent assignment
+    const layerMap = new Map(layers.map(l => [l.name.toLowerCase(), l.id]));
 
-const DEFAULT_LAYERS: Omit<LayerDefinition, 'id' | 'swarmId'>[] = [
-  { name: 'Interface', colorTheme: '#00d9ff', order: 1 },
-  { name: 'Processing', colorTheme: '#a855f7', order: 2 },
-  { name: 'Intelligence', colorTheme: '#22c55e', order: 3 },
-  { name: 'Operations', colorTheme: '#fbbf24', order: 4 },
-];
-
-function convertToSwarm(generated: GeneratedSwarmInput): Swarm {
-  const swarmId = uuidv7();
-  const now = new Date().toISOString();
-
-  // Create layers
-  const layers: LayerDefinition[] = DEFAULT_LAYERS.map(l => ({
-    id: uuidv7(),
-    swarmId,
-    ...l,
-  }));
-
-  // Build a layer name -> id map for agent assignment
-  const layerMap = new Map(layers.map(l => [l.name.toLowerCase(), l.id]));
-
-  // Create agents
-  const agents: Agent[] = generated.agents.map(a => {
-    const layerId = layerMap.get(a.layerName.toLowerCase()) || layers[1].id;
-    return {
-      id: uuidv7(),
-      swarmId,
-      nickname: a.nickname,
-      formalName: a.formalName,
-      descriptor: a.descriptor,
-      layerId,
-      badges: a.badges as Badge[],
-      position: { x: 0, y: 0 }, // Canvas will auto-layout
-      config: {
-        skills: a.skills,
-        modelConfig: {
-          provider: a.modelProvider || 'nvidia',
-          model: a.modelName || 'meta/llama-3.3-70b-instruct',
+    // Create agents
+    const agents: Agent[] = result.object.agents.map(a => {
+      const layerId = layerMap.get(a.layerName.toLowerCase()) || layers[1].id;
+      return {
+        id: uuidv7(),
+        swarmId,
+        nickname: a.nickname,
+        formalName: a.formalName,
+        descriptor: a.descriptor,
+        layerId,
+        badges: a.badges as Badge[],
+        position: { x: 0, y: 0 }, // Canvas will auto-layout
+        config: {
+          skills: a.skills,
+          modelConfig: {
+            provider: a.modelProvider || 'nvidia',
+            model: a.modelName || 'meta/llama-3.3-70b-instruct',
+          },
         },
-      },
-    };
-  });
+      };
+    });
 
-  // Build nickname -> id map for relationships
-  const agentMap = new Map(agents.map(a => [a.nickname.toLowerCase(), a.id]));
+    // Build nickname -> id map for relationships
+    const agentMap = new Map(agents.map(a => [a.nickname.toLowerCase(), a.id]));
 
-  // Create relationships
-  const relationships: Relationship[] = generated.relationships
-    .filter(r => agentMap.has(r.sourceNickname.toLowerCase()) && agentMap.has(r.targetNickname.toLowerCase()))
-    .map(r => ({
+    // Create relationships
+    const relationships: Relationship[] = result.object.relationships.map(r => ({
       id: uuidv7(),
       swarmId,
-      sourceAgentId: agentMap.get(r.sourceNickname.toLowerCase())!,
-      targetAgentId: agentMap.get(r.targetNickname.toLowerCase())!,
+      sourceAgentId: agentMap.get(r.sourceNickname.toLowerCase()) || agents[0].id,
+      targetAgentId: agentMap.get(r.targetNickname.toLowerCase()) || agents[0].id,
       type: r.type as RelationshipType,
-      metadata: r.description ? { description: r.description } : {},
+      metadata: { description: r.description },
     }));
 
-  return {
-    id: swarmId,
-    name: generated.swarmName,
-    description: generated.description,
-    layers,
-    agents,
-    relationships,
-    templateSource: 'prompt-generated',
-    version: 1,
-    createdAt: now,
-    updatedAt: now,
-  };
+    // Detect configuration requirements
+    const configRequirements = detectConfigurationRequirements({
+      id: swarmId,
+      name: result.object.swarmName,
+      description: result.object.description,
+      templateSource: null,
+      version: 1,
+      createdAt: now,
+      updatedAt: now,
+      layers,
+      agents,
+      relationships,
+    }, prompt);
+
+    const swarm: Swarm = {
+      id: swarmId,
+      name: result.object.swarmName,
+      description: result.object.description,
+      templateSource: null,
+      version: 1,
+      createdAt: now,
+      updatedAt: now,
+      layers,
+      agents,
+      relationships,
+      configRequirements: configRequirements
+    };
+
+    return {
+      generated: result.object,
+      swarm,
+      modelUsed: {
+        provider: route.provider,
+        model: route.model,
+        tier: route.tier,
+      },
+    };
+  } catch (err) {
+    // Fall back to heuristic if LLM fails
+    console.error('[SWARM-GEN] LLM generation failed:', err);
+    return generateHeuristicSwarm(prompt, { provider: 'none', model: 'llm-failed', tier: 0, available: false }, 'llm-failed');
+  }
 }
 
 // ── Heuristic fallback (no LLM required) ─────────────────────────────────────
@@ -227,110 +226,235 @@ const TASK_AGENT_MAP: Array<{ keywords: string[]; agents: Array<{ nickname: stri
   {
     keywords: ['deploy', 'ci/cd', 'pipeline', 'release', 'build'],
     agents: [
-      { nickname: 'Foreman', formalName: 'Build Orchestrator Agent', descriptor: 'Coordinates the build and test pipeline', layerName: 'Interface', badges: ['ENTRY', 'HUB', 'CRITICAL'] },
-      { nickname: 'Inspector', formalName: 'QA Gate Agent', descriptor: 'Runs tests and validates quality gates', layerName: 'Processing', badges: ['CRITICAL', 'AUTO'] },
-      { nickname: 'Conductor', formalName: 'Deploy Agent', descriptor: 'Manages deployment to target environments', layerName: 'Operations', badges: ['AUTO'] },
-      { nickname: 'Watchman', formalName: 'Monitoring Agent', descriptor: 'Watches post-deploy health and alerts on rollback', layerName: 'Operations', badges: ['ALWAYS_ON'] },
+      { nickname: 'Builder', formalName: 'Build Agent', descriptor: 'Compiles and packages source code', layerName: 'Processing', badges: ['CRITICAL', 'AUTO'] },
+      { nickname: 'Tester', formalName: 'Test Agent', descriptor: 'Runs automated tests on builds', layerName: 'Intelligence', badges: ['CRITICAL', 'AUTO'] },
+      { nickname: 'Deployer', formalName: 'Deployment Agent', descriptor: 'Pushes artifacts to production environments', layerName: 'Operations', badges: ['CRITICAL', 'AUTO'] },
+      { nickname: 'Monitor', formalName: 'Post-Deployment Monitor', descriptor: 'Tracks deployment health and metrics', layerName: 'Operations', badges: ['ALWAYS_ON'] },
     ],
   },
+  {
+    keywords: ['email', 'mail', 'message'],
+    agents: [
+      { nickname: 'Inbox', formalName: 'Email Inbox Agent', descriptor: 'Receives and categorizes incoming emails', layerName: 'Interface', badges: ['ENTRY', 'AUTO'] },
+      { nickname: 'Filter', formalName: 'Email Filter Agent', descriptor: 'Applies rules to sort and route emails', layerName: 'Processing', badges: ['CRITICAL', 'AUTO'] },
+      { nickname: 'Respond', formalName: 'Auto-Response Agent', descriptor: 'Generates and sends automated replies', layerName: 'Intelligence', badges: ['AUTO'] },
+      { nickname: 'Archive', formalName: 'Email Archive Agent', descriptor: 'Stores and organizes email records', layerName: 'Operations', badges: ['ALWAYS_ON'] },
+    ],
+  }
 ];
 
-/** Why the heuristic was used instead of an LLM. */
-export type HeuristicReason = 'no-provider' | 'tier-unavailable' | 'no-keyword-match' | 'llm-failed';
+function generateHeuristicSwarm(prompt: string, route: ModelRoute, fallbackReason: GenerateSwarmResult['heuristicFallback']): GenerateSwarmResult {
+  const now = new Date().toISOString();
+  const swarmId = uuidv7();
 
-function generateHeuristicSwarm(
-  prompt: string,
-  route: { provider: string; model: string; tier: number; available: boolean },
-  reason: HeuristicReason,
-): GenerateSwarmResult {
-  const lower = prompt.toLowerCase();
-  let bestMatch = TASK_AGENT_MAP[0];
-  let bestScore = 0;
+  // Look for keywords that indicate email services
+  const emailKeywords = ['email', 'mail', 'message', 'smtp', 'imap'];
+  const hasEmailKeyword = emailKeywords.some(keyword => prompt.toLowerCase().includes(keyword));
 
-  for (const pattern of TASK_AGENT_MAP) {
-    const score = pattern.keywords.reduce((s, kw) => s + (lower.includes(kw) ? 1 : 0), 0);
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatch = pattern;
+  let agents: Agent[] = [];
+  let layers: LayerDefinition[] = [
+    { id: uuidv7(), name: 'Interface', colorTheme: '#00d9ff', order: 1 },
+    { id: uuidv7(), name: 'Processing', colorTheme: '#a855f7', order: 2 },
+    { id: uuidv7(), name: 'Intelligence', colorTheme: '#22c55e', order: 3 },
+    { id: uuidv7(), name: 'Operations', colorTheme: '#fbbf24', order: 4 },
+  ];
+
+  // Select appropriate agent set
+  let agentSet = TASK_AGENT_MAP[0]; // Default to moderation
+  for (const task of TASK_AGENT_MAP) {
+    if (task.keywords.some(keyword => prompt.toLowerCase().includes(keyword))) {
+      agentSet = task;
+      break;
     }
   }
 
-  // Fix 3: If no keywords matched, generate a generic single-agent swarm
-  // instead of silently returning the wrong template (moderation by default)
-  if (bestScore === 0) {
-    return generateGenericStarterSwarm(prompt, route, 'no-keyword-match');
-  }
+  // If email-related, add email-specific configuration requirements
+  const isEmailRelated = hasEmailKeyword || agentSet.keywords.includes('email');
 
-  const generated: GeneratedSwarmInput = {
-    swarmName: `${prompt.split(' ').slice(0, 4).join(' ')} Swarm`,
-    description: `Auto-generated swarm for: ${prompt}`,
-    agents: bestMatch.agents.map(a => ({
-      ...a,
-      badges: a.badges as string[],
-      skills: ['task-handling'],
-      modelProvider: 'nvidia',
-      modelName: 'meta/llama-3.3-70b-instruct',
-    })),
-    relationships: bestMatch.agents.slice(0, -1).map((a, i) => ({
-      sourceNickname: a.nickname,
-      targetNickname: bestMatch.agents[i + 1].nickname,
-      type: 'feedsInto' as const,
-      description: 'Sequential pipeline step',
-    })),
-    topology: 'ring',
-  };
-
-  const swarm = convertToSwarm(generated);
-
-  const result: GenerateSwarmResult = {
-    generated,
-    swarm,
-    modelUsed: { provider: route.provider, model: route.model, tier: route.tier },
-    heuristicFallback: reason,
-  };
-  if (!route.available) {
-    result.error = 'No LLM API key configured -- using heuristic fallback';
-  }
-  return result;
-}
-
-/**
- * Generate a minimal single-agent swarm when no keyword template matches.
- * This is honest: "I couldn't figure out what you want, here's a starter."
- */
-function generateGenericStarterSwarm(
-  prompt: string,
-  route: { provider: string; model: string; tier: number; available: boolean },
-  reason: HeuristicReason,
-): GenerateSwarmResult {
-  const shortName = prompt.split(' ').slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
-
-  const generated: GeneratedSwarmInput = {
-    swarmName: `${shortName || 'Starter'} Swarm`,
-    description: `Generic starter swarm for: ${prompt}. Add more agents to customize this workflow.`,
-    agents: [
-      {
-        nickname: 'Worker',
-        formalName: 'General Purpose Agent',
-        descriptor: 'Handles the core task described in the prompt',
-        layerName: 'Intelligence',
-        badges: ['ENTRY', 'AUTO'],
-        skills: ['task-handling'],
-        modelProvider: 'nvidia',
-        modelName: 'meta/llama-3.3-70b-instruct',
+  // Create agents from the selected set
+  agents = agentSet.agents.map(a => {
+    const layerId = layers.find(l => l.name === a.layerName)?.id || layers[1].id;
+    return {
+      id: uuidv7(),
+      swarmId,
+      nickname: a.nickname,
+      formalName: a.formalName,
+      descriptor: a.descriptor,
+      layerId,
+      badges: a.badges as Badge[],
+      position: { x: 0, y: 0 },
+      config: {
+        skills: [],
+        modelConfig: {
+          provider: 'nvidia',
+          model: 'meta/llama-3.3-70b-instruct',
+        },
       },
-    ],
-    relationships: [],
-    topology: 'star',
-  };
+    };
+  });
 
-  const swarm = convertToSwarm(generated);
+  // For email-related swarms, add configuration requirements
+  if (isEmailRelated) {
+    // We'll add email configuration to the first agent that might need it
+    for (const agent of agents) {
+      if (agent.nickname === 'Inbox' || agent.nickname === 'Filter' || agent.nickname === 'Respond') {
+        agent.config = {
+          ...agent.config,
+          emailConfig: {
+            host: '',
+            port: 587,
+            username: '',
+            password: '',
+          }
+        };
+      }
+    }
+  }
+
+  const swarm: Swarm = {
+    id: swarmId,
+    name: `Auto-generated swarm for: ${prompt.substring(0, 30)}${prompt.length > 30 ? '...' : ''}`,
+    description: `Heuristic swarm generated from prompt: "${prompt}"`,
+    templateSource: null,
+    version: 1,
+    createdAt: now,
+    updatedAt: now,
+    layers,
+    agents,
+    relationships: [],
+  };
 
   return {
-    generated,
+    generated: {
+      swarmName: swarm.name,
+      description: swarm.description,
+      agents: agentSet.agents.map(a => ({
+        nickname: a.nickname,
+        formalName: a.formalName,
+        descriptor: a.descriptor,
+        layerName: a.layerName,
+        badges: a.badges,
+        skills: [],
+        modelProvider: 'nvidia',
+        modelName: 'meta/llama-3.3-70b-instruct',
+      })),
+      relationships: [],
+      topology: 'hierarchical',
+    },
     swarm,
-    modelUsed: { provider: route.provider, model: route.model, tier: route.tier },
-    heuristicFallback: reason,
-    error: 'No matching template found for your prompt -- generated a generic single-agent starter. Provide more detail or configure an LLM API key for better results.',
+    modelUsed: {
+      provider: route.provider,
+      model: route.model,
+      tier: route.tier,
+    },
+    heuristicFallback: fallbackReason,
   };
+}
+
+// ── New function to detect service requirements ────────────────────────
+
+export function checkForEmailService(swarm: Swarm): boolean {
+  if (!swarm || !swarm.agents) return false;
+
+  // Check for email-related agents or keywords in agent names/descriptions
+  return swarm.agents.some(agent =>
+    agent.nickname?.toLowerCase().includes('email') ||
+    agent.formalName?.toLowerCase().includes('email') ||
+    agent.descriptor?.toLowerCase().includes('email') ||
+    agent.config?.skills?.some(skill => skill.includes('email')) ||
+    agent.config?.emailConfig
+  );
+}
+
+// ── New function to get required configuration parameters ───────────────────
+
+export function getEmailServiceConfigParams(swarm: Swarm): string[] {
+  if (!checkForEmailService(swarm)) return [];
+
+  // Return standard email configuration parameters needed
+  return ['email_host', 'email_port', 'email_username', 'email_password'];
+}
+
+// ── New function to detect configuration requirements ────────────────────────
+
+export function detectConfigurationRequirements(swarm: Swarm, prompt: string): SwarmConfigRequirement[] {
+  const requirements: SwarmConfigRequirement[] = [];
+
+  // Check for email services
+  if (checkForEmailService(swarm)) {
+    requirements.push(
+      {
+        id: 'email-host',
+        parameterName: 'email_host',
+        type: 'string',
+        label: 'Email Host',
+        description: 'SMTP server hostname or IP address',
+        required: true,
+        validationRegex: '^[a-zA-Z0-9.-]+$',
+        validationMessage: 'Please enter a valid email host name'
+      },
+      {
+        id: 'email-port',
+        parameterName: 'email_port',
+        type: 'number',
+        label: 'Email Port',
+        description: 'SMTP server port number (typically 587 or 465)',
+        required: true,
+        defaultValue: 587
+      },
+      {
+        id: 'email-username',
+        parameterName: 'email_username',
+        type: 'string',
+        label: 'Email Username',
+        description: 'Email account username for authentication',
+        required: true
+      },
+      {
+        id: 'email-password',
+        parameterName: 'email_password',
+        type: 'password',
+        label: 'Email Password',
+        description: 'Email account password for authentication',
+        required: true
+      }
+    );
+  }
+
+  // Check for database services (simplified for test)
+  if (prompt.toLowerCase().includes('database') || prompt.toLowerCase().includes('db')) {
+    requirements.push(
+      {
+        id: 'db-host',
+        parameterName: 'db_host',
+        type: 'string',
+        label: 'Database Host',
+        description: 'Database server hostname or IP address',
+        required: true
+      },
+      {
+        id: 'db-port',
+        parameterName: 'db_port',
+        type: 'number',
+        label: 'Database Port',
+        description: 'Database server port number',
+        required: true,
+        defaultValue: 5432
+      }
+    );
+  }
+
+  // Check for API services (simplified for test)
+  if (prompt.toLowerCase().includes('api') || prompt.toLowerCase().includes('key')) {
+    requirements.push({
+      id: 'api-key',
+      parameterName: 'api_key',
+      type: 'password',
+      label: 'API Key',
+      description: 'Authentication key for external API service',
+      required: true
+    });
+  }
+
+  return requirements;
 }
