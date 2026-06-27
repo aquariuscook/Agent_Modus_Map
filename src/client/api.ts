@@ -914,8 +914,8 @@ export async function previewSearch(query: string): Promise<{
 }
 
 // Deploy / Runtime
-export async function deploySwarm(swarmId: string, query: string, schedule: string, budgetLimit?: number): Promise<any> {
-  return postJson(`/simulate/${swarmId}/deploy`, { query, schedule, budgetLimit });
+export async function deploySwarm(swarmId: string, query: string, schedule: string, budgetLimit?: number, config?: Record<string, string>): Promise<any> {
+  return postJson(`/simulate/${swarmId}/deploy`, { query, schedule, budgetLimit, config });
 }
 
 export async function pauseDeployment(swarmId: string): Promise<any> {

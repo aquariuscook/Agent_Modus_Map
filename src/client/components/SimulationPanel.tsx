@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { runSimulation, getSwarmCostEstimate, runLiveTestStreaming, getSwarmPackage, deploySwarm as apiDeploySwarm, pauseDeployment, resumeDeployment, stopDeployment, getDeployStatus, getDeployResults, previewSearch } from '../api.js';
 import { ProspectDashboard } from './ProspectDashboard.js';
+import type { SwarmConfigRequirement } from '../../shared/types/index.js';
 
 function linkifyText(text: string): string {
   // Escape HTML first to prevent XSS
@@ -683,6 +684,77 @@ function saveQuery(q: string) {
   localStorage.setItem(SAVED_QUERIES_KEY, JSON.stringify(queries.slice(0, 5)));
 }
 
+function deployConfigKey(swarmId: string) { return `swarm-deploy-config-${swarmId}`; }
+
+function loadDeployConfig(swarmId: string): Record<string, string> {
+  try { return JSON.parse(localStorage.getItem(deployConfigKey(swarmId)) || '{}'); } catch { return {}; }
+}
+
+function saveDeployConfig(swarmId: string, config: Record<string, string>) {
+  localStorage.setItem(deployConfigKey(swarmId), JSON.stringify(config));
+}
+
+interface ConfigFormProps {
+  requirements: SwarmConfigRequirement[];
+  values: Record<string, string>;
+  onChange: (values: Record<string, string>) => void;
+  collapsed: boolean;
+  onToggle: () => void;
+}
+
+function SwarmConfigForm({ requirements, values, onChange, collapsed, onToggle }: ConfigFormProps) {
+  const inp: React.CSSProperties = {
+    width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border-default)',
+    background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: 13,
+    fontFamily: 'var(--font-primary)', boxSizing: 'border-box',
+  };
+  const allFilled = requirements.filter(r => r.required).every(r => values[r.parameterName]?.trim());
+
+  return (
+    <div style={{ marginBottom: 16, border: '1px solid var(--border-default)', borderRadius: 8, overflow: 'hidden' }}>
+      <button
+        onClick={onToggle}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '10px 14px', background: 'var(--bg-surface)', border: 'none',
+          color: 'var(--text-primary)', cursor: 'pointer', fontFamily: 'var(--font-primary)', fontSize: 13, fontWeight: 600,
+        }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 16 }}>{allFilled ? '✓' : '⚙'}</span>
+          Required Configuration
+          {!allFilled && <span style={{ fontSize: 11, color: '#ef4444', fontWeight: 400 }}>— fill in before deploying</span>}
+        </span>
+        <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{collapsed ? '▼ show' : '▲ hide'}</span>
+      </button>
+      {!collapsed && (
+        <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {requirements.map(req => (
+            <div key={req.id}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
+                {req.label}{req.required && <span style={{ color: '#ef4444' }}> *</span>}
+              </label>
+              {req.description && (
+                <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 4 }}>{req.description}</div>
+              )}
+              <input
+                type={req.type === 'password' ? 'password' : req.type === 'number' ? 'number' : 'text'}
+                value={values[req.parameterName] ?? (req.defaultValue !== undefined ? String(req.defaultValue) : '')}
+                placeholder={req.defaultValue !== undefined ? String(req.defaultValue) : ''}
+                onChange={e => onChange({ ...values, [req.parameterName]: e.target.value })}
+                style={inp}
+              />
+            </div>
+          ))}
+          <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4 }}>
+            These values are saved locally and reused on future deploys.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange }: { swarmId: string; query: string; onQueryChange: (q: string) => void }) {
   const [schedule, setSchedule] = useState<string>('once');
   const [budget, setBudget] = useState('1.00');
@@ -696,6 +768,9 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
   const [previewing, setPreviewing] = useState(false);
   const [showTuning, setShowTuning] = useState(false);
   const [minScore, setMinScore] = useState(() => Number(localStorage.getItem('prospect-dash-min-score') || '5'));
+  const [configRequirements, setConfigRequirements] = useState<SwarmConfigRequirement[] | null>(null);
+  const [configValues, setConfigValues] = useState<Record<string, string>>(() => loadDeployConfig(swarmId));
+  const [configCollapsed, setConfigCollapsed] = useState(false);
 
   function copyResults(result: any, type: 'mock' | 'live') {
     doCopyResults(result, type);
@@ -784,12 +859,22 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
     setShowConfirm(false);
     setDeploying(true);
     try {
-      const result = await apiDeploySwarm(swarmId, query.trim(), schedule, budget ? Number(budget) : undefined);
+      const result = await apiDeploySwarm(swarmId, query.trim(), schedule, budget ? Number(budget) : undefined, configValues);
+      if (result && result.configRequired) {
+        setConfigRequirements(result.requirements ?? []);
+        setConfigCollapsed(false);
+        return;
+      }
       setDeployStatus(result);
       setTimeout(refreshStatus, 3000); // refresh after first run likely completes
     } catch (err: any) {
       setDeployStatus({ status: 'error', error: err.message, runCount: 0, totalCost: 0, budgetLimit: null } as any);
     } finally { setDeploying(false); }
+  }
+
+  function handleConfigChange(values: Record<string, string>) {
+    setConfigValues(values);
+    saveDeployConfig(swarmId, values);
   }
 
   const isRunning = deployStatus?.status === 'running';
@@ -810,6 +895,17 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
       <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.6 }}>
         Deploy this swarm to run inside the app. Set a query, schedule, and budget limit. Results accumulate here.
       </div>
+
+      {/* Config requirements form */}
+      {configRequirements && configRequirements.length > 0 && (
+        <SwarmConfigForm
+          requirements={configRequirements}
+          values={configValues}
+          onChange={handleConfigChange}
+          collapsed={configCollapsed}
+          onToggle={() => setConfigCollapsed(c => !c)}
+        />
+      )}
 
       {/* Status bar */}
       {deployStatus && deployStatus.status && (
@@ -984,13 +1080,21 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
             </div>
           </div>
 
-          <button onClick={() => setShowConfirm(true)} disabled={deploying || !query.trim()} style={{
-            marginTop: 16, padding: '12px 24px', borderRadius: 8, border: 'none',
-            background: '#22c55e', color: '#fff', fontWeight: 700, fontSize: 14,
-            cursor: deploying || !query.trim() ? 'default' : 'pointer',
-            fontFamily: 'var(--font-primary)', opacity: deploying || !query.trim() ? 0.4 : 1,
-            width: '100%',
-          }}>{deploying ? 'Deploying...' : 'Deploy Swarm'}</button>
+          {(() => {
+            const configMissing = configRequirements !== null && configRequirements.filter(r => r.required).some(r => !configValues[r.parameterName]?.trim());
+            const disabled = deploying || !query.trim() || configMissing;
+            return (
+              <button onClick={() => setShowConfirm(true)} disabled={disabled} style={{
+                marginTop: 16, padding: '12px 24px', borderRadius: 8, border: 'none',
+                background: '#22c55e', color: '#fff', fontWeight: 700, fontSize: 14,
+                cursor: disabled ? 'default' : 'pointer',
+                fontFamily: 'var(--font-primary)', opacity: disabled ? 0.4 : 1,
+                width: '100%',
+              }}>
+                {deploying ? 'Deploying...' : configMissing ? 'Fill in required configuration above' : 'Deploy Swarm'}
+              </button>
+            );
+          })()}
 
           {showConfirm && (
             <div style={{

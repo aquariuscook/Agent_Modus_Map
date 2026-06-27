@@ -1,6 +1,6 @@
 import type Database from 'better-sqlite3';
 import { v7 as uuidv7 } from 'uuid';
-import type { Swarm, Agent, Relationship, LayerDefinition, SwarmExport } from '../../shared/types/index.js';
+import type { Swarm, Agent, Relationship, LayerDefinition, SwarmExport, SwarmConfigRequirement } from '../../shared/types/index.js';
 
 export class SwarmService {
   constructor(private db: Database.Database) {}
@@ -202,6 +202,10 @@ export class SwarmService {
     const agentRows = this.db.prepare('SELECT * FROM agents WHERE swarm_id = ?').all(id) as any[];
     const relRows = this.db.prepare('SELECT * FROM relationships WHERE swarm_id = ?').all(id) as any[];
 
+    const configRequirements: SwarmConfigRequirement[] = row.config_requirements
+      ? JSON.parse(row.config_requirements)
+      : [];
+
     return {
       id: row.id,
       name: row.name,
@@ -218,7 +222,15 @@ export class SwarmService {
       })),
       agents: agentRows.map(a => this.mapAgent(a)),
       relationships: relRows.map(r => this.mapRelationship(r)),
+      configRequirements: configRequirements.length > 0 ? configRequirements : undefined,
     };
+  }
+
+  saveConfigRequirements(swarmId: string, requirements: SwarmConfigRequirement[]): boolean {
+    const result = this.db.prepare(
+      `UPDATE swarms SET config_requirements = ?, updated_at = datetime('now') WHERE id = ?`
+    ).run(JSON.stringify(requirements), swarmId);
+    return result.changes > 0;
   }
 
   private loadAgent(id: string): Agent | null {

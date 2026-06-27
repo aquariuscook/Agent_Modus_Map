@@ -7,7 +7,7 @@ import { z } from 'zod';
 import type { LanguageModel } from 'ai';
 import { getModelForTier, getCheapestModel, NoProviderAvailableError, callGenerateObject } from './provider-router-service.js';
 import type { ModelRoute } from './provider-router-service.js';
-import type { Swarm, Agent, Relationship, LayerDefinition, Badge, RelationshipType } from '../../shared/types/index.js';
+import type { Swarm, Agent, Relationship, LayerDefinition, Badge, RelationshipType, SwarmConfigRequirement } from '../../shared/types/index.js';
 import { v7 as uuidv7 } from 'uuid';
 
 // ── Zod schemas for structured LLM output ────────────────────────────────────

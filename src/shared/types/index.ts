@@ -72,6 +72,7 @@ export interface Swarm {
   version: number;
   createdAt: string;
   updatedAt: string;
+  configRequirements?: SwarmConfigRequirement[];
 }
 
 // Validation result from the validation engine
@@ -109,6 +110,18 @@ export interface ApiError {
   error: string;
   message: string;
   details?: unknown;
+}
+
+export interface SwarmConfigRequirement {
+  id: string;
+  parameterName: string;
+  type: 'string' | 'password' | 'number';
+  label: string;
+  description: string;
+  required: boolean;
+  defaultValue?: string | number;
+  validationRegex?: string;
+  validationMessage?: string;
 }
 
 // Export/Import format

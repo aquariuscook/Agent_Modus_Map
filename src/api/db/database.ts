@@ -119,4 +119,9 @@ function initSchema(database: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_llm_calls_caller ON llm_calls(caller);
     CREATE INDEX IF NOT EXISTS idx_llm_calls_provider ON llm_calls(provider);
   `);
+
+  // Additive migration: config_requirements column on swarms
+  try {
+    database.exec(`ALTER TABLE swarms ADD COLUMN config_requirements TEXT NOT NULL DEFAULT '[]'`);
+  } catch { /* column already exists */ }
 }

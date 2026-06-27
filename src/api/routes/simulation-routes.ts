@@ -8,6 +8,7 @@ import { runLiveExecution, runLiveExecutionStreaming, previewSearch } from '../s
 import { generateSwarmPackage } from '../services/swarm-export-service.js';
 import { isLLMAvailable } from '../services/llm-service.js';
 import { requireCapability } from '../services/license-service.js';
+import { detectConfigurationRequirements } from '../services/swarm-generator-service.js';
 
 export function createSimulationRoutes(db: Database.Database): Router {
   const router = Router();
@@ -104,15 +105,23 @@ export function createSimulationRoutes(db: Database.Database): Router {
     const swarm = swarmService.findById(req.params.swarmId);
     if (!swarm) return res.status(404).json({ error: 'Swarm not found' });
 
-    const { query, schedule, budgetLimit } = req.body;
+    const { query, schedule, budgetLimit, config: providedConfig = {} } = req.body;
     if (!query?.trim()) return res.status(400).json({ error: 'Query is required' });
     const validSchedules = ['once', 'hourly', 'daily', 'weekly'];
     if (!validSchedules.includes(schedule)) return res.status(400).json({ error: 'Schedule must be: once, hourly, daily, or weekly' });
+
+    // Check if this swarm requires configuration parameters
+    const requirements = detectConfigurationRequirements(swarm, query.trim());
+    const missingRequired = requirements.filter(r => r.required && !providedConfig[r.parameterName]);
+    if (missingRequired.length > 0) {
+      return res.json({ configRequired: true, requirements });
+    }
+
     const requiredCapability = schedule === 'once' ? 'deploy.once' : 'deploy.scheduled';
     const capabilityGuard = requireCapability(requiredCapability);
     capabilityGuard(req, res, () => {
-      const config = deploySwarm(String(req.params.swarmId), query.trim(), schedule, swarmService, budgetLimit ? Number(budgetLimit) : undefined);
-      res.json({ data: config });
+      const deployConfig = deploySwarm(String(req.params.swarmId), query.trim(), schedule, swarmService, budgetLimit ? Number(budgetLimit) : undefined);
+      res.json({ data: deployConfig });
     });
   });
 
